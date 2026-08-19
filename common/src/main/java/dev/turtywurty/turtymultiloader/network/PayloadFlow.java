@@ -1,4 +1,4 @@
-package dev.turtywurty.turtymultiloader.registration;
+package dev.turtywurty.turtymultiloader.network;
 
 public enum PayloadFlow {
     CLIENTBOUND,

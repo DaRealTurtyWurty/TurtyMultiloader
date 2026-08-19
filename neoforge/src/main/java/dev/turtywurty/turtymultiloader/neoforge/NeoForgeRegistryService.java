@@ -3,9 +3,6 @@ package dev.turtywurty.turtymultiloader.neoforge;
 import dev.turtywurty.turtymultiloader.registration.*;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.network.codec.StreamCodec;
-import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.entity.EntityType;
@@ -18,9 +15,6 @@ import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
 import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
 import net.neoforged.neoforge.event.entity.EntityAttributeCreationEvent;
-import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
-import net.neoforged.neoforge.network.handling.IPayloadHandler;
-import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
 import net.neoforged.neoforge.registries.RegisterEvent;
@@ -37,7 +31,6 @@ public final class NeoForgeRegistryService implements RegistryService {
     private final List<EntryDeclaration<?, ?>> entries = new ArrayList<>();
     private final List<EntityAttributesDeclaration<?>> entityAttributes = new ArrayList<>();
     private final List<CreativeTabPopulation> creativeTabPopulations = new ArrayList<>();
-    private final List<PayloadDeclaration<?, ?>> payloads = new ArrayList<>();
     private final List<WoodTypeDeclaration> woodTypes = new ArrayList<>();
     private final List<StrippableDeclaration> strippables = new ArrayList<>();
     private final List<FlammabilityDeclaration> flammability = new ArrayList<>();
@@ -46,7 +39,6 @@ public final class NeoForgeRegistryService implements RegistryService {
     private int appliedEntries;
     private boolean attributesListenerRegistered;
     private boolean creativeTabsListenerRegistered;
-    private boolean payloadsListenerRegistered;
     private boolean blockHooksListenerRegistered;
 
     public static void bind(IEventBus bus) {
@@ -109,22 +101,6 @@ public final class NeoForgeRegistryService implements RegistryService {
     }
 
     @Override
-    public synchronized <B extends FriendlyByteBuf, T extends CustomPacketPayload> void registerPayloadType(
-        PayloadPhase phase,
-        PayloadFlow flow,
-        CustomPacketPayload.Type<T> type,
-        StreamCodec<? super B, T> codec
-    ) {
-        ensureOpen();
-        payloads.add(new PayloadDeclaration<>(
-            Objects.requireNonNull(phase, "phase"),
-            Objects.requireNonNull(flow, "flow"),
-            Objects.requireNonNull(type, "type"),
-            Objects.requireNonNull(codec, "codec")
-        ));
-    }
-
-    @Override
     public synchronized QueuedValue<WoodType> registerWoodType(Supplier<? extends WoodType> factory) {
         ensureOpen();
         QueuedValue<WoodType> result = new QueuedValue<>();
@@ -181,10 +157,6 @@ public final class NeoForgeRegistryService implements RegistryService {
         if (!creativeTabPopulations.isEmpty() && !creativeTabsListenerRegistered) {
             bus.addListener(BuildCreativeModeTabContentsEvent.class, this::populateCreativeTab);
             creativeTabsListenerRegistered = true;
-        }
-        if (!payloads.isEmpty() && !payloadsListenerRegistered) {
-            bus.addListener(RegisterPayloadHandlersEvent.class, this::registerPayloads);
-            payloadsListenerRegistered = true;
         }
         if ((!woodTypes.isEmpty() || !strippables.isEmpty() || !flammability.isEmpty())
             && !blockHooksListenerRegistered) {
@@ -247,32 +219,6 @@ public final class NeoForgeRegistryService implements RegistryService {
             .forEach(declaration -> declaration.population().accept(stack -> event.accept(stack)));
     }
 
-    private void registerPayloads(RegisterPayloadHandlersEvent event) {
-        PayloadRegistrar registrar = event.registrar("1");
-        payloads.forEach(declaration -> registerPayload(registrar, declaration));
-    }
-
-    @SuppressWarnings({"rawtypes", "unchecked"})
-    private static void registerPayload(PayloadRegistrar registrar, PayloadDeclaration<?, ?> declaration) {
-        CustomPacketPayload.Type type = declaration.type();
-        StreamCodec codec = declaration.codec();
-        IPayloadHandler noOp = (payload, context) -> {
-        };
-        if (declaration.phase() == PayloadPhase.PLAY) {
-            switch (declaration.flow()) {
-                case CLIENTBOUND -> registrar.playToClient(type, codec);
-                case SERVERBOUND -> registrar.playToServer(type, codec, noOp);
-                case BIDIRECTIONAL -> registrar.playBidirectional(type, codec, noOp);
-            }
-        } else {
-            switch (declaration.flow()) {
-                case CLIENTBOUND -> registrar.configurationToClient(type, codec);
-                case SERVERBOUND -> registrar.configurationToServer(type, codec, noOp);
-                case BIDIRECTIONAL -> registrar.configurationBidirectional(type, codec, noOp);
-            }
-        }
-    }
-
     private boolean blockHooksRegistered;
 
     private void registerBlockHooks(RegisterEvent event) {
@@ -324,14 +270,6 @@ public final class NeoForgeRegistryService implements RegistryService {
     private record CreativeTabPopulation(
         ResourceKey<CreativeModeTab> tab,
         Consumer<CreativeTabOutput> population
-    ) {
-    }
-
-    private record PayloadDeclaration<B extends FriendlyByteBuf, T extends CustomPacketPayload>(
-        PayloadPhase phase,
-        PayloadFlow flow,
-        CustomPacketPayload.Type<T> type,
-        StreamCodec<? super B, T> codec
     ) {
     }
 

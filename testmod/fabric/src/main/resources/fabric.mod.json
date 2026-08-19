@@ -8,6 +8,9 @@
         "main": [
             "dev.turtywurty.turtymultiloader.testmod.fabric.TestModFabric"
         ],
+        "client": [
+            "dev.turtywurty.turtymultiloader.testmod.fabric.TestModFabricClient"
+        ],
         "fabric-gametest": [
             "dev.turtywurty.turtymultiloader.testmod.fabric.TestModFabricGameTests"
         ]

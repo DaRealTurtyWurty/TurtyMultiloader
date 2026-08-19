@@ -5,7 +5,6 @@ import dev.turtywurty.turtymultiloader.registration.*;
 import net.fabricmc.fabric.api.creativetab.v1.CreativeModeTabEvents;
 import net.fabricmc.fabric.api.event.registry.FabricRegistryBuilder;
 import net.fabricmc.fabric.api.event.registry.RegistryAttribute;
-import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.object.builder.v1.entity.FabricDefaultAttributeRegistry;
 import net.fabricmc.fabric.api.registry.FlammableBlockRegistry;
 import net.fabricmc.fabric.api.registry.StrippableBlockRegistry;
@@ -13,9 +12,6 @@ import net.minecraft.core.Holder;
 import net.minecraft.core.MappedRegistry;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.network.codec.StreamCodec;
-import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.entity.EntityType;
@@ -36,7 +32,6 @@ public final class FabricRegistryService implements RegistryService {
     private final List<EntryDeclaration<?, ?>> entries = new ArrayList<>();
     private final List<EntityAttributesDeclaration<?>> entityAttributes = new ArrayList<>();
     private final List<CreativeTabPopulation> creativeTabPopulations = new ArrayList<>();
-    private final List<PayloadDeclaration<?, ?>> payloads = new ArrayList<>();
     private final List<WoodTypeDeclaration> woodTypes = new ArrayList<>();
     private final List<StrippableDeclaration> strippables = new ArrayList<>();
     private final List<FlammabilityDeclaration> flammability = new ArrayList<>();
@@ -94,22 +89,6 @@ public final class FabricRegistryService implements RegistryService {
     }
 
     @Override
-    public synchronized <B extends FriendlyByteBuf, T extends CustomPacketPayload> void registerPayloadType(
-        PayloadPhase phase,
-        PayloadFlow flow,
-        CustomPacketPayload.Type<T> type,
-        StreamCodec<? super B, T> codec
-    ) {
-        ensureOpen();
-        payloads.add(new PayloadDeclaration<>(
-            Objects.requireNonNull(phase, "phase"),
-            Objects.requireNonNull(flow, "flow"),
-            Objects.requireNonNull(type, "type"),
-            Objects.requireNonNull(codec, "codec")
-        ));
-    }
-
-    @Override
     public synchronized QueuedValue<WoodType> registerWoodType(Supplier<? extends WoodType> factory) {
         ensureOpen();
         QueuedValue<WoodType> result = new QueuedValue<>();
@@ -153,8 +132,6 @@ public final class FabricRegistryService implements RegistryService {
         entityAttributes.clear();
         creativeTabPopulations.forEach(FabricRegistryService::registerCreativeTabPopulation);
         creativeTabPopulations.clear();
-        payloads.forEach(FabricRegistryService::registerPayload);
-        payloads.clear();
         woodTypes.forEach(declaration -> declaration.result().bind(declaration.factory().get()));
         woodTypes.clear();
         strippables.forEach(declaration -> StrippableBlockRegistry.register(
@@ -214,24 +191,6 @@ public final class FabricRegistryService implements RegistryService {
         );
     }
 
-    @SuppressWarnings({"rawtypes", "unchecked"})
-    private static void registerPayload(PayloadDeclaration<?, ?> declaration) {
-        PayloadTypeRegistry clientbound;
-        PayloadTypeRegistry serverbound;
-        if (declaration.phase() == PayloadPhase.PLAY) {
-            clientbound = PayloadTypeRegistry.clientboundPlay();
-            serverbound = PayloadTypeRegistry.serverboundPlay();
-        } else {
-            clientbound = PayloadTypeRegistry.clientboundConfiguration();
-            serverbound = PayloadTypeRegistry.serverboundConfiguration();
-        }
-
-        if (declaration.flow() != PayloadFlow.SERVERBOUND)
-            clientbound.register(declaration.type(), declaration.codec());
-        if (declaration.flow() != PayloadFlow.CLIENTBOUND)
-            serverbound.register(declaration.type(), declaration.codec());
-    }
-
     private void ensureOpen() {
         // Fabric can flush another declaration batch while mod entrypoints are still running.
     }
@@ -256,14 +215,6 @@ public final class FabricRegistryService implements RegistryService {
     private record CreativeTabPopulation(
         ResourceKey<CreativeModeTab> tab,
         Consumer<CreativeTabOutput> population
-    ) {
-    }
-
-    private record PayloadDeclaration<B extends FriendlyByteBuf, T extends CustomPacketPayload>(
-        PayloadPhase phase,
-        PayloadFlow flow,
-        CustomPacketPayload.Type<T> type,
-        StreamCodec<? super B, T> codec
     ) {
     }
 

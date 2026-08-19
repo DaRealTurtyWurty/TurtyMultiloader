@@ -3,9 +3,6 @@ package dev.turtywurty.turtymultiloader.registration;
 import net.minecraft.core.Registry;
 import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.network.codec.StreamCodec;
-import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.entity.Entity;
@@ -58,13 +55,6 @@ public interface RegistryService {
     );
 
     void populateCreativeTab(ResourceKey<CreativeModeTab> tab, Consumer<CreativeTabOutput> population);
-
-    <B extends FriendlyByteBuf, T extends CustomPacketPayload> void registerPayloadType(
-        PayloadPhase phase,
-        PayloadFlow flow,
-        CustomPacketPayload.Type<T> type,
-        StreamCodec<? super B, T> codec
-    );
 
     QueuedValue<WoodType> registerWoodType(Supplier<? extends WoodType> factory);
 

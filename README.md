@@ -79,9 +79,87 @@ public static final RegistrationHandle<Block, ExampleBlock> EXAMPLE_BLOCK =
 has been applied fails explicitly.
 
 The service has typed helpers for blocks, items, fluids, block entities, entities and attributes, menus, recipes,
-data components, consume effects, position sources, world-generation features, creative tabs, payload types, wood
-types, stripping, and flammability. `register(...)` accepts any vanilla `ResourceKey<? extends Registry<R>>`, and
+data components, consume effects, position sources, world-generation features, creative tabs, wood types, stripping,
+and flammability. `register(...)` accepts any vanilla `ResourceKey<? extends Registry<R>>`, and
 `customRegistry(...)` creates custom registries whose entries use the same handles.
+
+### Networking service
+
+`NetworkService` uses vanilla `CustomPacketPayload` records and `StreamCodec`s directly. It does not wrap buffers or
+payload data. Declare each payload once in common initialization with its phase, direction, protocol version, and
+required/optional policy:
+
+```java
+public record SetModePayload(BlockPos pos, int mode) implements CustomPacketPayload {
+    public static final Type<SetModePayload> TYPE =
+        new Type<>(Identifier.fromNamespaceAndPath(MOD_ID, "set_mode"));
+    public static final StreamCodec<RegistryFriendlyByteBuf, SetModePayload> CODEC = StreamCodec.composite(
+        BlockPos.STREAM_CODEC, SetModePayload::pos,
+        ByteBufCodecs.VAR_INT, SetModePayload::mode,
+        SetModePayload::new
+    );
+
+    @Override
+    public Type<SetModePayload> type() {
+        return TYPE;
+    }
+}
+
+private static final NetworkService NETWORK = NetworkService.get();
+
+static {
+    NETWORK.registerPlayServerbound(
+        SetModePayload.TYPE,
+        SetModePayload.CODEC,
+        PayloadRegistrationOptions.required("2"),
+        (payload, context) -> {
+            ServerPlayer sender = context.sender().orElseThrow();
+            if (!context.hasPermission(Commands.LEVEL_GAMEMASTERS))
+                return;
+            // Validate payload.pos()/mode() against sender before changing server state.
+        }
+    );
+}
+```
+
+The six registration methods cover clientbound, serverbound, and bidirectional payloads in both play and
+configuration phases. Attach the receiving side of a clientbound or bidirectional payload from the consuming mod's
+client initializer; this keeps client implementation classes off dedicated servers:
+
+```java
+NETWORK.registerClientHandler(PayloadPhase.PLAY, SyncMachinePayload.TYPE, (payload, context) -> {
+    // Runs on the render thread; context.player() contains the LocalPlayer.
+});
+```
+
+Handlers run on the logical side's main game thread on both loaders. `PayloadContext` exposes the phase, receiving
+side, player, authenticated serverbound sender, vanilla `PermissionSet`, reply/disconnect operations, and
+`enqueueWork(...)`. Configuration handlers have no player or sender.
+
+Play-phase send helpers cover the server, one player, every player, entity/chunk tracking players, one dimension, and
+players near a `Vec3`. `canSendToServer(...)` and `canSend(...)` let optional features be gated explicitly. Required
+payload or protocol mismatches disconnect during negotiation; optional mismatches remain connectable and sends are
+skipped. NeoForge uses its native payload negotiation, while Fabric advertises an internal version-probe channel for
+each vanilla payload type.
+
+Lifecycle and initial synchronization are loader-neutral:
+
+```java
+NETWORK.onConnection(context -> preload(context.profile()));
+NETWORK.onJoin(player -> initializeSession(player));
+NETWORK.onDisconnect(player -> closeSession(player));
+NETWORK.onClientJoin(ClientState::connected);
+NETWORK.onClientDisconnect(ClientState::disconnected);
+
+NETWORK.addLoginSync(player -> List.of(
+    createMachineSnapshot(player),
+    createNetworkSnapshot(player)
+));
+```
+
+Login sync providers run in registration order after the server join callbacks. Unsupported optional payloads are
+filtered per player. Networking declarations do not use `RegistryService.apply()`; Fabric registers them immediately
+and NeoForge consumes them from `RegisterPayloadHandlersEvent`.
 
 ### Resource transfer service
 

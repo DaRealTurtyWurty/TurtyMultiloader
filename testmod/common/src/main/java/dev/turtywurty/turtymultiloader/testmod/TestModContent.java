@@ -9,6 +9,8 @@ import dev.turtywurty.slurryapi.SlurryApi;
 import dev.turtywurty.slurryapi.api.Slurry;
 import dev.turtywurty.slurryapi.api.storage.SingleSlurryStorage;
 import dev.turtywurty.slurryapi.api.storage.SlurryStorage;
+import dev.turtywurty.turtymultiloader.network.NetworkService;
+import dev.turtywurty.turtymultiloader.network.PayloadRegistrationOptions;
 import dev.turtywurty.turtymultiloader.registration.*;
 import dev.turtywurty.turtymultiloader.transfer.TransferService;
 import dev.turtywurty.turtymultiloader.transfer.lookup.StorageKeys;
@@ -33,9 +35,12 @@ import net.minecraft.world.level.block.state.properties.BlockSetType;
 import net.minecraft.world.level.block.state.properties.WoodType;
 import net.minecraft.world.level.material.Fluid;
 
+import java.util.List;
+
 public final class TestModContent {
     public static final String MOD_ID = "turtymultiloader_testmod";
     public static final RegistryService REGISTRIES = RegistryService.get();
+    public static final NetworkService NETWORK = NetworkService.get();
     public static final TransferService TRANSFERS = TransferService.get();
 
     public static final RegistrationHandle<Block, Block> TEST_LOG = REGISTRIES.registerBlock(
@@ -94,12 +99,12 @@ public final class TestModContent {
         REGISTRIES.populateCreativeTab(CreativeModeTabs.BUILDING_BLOCKS, output -> output.accept(TEST_LOG_ITEM.get()));
         REGISTRIES.registerStrippable(TEST_LOG, STRIPPED_TEST_LOG);
         REGISTRIES.registerFlammable(TEST_LOG, 5, 5);
-        REGISTRIES.registerPayloadType(
-            PayloadPhase.PLAY,
-            PayloadFlow.CLIENTBOUND,
+        NETWORK.registerPlayClientbound(
             TEST_PAYLOAD_TYPE,
-            TEST_PAYLOAD_CODEC
+            TEST_PAYLOAD_CODEC,
+            PayloadRegistrationOptions.required("1")
         );
+        NETWORK.addLoginSync(player -> List.of(new TestPayload(42)));
         TRANSFERS.registerBlockProvider(StorageKeys.ITEM, (level, pos, state, blockEntity, side) -> TEST_ITEM_STORAGE,
             TEST_LOG);
         TRANSFERS.registerItemProvider(StorageKeys.ITEM, (stack, context) -> TEST_ITEM_STORAGE, TEST_LOG_ITEM);
