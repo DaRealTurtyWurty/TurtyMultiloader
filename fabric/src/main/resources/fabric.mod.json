@@ -17,6 +17,9 @@
     "entrypoints": {
         "main": [
             "dev.turtywurty.turtymultiloader.fabric.TurtyMultiloaderFabric"
+        ],
+        "client": [
+            "dev.turtywurty.turtymultiloader.fabric.TurtyMultiloaderFabricClient"
         ]
     },
     "depends": {
