@@ -14,7 +14,9 @@ import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.RegistryFixedCodec;
 
-/** Loader-neutral entry point for the optional slurry module. */
+/**
+ * Loader-neutral entry point for the optional slurry module.
+ */
 public final class SlurryApi {
     public static final String MOD_ID = "slurryapi";
 

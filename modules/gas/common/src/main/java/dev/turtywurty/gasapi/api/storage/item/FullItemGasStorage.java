@@ -15,7 +15,9 @@ import net.minecraft.world.item.Item;
 import java.util.Objects;
 import java.util.function.Function;
 
-/** Turns a full container item into an empty one when its complete gas charge is extracted. */
+/**
+ * Turns a full container item into an empty one when its complete gas charge is extracted.
+ */
 public final class FullItemGasStorage implements SingleSlotStorage<ResourceVariant<Gas>> {
     private final MutableItemContext context;
     private final Item fullItem;

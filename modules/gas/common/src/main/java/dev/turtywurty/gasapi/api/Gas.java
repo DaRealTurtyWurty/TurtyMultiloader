@@ -5,7 +5,9 @@ import net.minecraft.resources.Identifier;
 
 import java.util.Objects;
 
-/** A registered gas kind. Registry identity, not this field, is authoritative. */
+/**
+ * A registered gas kind. Registry identity, not this field, is authoritative.
+ */
 public final class Gas {
     private final Identifier id;
 

@@ -4,11 +4,14 @@ import net.minecraft.resources.Identifier;
 
 import java.util.Objects;
 
-/** Identifies a physical amount dimension; mods may define additional dimensions by identifier. */
+/**
+ * Identifies a physical amount dimension; mods may define additional dimensions by identifier.
+ */
 public record UnitDimension(Identifier id) {
     public static final UnitDimension ITEM = standard("item");
     public static final UnitDimension FLUID = standard("fluid");
     public static final UnitDimension ENERGY = standard("energy");
+
     public UnitDimension {
         Objects.requireNonNull(id, "id");
     }

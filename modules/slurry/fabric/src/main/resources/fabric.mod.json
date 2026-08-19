@@ -4,12 +4,18 @@
     "version": "${version}",
     "name": "TurtyMultiloader Slurry API",
     "description": "Optional slurry resource support for TurtyMultiloader.",
-    "authors": ["${mod_author}"],
+    "authors": [
+        "${mod_author}"
+    ],
     "license": "${license}",
     "environment": "*",
     "entrypoints": {
-        "main": ["dev.turtywurty.slurryapi.fabric.SlurryApiFabric"],
-        "client": ["dev.turtywurty.slurryapi.fabric.SlurryApiFabricClient"]
+        "main": [
+            "dev.turtywurty.slurryapi.fabric.SlurryApiFabric"
+        ],
+        "client": [
+            "dev.turtywurty.slurryapi.fabric.SlurryApiFabricClient"
+        ]
     },
     "depends": {
         "fabricloader": ">=${fabric_loader_version}",

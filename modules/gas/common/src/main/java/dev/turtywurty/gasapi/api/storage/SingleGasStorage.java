@@ -8,10 +8,13 @@ import dev.turtywurty.turtymultiloader.transfer.storage.TransferSupport;
 
 import java.util.Objects;
 
-/** Neutral single-slot gas storage. */
+/**
+ * Neutral single-slot gas storage.
+ */
 public class SingleGasStorage extends SimpleSingleSlotStorage<ResourceVariant<Gas>> {
     public SingleGasStorage(long capacity) {
-        this(capacity, TransferSupport.BOTH, () -> { });
+        this(capacity, TransferSupport.BOTH, () -> {
+        });
     }
 
     public SingleGasStorage(long capacity, TransferSupport support, Runnable onChange) {

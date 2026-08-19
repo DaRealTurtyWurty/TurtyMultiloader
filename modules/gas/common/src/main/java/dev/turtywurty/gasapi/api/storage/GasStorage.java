@@ -18,7 +18,9 @@ import net.minecraft.world.level.block.Block;
 
 import java.util.function.Supplier;
 
-/** Loader-neutral gas exposure and lookup helpers. */
+/**
+ * Loader-neutral gas exposure and lookup helpers.
+ */
 public final class GasStorage {
     public static final StorageKey<ResourceVariant<Gas>> KEY = GasApi.RESOURCE_FAMILY.storageKey();
 

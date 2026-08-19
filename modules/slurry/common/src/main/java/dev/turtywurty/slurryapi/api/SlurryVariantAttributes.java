@@ -12,7 +12,9 @@ import java.util.IdentityHashMap;
 import java.util.Map;
 import java.util.Objects;
 
-/** Loader-independent slurry display and container-sound attributes. */
+/**
+ * Loader-independent slurry display and container-sound attributes.
+ */
 public final class SlurryVariantAttributes {
     private static final Map<Slurry, SlurryVariantAttributeHandler> HANDLERS = new IdentityHashMap<>();
     private static final SlurryVariantAttributeHandler DEFAULT_HANDLER = variant -> {

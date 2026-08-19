@@ -10,7 +10,9 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 
-/** Neutral slurry-container interaction utilities with the original fill/empty sound hooks. */
+/**
+ * Neutral slurry-container interaction utilities with the original fill/empty sound hooks.
+ */
 public final class SlurryStorageUtil {
     private SlurryStorageUtil() {
     }

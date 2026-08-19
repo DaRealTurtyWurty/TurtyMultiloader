@@ -15,7 +15,9 @@ import net.minecraft.world.item.Item;
 import java.util.Objects;
 import java.util.function.Function;
 
-/** Turns an empty container item into a full one when exactly one gas charge is inserted. */
+/**
+ * Turns an empty container item into a full one when exactly one gas charge is inserted.
+ */
 public final class EmptyItemGasStorage implements SingleSlotStorage<ResourceVariant<Gas>> {
     private final MutableItemContext context;
     private final Item emptyItem;

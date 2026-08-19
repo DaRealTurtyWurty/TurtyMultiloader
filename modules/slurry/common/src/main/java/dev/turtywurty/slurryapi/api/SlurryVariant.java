@@ -8,7 +8,9 @@ import net.minecraft.core.component.DataComponentPatch;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 
-/** Factory and codecs for the neutral slurry variant type. */
+/**
+ * Factory and codecs for the neutral slurry variant type.
+ */
 public final class SlurryVariant {
     public static final Codec<ResourceVariant<Slurry>> CODEC = SlurryApi.RESOURCE_FAMILY.codec();
     public static final StreamCodec<RegistryFriendlyByteBuf, ResourceVariant<Slurry>> STREAM_CODEC =

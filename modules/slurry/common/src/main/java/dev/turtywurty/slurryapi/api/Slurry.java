@@ -5,7 +5,9 @@ import net.minecraft.resources.Identifier;
 
 import java.util.Objects;
 
-/** A registered slurry kind. */
+/**
+ * A registered slurry kind.
+ */
 public final class Slurry {
     private final Identifier id;
 

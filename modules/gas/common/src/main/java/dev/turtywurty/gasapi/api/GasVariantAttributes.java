@@ -9,7 +9,9 @@ import java.util.IdentityHashMap;
 import java.util.Map;
 import java.util.Objects;
 
-/** Loader-independent variant display attributes. */
+/**
+ * Loader-independent variant display attributes.
+ */
 public final class GasVariantAttributes {
     private static final Map<Gas, GasVariantAttributeHandler> HANDLERS = new IdentityHashMap<>();
     private static final GasVariantAttributeHandler DEFAULT_HANDLER = variant -> {

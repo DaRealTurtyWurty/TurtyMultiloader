@@ -5,7 +5,9 @@ import dev.turtywurty.turtymultiloader.transfer.StorageTransfer;
 import dev.turtywurty.turtymultiloader.transfer.resource.ResourceVariant;
 import dev.turtywurty.turtymultiloader.transfer.storage.ResourceStorage;
 
-/** Neutral gas-container interaction utilities. */
+/**
+ * Neutral gas-container interaction utilities.
+ */
 public final class GasStorageUtil {
     private GasStorageUtil() {
     }

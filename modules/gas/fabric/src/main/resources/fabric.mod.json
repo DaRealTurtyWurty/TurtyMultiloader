@@ -4,11 +4,15 @@
     "version": "${version}",
     "name": "TurtyMultiloader Gas",
     "description": "Optional gas resource support for TurtyMultiloader.",
-    "authors": ["${mod_author}"],
+    "authors": [
+        "${mod_author}"
+    ],
     "license": "${license}",
     "environment": "*",
     "entrypoints": {
-        "main": ["dev.turtywurty.gasapi.fabric.GasApiFabric"]
+        "main": [
+            "dev.turtywurty.gasapi.fabric.GasApiFabric"
+        ]
     },
     "depends": {
         "fabricloader": ">=${fabric_loader_version}",

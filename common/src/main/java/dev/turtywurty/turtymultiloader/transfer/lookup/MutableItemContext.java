@@ -22,7 +22,9 @@ public interface MutableItemContext {
 
     long extract(ResourceVariant<Item> resource, long maxAmount, TransferContext transaction);
 
-    /** Atomically replaces items in this location, returning the number replaced. */
+    /**
+     * Atomically replaces items in this location, returning the number replaced.
+     */
     default long exchange(ResourceVariant<Item> replacement, long maxAmount, TransferContext transaction) {
         ResourceVariant<Item> current = resource();
         if (current.isBlank() || replacement.isBlank() || maxAmount <= 0)

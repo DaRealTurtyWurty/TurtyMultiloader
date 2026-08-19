@@ -18,7 +18,9 @@ import net.minecraft.world.level.block.Block;
 
 import java.util.function.Supplier;
 
-/** Loader-neutral slurry exposure and lookup helpers. */
+/**
+ * Loader-neutral slurry exposure and lookup helpers.
+ */
 public final class SlurryStorage {
     public static final StorageKey<ResourceVariant<Slurry>> KEY = SlurryApi.RESOURCE_FAMILY.storageKey();
 

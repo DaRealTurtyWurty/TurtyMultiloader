@@ -8,10 +8,13 @@ import dev.turtywurty.turtymultiloader.transfer.storage.TransferSupport;
 
 import java.util.Objects;
 
-/** Neutral single-slot slurry storage. */
+/**
+ * Neutral single-slot slurry storage.
+ */
 public class SingleSlurryStorage extends SimpleSingleSlotStorage<ResourceVariant<Slurry>> {
     public SingleSlurryStorage(long capacity) {
-        this(capacity, TransferSupport.BOTH, () -> { });
+        this(capacity, TransferSupport.BOTH, () -> {
+        });
     }
 
     public SingleSlurryStorage(long capacity, TransferSupport support, Runnable onChange) {

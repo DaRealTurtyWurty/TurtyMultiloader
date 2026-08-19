@@ -14,7 +14,9 @@ import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.RegistryFixedCodec;
 
-/** Loader-neutral entry point for the optional gas module. */
+/**
+ * Loader-neutral entry point for the optional gas module.
+ */
 public final class GasApi {
     public static final String MOD_ID = "gasapi";
 
@@ -43,7 +45,9 @@ public final class GasApi {
     private GasApi() {
     }
 
-    /** Forces the module declarations to load before the owning mod applies registration. */
+    /**
+     * Forces the module declarations to load before the owning mod applies registration.
+     */
     public static void initialize() {
     }
 

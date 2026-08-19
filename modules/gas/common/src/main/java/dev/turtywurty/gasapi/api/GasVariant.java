@@ -8,7 +8,9 @@ import net.minecraft.core.component.DataComponentPatch;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 
-/** Factory and codecs for the neutral gas variant type. */
+/**
+ * Factory and codecs for the neutral gas variant type.
+ */
 public final class GasVariant {
     public static final Codec<ResourceVariant<Gas>> CODEC = GasApi.RESOURCE_FAMILY.codec();
     public static final StreamCodec<RegistryFriendlyByteBuf, ResourceVariant<Gas>> STREAM_CODEC =

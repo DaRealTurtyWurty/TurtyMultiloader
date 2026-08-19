@@ -6,6 +6,7 @@ public final class EmptySlurryStorage extends SingleSlurryStorage {
     public static final EmptySlurryStorage INSTANCE = new EmptySlurryStorage();
 
     private EmptySlurryStorage() {
-        super(0, TransferSupport.NONE, () -> { });
+        super(0, TransferSupport.NONE, () -> {
+        });
     }
 }

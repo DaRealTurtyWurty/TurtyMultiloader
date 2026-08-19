@@ -14,6 +14,7 @@ public final class Units {
     public static final TransferUnit FLUID_BUCKET = unit("fluid_bucket", UnitDimension.FLUID, "B", 81_000);
     public static final TransferUnit ENERGY = unit("energy", UnitDimension.ENERGY, "E", 1);
     public static final TransferUnit KILOENERGY = unit("kiloenergy", UnitDimension.ENERGY, "kE", 1_000);
+
     private Units() {
     }
 
