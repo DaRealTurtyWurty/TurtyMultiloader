@@ -1,12 +1,28 @@
 package dev.turtywurty.turtymultiloader.testmod;
 
 import com.mojang.serialization.Codec;
+import dev.turtywurty.gasapi.GasApi;
+import dev.turtywurty.gasapi.api.Gas;
+import dev.turtywurty.gasapi.api.storage.GasStorage;
+import dev.turtywurty.gasapi.api.storage.SingleGasStorage;
+import dev.turtywurty.slurryapi.SlurryApi;
+import dev.turtywurty.slurryapi.api.Slurry;
+import dev.turtywurty.slurryapi.api.storage.SingleSlurryStorage;
+import dev.turtywurty.slurryapi.api.storage.SlurryStorage;
 import dev.turtywurty.turtymultiloader.registration.CustomRegistry;
 import dev.turtywurty.turtymultiloader.registration.PayloadFlow;
 import dev.turtywurty.turtymultiloader.registration.PayloadPhase;
 import dev.turtywurty.turtymultiloader.registration.QueuedValue;
 import dev.turtywurty.turtymultiloader.registration.RegistrationHandle;
 import dev.turtywurty.turtymultiloader.registration.RegistryService;
+import dev.turtywurty.turtymultiloader.transfer.TransferService;
+import dev.turtywurty.turtymultiloader.transfer.lookup.StorageKeys;
+import dev.turtywurty.turtymultiloader.transfer.resource.ResourceTypes;
+import dev.turtywurty.turtymultiloader.transfer.resource.ResourceVariant;
+import dev.turtywurty.turtymultiloader.transfer.resource.UnitResource;
+import dev.turtywurty.turtymultiloader.transfer.storage.SimpleSingleSlotStorage;
+import dev.turtywurty.turtymultiloader.transfer.storage.SimpleStorage;
+import dev.turtywurty.turtymultiloader.transfer.unit.Units;
 import net.minecraft.core.component.DataComponentType;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
@@ -21,10 +37,12 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.properties.BlockSetType;
 import net.minecraft.world.level.block.state.properties.WoodType;
+import net.minecraft.world.level.material.Fluid;
 
 public final class TestModContent {
     public static final String MOD_ID = "turtymultiloader_testmod";
     public static final RegistryService REGISTRIES = RegistryService.get();
+    public static final TransferService TRANSFERS = TransferService.get();
 
     public static final RegistrationHandle<Block, Block> TEST_LOG = REGISTRIES.registerBlock(
         id("test_log"),
@@ -54,6 +72,8 @@ public final class TestModContent {
         id("registered_value"),
         () -> new TestValue("registered through RegistryService")
     );
+    public static final RegistrationHandle<Gas, Gas> TEST_GAS = GasApi.register(id("test_gas"));
+    public static final RegistrationHandle<Slurry, Slurry> TEST_SLURRY = SlurryApi.register(id("test_slurry"));
 
     public static final QueuedValue<WoodType> TEST_WOOD_TYPE = REGISTRIES.registerWoodType(
         () -> new WoodType(MOD_ID + ":test", BlockSetType.OAK)
@@ -63,6 +83,18 @@ public final class TestModContent {
         new CustomPacketPayload.Type<>(id("test_payload"));
     public static final StreamCodec<RegistryFriendlyByteBuf, TestPayload> TEST_PAYLOAD_CODEC =
         ByteBufCodecs.VAR_INT.map(TestPayload::new, TestPayload::value).cast();
+    public static final SimpleSingleSlotStorage<ResourceVariant<Item>> TEST_ITEM_STORAGE =
+        new SimpleSingleSlotStorage<>(ResourceTypes.ITEM, 64);
+    public static final SimpleStorage<ResourceVariant<Item>> TEST_MULTI_ITEM_STORAGE =
+        new SimpleStorage<>(ResourceTypes.ITEM, 2, 64);
+    public static final SimpleSingleSlotStorage<ResourceVariant<Fluid>> TEST_FLUID_STORAGE =
+        new SimpleSingleSlotStorage<>(ResourceTypes.FLUID, 162_000);
+    public static final SimpleSingleSlotStorage<ResourceVariant<UnitResource>> TEST_ENERGY_STORAGE =
+        new SimpleSingleSlotStorage<>(ResourceTypes.ENERGY, 10_000);
+    public static final SimpleSingleSlotStorage<ResourceVariant<UnitResource>> LATE_ENERGY_STORAGE =
+        new SimpleSingleSlotStorage<>(ResourceTypes.ENERGY, 10_000);
+    public static final SingleGasStorage TEST_GAS_STORAGE = new SingleGasStorage(162_000);
+    public static final SingleSlurryStorage TEST_SLURRY_STORAGE = new SingleSlurryStorage(162_000);
 
     static {
         REGISTRIES.populateCreativeTab(CreativeModeTabs.BUILDING_BLOCKS, output -> output.accept(TEST_LOG_ITEM.get()));
@@ -74,14 +106,52 @@ public final class TestModContent {
             TEST_PAYLOAD_TYPE,
             TEST_PAYLOAD_CODEC
         );
+        TRANSFERS.registerBlockProvider(StorageKeys.ITEM, (level, pos, state, blockEntity, side) -> TEST_ITEM_STORAGE,
+            TEST_LOG);
+        TRANSFERS.registerItemProvider(StorageKeys.ITEM, (stack, context) -> TEST_ITEM_STORAGE, TEST_LOG_ITEM);
+        TRANSFERS.registerBlockProvider(
+            StorageKeys.ITEM,
+            (level, pos, state, blockEntity, side) -> TEST_MULTI_ITEM_STORAGE,
+            STRIPPED_TEST_LOG
+        );
+        TRANSFERS.registerBlockProvider(
+            StorageKeys.FLUID,
+            (level, pos, state, blockEntity, side) -> TEST_FLUID_STORAGE,
+            TEST_LOG
+        );
+        TRANSFERS.registerBlockProvider(
+            StorageKeys.ENERGY,
+            (level, pos, state, blockEntity, side) -> TEST_ENERGY_STORAGE,
+            TEST_LOG
+        );
+        TRANSFERS.registerItemProvider(
+            StorageKeys.ENERGY,
+            (stack, context) -> TEST_ENERGY_STORAGE,
+            TEST_LOG_ITEM
+        );
+        GasStorage.registerBlockProvider(
+            (level, pos, state, blockEntity, side) -> TEST_GAS_STORAGE,
+            TEST_LOG
+        );
+        SlurryStorage.registerBlockProvider(
+            (level, pos, state, blockEntity, side) -> TEST_SLURRY_STORAGE,
+            TEST_LOG
+        );
     }
 
     private TestModContent() {
     }
 
     public static void initialize() {
-        if (REGISTRIES.isApplied())
-            throw new IllegalStateException("Test mod declarations were loaded after registration was applied");
+    }
+
+    /** Declares a provider after the first TransferService.apply() call to verify multi-consumer lifecycle support. */
+    public static void registerLateTransfers() {
+        TRANSFERS.registerBlockProvider(
+            StorageKeys.ENERGY,
+            (level, pos, state, blockEntity, side) -> LATE_ENERGY_STORAGE,
+            STRIPPED_TEST_LOG
+        );
     }
 
     private static Identifier id(String path) {

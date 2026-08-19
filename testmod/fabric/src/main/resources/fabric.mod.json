@@ -17,6 +17,8 @@
         "fabric-api": ">=${fabric_api_version}",
         "fabric-gametest-api-v1": "*",
         "minecraft": "~${minecraft_version}",
-        "turtymultiloader": "*"
+        "turtymultiloader": "*",
+        "gasapi": "*",
+        "slurryapi": "*"
     }
 }

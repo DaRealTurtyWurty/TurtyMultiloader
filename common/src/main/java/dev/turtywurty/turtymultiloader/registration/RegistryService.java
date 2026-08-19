@@ -188,6 +188,10 @@ public interface RegistryService {
         return customRegistry(ResourceKey.createRegistryKey(id), CustomRegistryOptions.DEFAULT);
     }
 
+    default <T> CustomRegistry<T> customRegistry(Identifier id, CustomRegistryOptions options) {
+        return customRegistry(ResourceKey.createRegistryKey(id), options);
+    }
+
     final class ServiceHolder {
         private static final RegistryService INSTANCE = ServiceLoader.load(
                 RegistryService.class,

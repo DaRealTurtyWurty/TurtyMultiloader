@@ -1,14 +1,6 @@
 package dev.turtywurty.turtymultiloader.neoforge;
 
-import dev.turtywurty.turtymultiloader.registration.CreativeTabOutput;
-import dev.turtywurty.turtymultiloader.registration.CustomRegistry;
-import dev.turtywurty.turtymultiloader.registration.CustomRegistryOptions;
-import dev.turtywurty.turtymultiloader.registration.PayloadFlow;
-import dev.turtywurty.turtymultiloader.registration.PayloadPhase;
-import dev.turtywurty.turtymultiloader.registration.QueuedValue;
-import dev.turtywurty.turtymultiloader.registration.RegistrationHandle;
-import dev.turtywurty.turtymultiloader.registration.RegistryService;
-import dev.turtywurty.turtymultiloader.registration.VanillaRegistryHooks;
+import dev.turtywurty.turtymultiloader.registration.*;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.FriendlyByteBuf;
@@ -23,6 +15,7 @@ import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.properties.WoodType;
 import net.neoforged.bus.api.IEventBus;
+import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
 import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
 import net.neoforged.neoforge.event.entity.EntityAttributeCreationEvent;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
@@ -32,16 +25,13 @@ import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
 import net.neoforged.neoforge.registries.RegisterEvent;
 
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 public final class NeoForgeRegistryService implements RegistryService {
     private static volatile IEventBus modBus;
+    private static volatile boolean registrationClosed;
 
     private final List<CustomRegistryDeclaration<?>> customRegistries = new ArrayList<>();
     private final List<EntryDeclaration<?, ?>> entries = new ArrayList<>();
@@ -52,12 +42,19 @@ public final class NeoForgeRegistryService implements RegistryService {
     private final List<StrippableDeclaration> strippables = new ArrayList<>();
     private final List<FlammabilityDeclaration> flammability = new ArrayList<>();
     private boolean applied;
+    private int appliedCustomRegistries;
+    private int appliedEntries;
+    private boolean attributesListenerRegistered;
+    private boolean creativeTabsListenerRegistered;
+    private boolean payloadsListenerRegistered;
+    private boolean blockHooksListenerRegistered;
 
     public static void bind(IEventBus bus) {
         if (modBus != null && modBus != bus)
             throw new IllegalStateException("NeoForge registry service is already bound to a mod event bus");
 
         modBus = Objects.requireNonNull(bus, "bus");
+        bus.addListener(RegisterCapabilitiesEvent.class, NeoForgeRegistryService::closeRegistration);
     }
 
     @Override
@@ -162,8 +159,7 @@ public final class NeoForgeRegistryService implements RegistryService {
 
     @Override
     public synchronized void apply() {
-        if (applied)
-            return;
+        ensureOpen();
 
         IEventBus bus = modBus;
         if (bus == null)
@@ -171,18 +167,30 @@ public final class NeoForgeRegistryService implements RegistryService {
 
         applied = true;
         Map<RegistrarKey, DeferredRegister<?>> registrars = new LinkedHashMap<>();
-        customRegistries.forEach(declaration -> createCustomRegistry(declaration, registrars));
-        entries.forEach(declaration -> queueEntry(declaration, registrars));
+        customRegistries.subList(appliedCustomRegistries, customRegistries.size())
+            .forEach(declaration -> createCustomRegistry(declaration, registrars));
+        entries.subList(appliedEntries, entries.size()).forEach(declaration -> queueEntry(declaration, registrars));
         registrars.values().forEach(registrar -> registrar.register(bus));
+        appliedCustomRegistries = customRegistries.size();
+        appliedEntries = entries.size();
 
-        if (!entityAttributes.isEmpty())
+        if (!entityAttributes.isEmpty() && !attributesListenerRegistered) {
             bus.addListener(EntityAttributeCreationEvent.class, this::registerAttributes);
-        if (!creativeTabPopulations.isEmpty())
+            attributesListenerRegistered = true;
+        }
+        if (!creativeTabPopulations.isEmpty() && !creativeTabsListenerRegistered) {
             bus.addListener(BuildCreativeModeTabContentsEvent.class, this::populateCreativeTab);
-        if (!payloads.isEmpty())
+            creativeTabsListenerRegistered = true;
+        }
+        if (!payloads.isEmpty() && !payloadsListenerRegistered) {
             bus.addListener(RegisterPayloadHandlersEvent.class, this::registerPayloads);
-        if (!woodTypes.isEmpty() || !strippables.isEmpty() || !flammability.isEmpty())
+            payloadsListenerRegistered = true;
+        }
+        if ((!woodTypes.isEmpty() || !strippables.isEmpty() || !flammability.isEmpty())
+            && !blockHooksListenerRegistered) {
             bus.addListener(RegisterEvent.class, this::registerBlockHooks);
+            blockHooksListenerRegistered = true;
+        }
     }
 
     @Override
@@ -285,8 +293,12 @@ public final class NeoForgeRegistryService implements RegistryService {
     }
 
     private void ensureOpen() {
-        if (applied)
-            throw new IllegalStateException("Registry service has already been applied");
+        if (registrationClosed)
+            throw new IllegalStateException("NeoForge registration has already reached capability registration");
+    }
+
+    private static void closeRegistration(RegisterCapabilitiesEvent ignored) {
+        registrationClosed = true;
     }
 
     private record RegistrarKey(ResourceKey<? extends Registry<?>> registryKey, String namespace) {

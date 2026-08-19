@@ -28,3 +28,17 @@ type = "required"
 versionRange = "[${version},)"
 ordering = "AFTER"
 side = "BOTH"
+
+[[dependencies.turtymultiloader_testmod]]
+modId = "gasapi"
+type = "required"
+versionRange = "[${version},)"
+ordering = "AFTER"
+side = "BOTH"
+
+[[dependencies.turtymultiloader_testmod]]
+modId = "slurryapi"
+type = "required"
+versionRange = "[${version},)"
+ordering = "AFTER"
+side = "BOTH"

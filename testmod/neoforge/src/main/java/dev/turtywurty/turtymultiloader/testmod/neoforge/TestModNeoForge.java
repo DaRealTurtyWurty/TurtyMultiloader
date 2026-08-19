@@ -1,9 +1,10 @@
 package dev.turtywurty.turtymultiloader.testmod.neoforge;
 
-import dev.turtywurty.turtymultiloader.neoforge.NeoForgeRegistryService;
 import dev.turtywurty.turtymultiloader.registration.RegistryService;
 import dev.turtywurty.turtymultiloader.testmod.RegistryGameTests;
 import dev.turtywurty.turtymultiloader.testmod.TestModContent;
+import dev.turtywurty.turtymultiloader.testmod.TransferGameTests;
+import dev.turtywurty.turtymultiloader.transfer.TransferService;
 import net.minecraft.gametest.framework.BuiltinTestFunctions;
 import net.minecraft.gametest.framework.FunctionGameTestInstance;
 import net.minecraft.gametest.framework.GameTestHelper;
@@ -17,9 +18,11 @@ import net.neoforged.neoforge.event.RegisterGameTestsEvent;
 @Mod(TestModContent.MOD_ID)
 public final class TestModNeoForge {
     public TestModNeoForge(IEventBus modBus) {
-        NeoForgeRegistryService.bind(modBus);
         TestModContent.initialize();
         RegistryService.get().apply();
+        TransferService.get().apply();
+        TestModContent.registerLateTransfers();
+        TransferService.get().apply();
 
         modBus.addListener(RegisterGameTestsEvent.class, TestModNeoForge::registerGameTests);
     }
@@ -36,6 +39,16 @@ public final class TestModNeoForge {
                 @Override
                 public void run(GameTestHelper helper) {
                     RegistryGameTests.verifyRegistryService(helper);
+                }
+            }
+        );
+        var transferTestData = new TestData<>(environment, RegistryGameTests.EMPTY_STRUCTURE, 20, 0, true);
+        event.registerTest(
+            TransferGameTests.TEST_ID,
+            new FunctionGameTestInstance(BuiltinTestFunctions.ALWAYS_PASS, transferTestData) {
+                @Override
+                public void run(GameTestHelper helper) {
+                    TransferGameTests.verifyTransferService(helper);
                 }
             }
         );

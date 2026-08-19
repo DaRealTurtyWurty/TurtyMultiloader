@@ -7,7 +7,9 @@ import net.minecraft.resources.ResourceKey;
 import java.util.Objects;
 import java.util.function.Supplier;
 
-/** A queued custom registry and its vanilla registry key. */
+/**
+ * A queued custom registry and its vanilla registry key.
+ */
 public final class CustomRegistry<T> implements Supplier<Registry<T>> {
     private final RegistryService owner;
     private final ResourceKey<Registry<T>> key;
@@ -35,7 +37,9 @@ public final class CustomRegistry<T> implements Supplier<Registry<T>> {
         return current.get();
     }
 
-    /** Binds this custom registry. Intended for registration backends. */
+    /**
+     * Binds this custom registry. Intended for registration backends.
+     */
     public synchronized void bind(Supplier<? extends Registry<T>> registry) {
         if (this.registry != null)
             throw new IllegalStateException("Custom registry " + key.identifier() + " is already bound");

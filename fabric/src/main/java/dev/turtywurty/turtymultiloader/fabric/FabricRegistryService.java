@@ -1,14 +1,7 @@
 package dev.turtywurty.turtymultiloader.fabric;
 
 import com.mojang.serialization.Lifecycle;
-import dev.turtywurty.turtymultiloader.registration.CreativeTabOutput;
-import dev.turtywurty.turtymultiloader.registration.CustomRegistry;
-import dev.turtywurty.turtymultiloader.registration.CustomRegistryOptions;
-import dev.turtywurty.turtymultiloader.registration.PayloadFlow;
-import dev.turtywurty.turtymultiloader.registration.PayloadPhase;
-import dev.turtywurty.turtymultiloader.registration.QueuedValue;
-import dev.turtywurty.turtymultiloader.registration.RegistrationHandle;
-import dev.turtywurty.turtymultiloader.registration.RegistryService;
+import dev.turtywurty.turtymultiloader.registration.*;
 import net.fabricmc.fabric.api.creativetab.v1.CreativeModeTabEvents;
 import net.fabricmc.fabric.api.event.registry.FabricRegistryBuilder;
 import net.fabricmc.fabric.api.event.registry.RegistryAttribute;
@@ -151,25 +144,30 @@ public final class FabricRegistryService implements RegistryService {
 
     @Override
     public synchronized void apply() {
-        if (applied)
-            return;
-
         applied = true;
         customRegistries.forEach(FabricRegistryService::createCustomRegistry);
+        customRegistries.clear();
         entries.forEach(FabricRegistryService::registerEntry);
+        entries.clear();
         entityAttributes.forEach(FabricRegistryService::registerAttributes);
+        entityAttributes.clear();
         creativeTabPopulations.forEach(FabricRegistryService::registerCreativeTabPopulation);
+        creativeTabPopulations.clear();
         payloads.forEach(FabricRegistryService::registerPayload);
+        payloads.clear();
         woodTypes.forEach(declaration -> declaration.result().bind(declaration.factory().get()));
+        woodTypes.clear();
         strippables.forEach(declaration -> StrippableBlockRegistry.register(
             declaration.block().get(),
             declaration.stripped().get()
         ));
+        strippables.clear();
         flammability.forEach(declaration -> FlammableBlockRegistry.getDefaultInstance().add(
             declaration.block().get(),
             declaration.igniteOdds(),
             declaration.burnOdds()
         ));
+        flammability.clear();
     }
 
     @Override
@@ -235,8 +233,7 @@ public final class FabricRegistryService implements RegistryService {
     }
 
     private void ensureOpen() {
-        if (applied)
-            throw new IllegalStateException("Registry service has already been applied");
+        // Fabric can flush another declaration batch while mod entrypoints are still running.
     }
 
     private record CustomRegistryDeclaration<T>(CustomRegistry<T> result, CustomRegistryOptions options) {

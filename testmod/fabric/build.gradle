@@ -24,6 +24,8 @@ dependencies {
     implementation "net.fabricmc.fabric-api:fabric-api:${fabric_api_version}"
     implementation "net.fabricmc.fabric-api:fabric-gametest-api-v1:${fabric_gametest_api_version}"
     implementation project(path: ':fabric')
+    implementation project(path: ':gas-fabric')
+    implementation project(path: ':slurry-fabric')
 }
 
 loom {
@@ -46,10 +48,10 @@ processResources {
     inputs.property('fabric_api_version', fabric_api_version)
     filesMatching('fabric.mod.json') {
         expand([
-                version: project.version,
-                minecraft_version: minecraft_version,
-                fabric_loader_version: fabric_loader_version,
-                fabric_api_version: fabric_api_version
+            version              : project.version,
+            minecraft_version    : minecraft_version,
+            fabric_loader_version: fabric_loader_version,
+            fabric_api_version   : fabric_api_version
         ])
     }
 }

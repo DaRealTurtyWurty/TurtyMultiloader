@@ -20,6 +20,8 @@ sourceSets.main.resources.srcDir('../common/src/main/resources')
 
 dependencies {
     implementation project(path: ':neoforge')
+    implementation project(path: ':gas-neoforge')
+    implementation project(path: ':slurry-neoforge')
 }
 
 neoForge {
@@ -48,10 +50,10 @@ processResources {
     inputs.property('neoforge_loader_version_range', neoforge_loader_version_range)
     filesMatching('META-INF/neoforge.mods.toml') {
         expand([
-                version: project.version,
-                minecraft_version_range: minecraft_version_range,
-                neoforge_version: neoforge_version,
-                neoforge_loader_version_range: neoforge_loader_version_range
+            version                      : project.version,
+            minecraft_version_range      : minecraft_version_range,
+            neoforge_version             : neoforge_version,
+            neoforge_loader_version_range: neoforge_loader_version_range
         ])
     }
 }

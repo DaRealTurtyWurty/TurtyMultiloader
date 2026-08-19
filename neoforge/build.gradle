@@ -23,10 +23,10 @@ neoForge {
             clientData()
             gameDirectory = mkdir(file('runs/data'))
             programArguments.addAll(
-                    '--mod', project.mod_id,
-                    '--all',
-                    '--output', file('src/generated/resources/').absolutePath,
-                    '--existing', file('src/main/resources/').absolutePath
+                '--mod', project.mod_id,
+                '--all',
+                '--output', file('src/generated/resources/').absolutePath,
+                '--existing', file('src/main/resources/').absolutePath
             )
         }
         server {

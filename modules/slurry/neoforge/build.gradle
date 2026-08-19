@@ -1,0 +1,45 @@
+plugins {
+    id 'multiloader-common'
+    id 'net.neoforged.moddev'
+}
+
+description = 'Optional slurry resource support for TurtyMultiloader on NeoForge.'
+
+base {
+    archivesName = "turtymultiloader-slurry-neoforge-${minecraft_version}"
+}
+
+sourceSets.main.java.srcDir('../common/src/main/java')
+
+dependencies {
+    api project(':neoforge')
+}
+
+neoForge {
+    version = neoforge_version
+
+    mods {
+        slurryapi {
+            sourceSet sourceSets.main
+        }
+    }
+}
+
+def loaderAttribute = Attribute.of('io.github.mcgradleconventions.loader', String)
+['apiElements', 'runtimeElements', 'sourcesElements', 'javadocElements'].each { variant ->
+    configurations.named(variant) {
+        attributes {
+            attribute(loaderAttribute, 'neoforge')
+        }
+    }
+}
+
+sourceSets.configureEach {
+    [it.compileClasspathConfigurationName, it.runtimeClasspathConfigurationName, it.getTaskName(null, 'jarJar')].each { variant ->
+        configurations.named(variant) {
+            attributes {
+                attribute(loaderAttribute, 'neoforge')
+            }
+        }
+    }
+}

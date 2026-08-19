@@ -7,7 +7,9 @@ import net.minecraft.world.level.block.FireBlock;
 
 import java.util.HashMap;
 
-/** Internal vanilla hooks shared by the loader implementations. */
+/**
+ * Internal vanilla hooks shared by the loader implementations.
+ */
 public final class VanillaRegistryHooks {
     private VanillaRegistryHooks() {
     }
