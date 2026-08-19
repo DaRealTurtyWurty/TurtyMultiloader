@@ -8,29 +8,20 @@
         "${mod_author}"
     ],
     "contact": {
-        "homepage": "https://fabricmc.net/",
-        "sources": "https://github.com/FabricMC/fabric-example-mod"
+        "homepage": "https://github.com/DaRealTurtyWurty/TurtyMultiloader",
+        "issues": "https://github.com/DaRealTurtyWurty/TurtyMultiloader/issues",
+        "sources": "https://github.com/DaRealTurtyWurty/TurtyMultiloader"
     },
     "license": "${license}",
-    "icon": "${mod_id}.png",
     "environment": "*",
     "entrypoints": {
         "main": [
-            "com.example.examplemod.ExampleMod"
+            "dev.turtywurty.turtymultiloader.fabric.TurtyMultiloaderFabric"
         ]
     },
-    "mixins": [
-        "${mod_id}.mixins.json",
-        "${mod_id}.fabric.mixins.json"
-    ],
     "depends": {
         "fabricloader": ">=${fabric_loader_version}",
-        "fabric-api": "*",
         "minecraft": "~${minecraft_version}",
         "java": ">=${java_version}"
-    },
-    "suggests": {
-        "another-mod": "*"
     }
 }
-  
