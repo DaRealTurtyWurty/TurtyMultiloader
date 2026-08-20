@@ -96,6 +96,94 @@ pose stack, buffer source, and the submit-node collector when that stage supplie
 common initialization and client callbacks during client initialization. Registrations are process-lifetime callbacks;
 the native Fabric and NeoForge event systems do not provide a shared unregister operation.
 
+### Configuration
+
+`Configurations` registers loader-neutral, typed JSON configs using Mojang `Codec<T>`. The common API never exposes
+NeoForge `ModConfigSpec`. Every spec declares one of four explicit scopes:
+
+- `STARTUP`: global, loaded immediately on both physical sides, never synchronized.
+- `CLIENT`: global, loaded only during physical-client initialization, never synchronized.
+- `COMMON`: global, loaded during common initialization on both physical sides, never synchronized.
+- `SERVER`: loaded for the active world and synchronized from the server to clients on login.
+
+The default filenames are `<namespace>-<path>-<scope>.json`. Server files default to `<world>/serverconfig`; the other
+scopes use the loader's global config directory. Custom paths can retain an existing format and location. For example,
+Industria can keep `<world>/config/industria.json`:
+
+```java
+public record IndustriaConfig(boolean rubberTrees, int pipeCapacity) {
+    public static final Codec<IndustriaConfig> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+        Codec.BOOL.fieldOf("rubber_trees").forGetter(IndustriaConfig::rubberTrees),
+        Codec.INT.fieldOf("pipe_capacity").forGetter(IndustriaConfig::pipeCapacity)
+    ).apply(instance, IndustriaConfig::new));
+}
+
+public static final ConfigHandle<IndustriaConfig> SERVER_CONFIG = Configurations.register(
+    ConfigurationSpec.builder(
+            Identifier.fromNamespaceAndPath("industria", "server"),
+            ConfigScope.SERVER,
+            IndustriaConfig.CODEC,
+            () -> new IndustriaConfig(true, 81_000)
+        )
+        .path(ConfigPaths.world("config/industria.json"))
+        .validator(ConfigValidator.predicate(
+            config -> config.pipeCapacity() > 0,
+            "pipe_capacity must be positive"
+        ))
+        .onChange((config, lifecycle) -> rebuildCaches(config))
+        .build()
+);
+
+// Optional convenience accessor used by the rest of Industria.
+public static IndustriaConfig server() {
+    return SERVER_CONFIG.value();
+}
+```
+
+The handle is the live access point. Register it once during common mod initialization, then read the typed value from
+ordinary common code—there is no loader-specific lookup:
+
+```java
+int capacity = IndustriaConfigs.SERVER_CONFIG.value().pipeCapacity();
+if (IndustriaConfigs.server().rubberTrees()) {
+    generateRubberTree(level, pos);
+}
+```
+
+`value()` always returns the current in-memory object. For a `SERVER` config, it becomes the world file's value during
+`Events.onServerStarting`; on a remote client, the same handle becomes the server-synchronized value when the login
+packet arrives. Code that must run specifically when a value becomes active should use the spec's `onChange` callback
+and inspect `ConfigLifecycle`. `isLoaded()` distinguishes an installed file/network value from the pre-load default.
+
+For immutable record configs, replace the record to change a setting. `setAndSave` validates, writes, and synchronizes
+in one operation:
+
+```java
+IndustriaConfig old = IndustriaConfigs.SERVER_CONFIG.value();
+IndustriaConfigs.SERVER_CONFIG.setAndSave(
+    new IndustriaConfig(old.rubberTrees(), 162_000),
+    server
+);
+```
+
+If several values are being changed together, call `set(...)`, then `save(server)` and `synchronize(server)` once.
+`reload(server)` re-reads the world file, while `path(server)` exposes its resolved location. Treat synchronized server
+handles as read-only in client code; server changes are authoritative and replace the client's value.
+
+Missing files are created from validated defaults. Invalid JSON, codec failures, and validation failures produce a
+`.bak` copy before defaults are written. Writes use a temporary file and an atomic replace where supported. Handles
+support explicit load, reload, save, set, and `setAndSave`; the latter also synchronizes a server config. Use
+`synchronize(server)` after an in-memory server-side change when saving is intentionally deferred.
+
+Admins can inspect and edit registered configs with `/turtymultiloader config list`, `get <id> [path]`,
+`set <id> <path> <json>`, `reload <id>`, and `save <id>`. `set` edits the encoded JSON and decodes and validates the
+entire object before it is installed, saved, and synchronized. Client-scoped files cannot be changed from server
+commands.
+
+Client mods may register a custom screen through `ConfigurationScreens.register(modId, factory)`. NeoForge exposes it
+from the Mods screen through `IConfigScreenFactory`; Fabric integrations can call `ConfigurationScreens.create(...)`
+from Mod Menu or another optional UI without forcing that dependency into this library.
+
 ### Client registration and rendering
 
 `ClientRegistrations` covers static client declarations whose implementations are vanilla types but whose registration

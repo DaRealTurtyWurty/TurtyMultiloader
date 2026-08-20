@@ -1,11 +1,11 @@
 package dev.turtywurty.turtymultiloader.testmod;
 
 import com.google.gson.JsonParser;
-import net.minecraft.advancements.criterion.InventoryChangeTrigger;
 import dev.turtywurty.turtymultiloader.datagen.DataGeneration;
 import dev.turtywurty.turtymultiloader.datagen.DataGenerationSpec;
 import dev.turtywurty.turtymultiloader.datagen.convention.ConventionTag;
 import dev.turtywurty.turtymultiloader.datagen.convention.ConventionTags;
+import net.minecraft.advancements.criterion.InventoryChangeTrigger;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.data.loot.LootTableProvider;
 import net.minecraft.data.recipes.RecipeCategory;

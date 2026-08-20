@@ -23,6 +23,11 @@ import java.util.List;
 
 public final class TestModFabricGameTests {
     @GameTest(structure = "minecraft:empty")
+    public void configurationService(GameTestHelper helper) {
+        ConfigurationGameTests.verifyConfigurationService(helper);
+    }
+
+    @GameTest(structure = "minecraft:empty")
     public void attachmentService(GameTestHelper helper) {
         AttachmentGameTests.verifyAttachmentService(helper);
     }

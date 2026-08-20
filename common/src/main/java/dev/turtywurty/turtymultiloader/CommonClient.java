@@ -1,5 +1,6 @@
 package dev.turtywurty.turtymultiloader;
 
+import dev.turtywurty.turtymultiloader.config.Configurations;
 import dev.turtywurty.turtymultiloader.integration.OptionalModIntegrations;
 import dev.turtywurty.turtymultiloader.platform.Platform;
 
@@ -19,6 +20,7 @@ public final class CommonClient {
 
         CommonMod.init();
         if (INITIALIZED.compareAndSet(false, true)) {
+            Configurations.initializeClient();
             OptionalModIntegrations.initializeClient();
         }
     }

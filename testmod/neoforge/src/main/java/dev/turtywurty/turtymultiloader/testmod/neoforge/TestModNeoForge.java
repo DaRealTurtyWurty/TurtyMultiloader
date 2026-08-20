@@ -1,15 +1,15 @@
 package dev.turtywurty.turtymultiloader.testmod.neoforge;
 
-import dev.turtywurty.turtymultiloader.registration.RegistryService;
 import dev.turtywurty.turtymultiloader.neoforge.datagen.NeoForgeDataGeneration;
+import dev.turtywurty.turtymultiloader.registration.RegistryService;
 import dev.turtywurty.turtymultiloader.testmod.*;
 import dev.turtywurty.turtymultiloader.transfer.TransferService;
 import net.minecraft.gametest.framework.*;
 import net.minecraft.resources.Identifier;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.common.Mod;
-import net.neoforged.neoforge.event.RegisterGameTestsEvent;
 import net.neoforged.neoforge.data.event.GatherDataEvent;
+import net.neoforged.neoforge.event.RegisterGameTestsEvent;
 
 @Mod(TestModContent.MOD_ID)
 public final class TestModNeoForge {
@@ -83,6 +83,16 @@ public final class TestModNeoForge {
                 @Override
                 public void run(GameTestHelper helper) {
                     WorldGenerationGameTests.verifyWorldGenerationService(helper);
+                }
+            }
+        );
+        var configTestData = new TestData<>(environment, RegistryGameTests.EMPTY_STRUCTURE, 20, 0, true);
+        event.registerTest(
+            ConfigurationGameTests.TEST_ID,
+            new FunctionGameTestInstance(BuiltinTestFunctions.ALWAYS_PASS, configTestData) {
+                @Override
+                public void run(GameTestHelper helper) {
+                    ConfigurationGameTests.verifyConfigurationService(helper);
                 }
             }
         );

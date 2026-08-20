@@ -1,6 +1,7 @@
 package dev.turtywurty.turtymultiloader.testmod;
 
 import com.mojang.serialization.Codec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
 import dev.turtywurty.gasapi.GasApi;
 import dev.turtywurty.gasapi.api.Gas;
 import dev.turtywurty.gasapi.api.storage.GasStorage;
@@ -12,6 +13,7 @@ import dev.turtywurty.slurryapi.api.storage.SlurryStorage;
 import dev.turtywurty.turtymultiloader.attachment.AttachmentType;
 import dev.turtywurty.turtymultiloader.attachment.Attachments;
 import dev.turtywurty.turtymultiloader.attachment.SavedStateType;
+import dev.turtywurty.turtymultiloader.config.*;
 import dev.turtywurty.turtymultiloader.menu.ExtendedMenuRegistration;
 import dev.turtywurty.turtymultiloader.menu.Menus;
 import dev.turtywurty.turtymultiloader.menu.sync.MenuSyncChannel;
@@ -53,6 +55,20 @@ public final class TestModContent {
     public static final RegistryService REGISTRIES = RegistryService.get();
     public static final NetworkService NETWORK = NetworkService.get();
     public static final TransferService TRANSFERS = TransferService.get();
+    public static final ConfigHandle<TestConfiguration> TEST_CONFIG = Configurations.register(
+        ConfigurationSpec.builder(
+                id("test_config"),
+                ConfigScope.SERVER,
+                TestConfiguration.CODEC,
+                () -> new TestConfiguration(true, 1_000)
+            )
+            .path(ConfigPaths.world("config/turtymultiloader-test.json"))
+            .validator(ConfigValidator.predicate(
+                config -> config.capacity() >= 1 && config.capacity() <= 1_000_000,
+                "capacity must be between 1 and 1,000,000"
+            ))
+            .build()
+    );
     public static final AttachmentType<Integer> TEST_COUNTER = Attachments.register(
         id("test_counter"),
         builder -> builder.defaultFactory(() -> 0)
@@ -219,6 +235,13 @@ public final class TestModContent {
     }
 
     public record TestValue(String description) {
+    }
+
+    public record TestConfiguration(boolean enabled, int capacity) {
+        public static final Codec<TestConfiguration> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+            Codec.BOOL.fieldOf("enabled").forGetter(TestConfiguration::enabled),
+            Codec.INT.fieldOf("capacity").forGetter(TestConfiguration::capacity)
+        ).apply(instance, TestConfiguration::new));
     }
 
     public record TestPayload(int value) implements CustomPacketPayload {

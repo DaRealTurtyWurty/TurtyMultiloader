@@ -1,5 +1,6 @@
 package dev.turtywurty.turtymultiloader;
 
+import dev.turtywurty.turtymultiloader.config.Configurations;
 import dev.turtywurty.turtymultiloader.integration.OptionalModIntegrations;
 import dev.turtywurty.turtymultiloader.platform.Platform;
 
@@ -21,6 +22,7 @@ public final class CommonMod {
             Platform.loader().displayName(),
             Platform.physicalSide().displayName()
         );
+        Configurations.initializeCommon();
         OptionalModIntegrations.initializeCommon();
     }
 }
