@@ -36,6 +36,11 @@ import java.util.List;
 
 public final class TestModFabricGameTests {
     @GameTest(structure = "minecraft:empty")
+    public void multiblockModule(GameTestHelper helper) {
+        MultiblockModuleGameTests.verifyModule(helper);
+    }
+
+    @GameTest(structure = "minecraft:empty")
     public void configurationService(GameTestHelper helper) {
         ConfigurationGameTests.verifyConfigurationService(helper);
     }

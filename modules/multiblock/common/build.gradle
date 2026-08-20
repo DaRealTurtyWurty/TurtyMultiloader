@@ -1,0 +1,48 @@
+plugins {
+    id 'multiloader-common'
+    id 'net.neoforged.moddev'
+}
+
+description = 'Loader-neutral multiblock framework for TurtyMultiloader.'
+
+base {
+    archivesName = "turtymultiloader-multiblock-common-${minecraft_version}"
+}
+
+neoForge {
+    neoFormVersion = neo_form_version
+}
+
+def loaderAttribute = Attribute.of('io.github.mcgradleconventions.loader', String)
+
+dependencies {
+    api(project(':common')) {
+        attributes {
+            attribute(loaderAttribute, 'common')
+        }
+    }
+}
+
+['apiElements', 'runtimeElements', 'sourcesElements', 'javadocElements'].each { variant ->
+    configurations.named(variant) {
+        attributes {
+            attribute(loaderAttribute, 'common')
+        }
+    }
+}
+
+sourceSets.configureEach {
+    [it.compileClasspathConfigurationName, it.runtimeClasspathConfigurationName].each { variant ->
+        configurations.named(variant) {
+            attributes {
+                attribute(loaderAttribute, 'common')
+            }
+        }
+    }
+}
+
+[jar, sourcesJar].each {
+    it.from('../LICENSE') {
+        rename { name -> "${name}_MultiblockLib" }
+    }
+}

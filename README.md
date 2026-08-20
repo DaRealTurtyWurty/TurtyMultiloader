@@ -14,6 +14,7 @@ TurtyMultiloader is a Minecraft mod targeting Fabric and NeoForge from a shared 
 - `neoforge` contains the NeoForge entry point and loader metadata.
 - `modules/gas` is the optional, multiloader successor to `FabricGasApi`.
 - `modules/slurry` is the optional, multiloader successor to `FabricSlurryApi`.
+- `modules/multiblock` is the optional, multiloader port of `MultiblockLib`.
 - `testmod/common`, `testmod/fabric`, and `testmod/neoforge` contain an isolated consumer mod and its GameTests.
 
 Keep loader-specific APIs inside their corresponding module. Code in `common` must only depend on Minecraft and
@@ -38,14 +39,16 @@ client runs.
 
 Releases use group `dev.turtywurty.turtymultiloader`, version `26.1.1.0`, and Minecraft-qualified artifact IDs:
 
-| Use | Common | Fabric | NeoForge |
-| --- | --- | --- | --- |
-| Core | `turtymultiloader-common-26.1.1` | `turtymultiloader-fabric-26.1.1` | `turtymultiloader-neoforge-26.1.1` |
-| Gas | `turtymultiloader-gas-common-26.1.1` | `turtymultiloader-gas-fabric-26.1.1` | `turtymultiloader-gas-neoforge-26.1.1` |
-| Slurry | `turtymultiloader-slurry-common-26.1.1` | `turtymultiloader-slurry-fabric-26.1.1` | `turtymultiloader-slurry-neoforge-26.1.1` |
+| Use        | Common                                      | Fabric                                      | NeoForge                                      |
+|------------|---------------------------------------------|---------------------------------------------|-----------------------------------------------|
+| Core       | `turtymultiloader-common-26.1.1`            | `turtymultiloader-fabric-26.1.1`            | `turtymultiloader-neoforge-26.1.1`            |
+| Gas        | `turtymultiloader-gas-common-26.1.1`        | `turtymultiloader-gas-fabric-26.1.1`        | `turtymultiloader-gas-neoforge-26.1.1`        |
+| Slurry     | `turtymultiloader-slurry-common-26.1.1`     | `turtymultiloader-slurry-fabric-26.1.1`     | `turtymultiloader-slurry-neoforge-26.1.1`     |
+| Multiblock | `turtymultiloader-multiblock-common-26.1.1` | `turtymultiloader-multiblock-fabric-26.1.1` | `turtymultiloader-multiblock-neoforge-26.1.1` |
 
 Add the Maven repository that contains the release to every consumer project. A local checkout publishes to
-`build/local-maven` by default, so a sibling build can use `maven { url = uri("../TurtyMultiloader/build/local-maven") }`.
+`build/local-maven` by default, so a sibling build can use
+`maven { url = uri("../TurtyMultiloader/build/local-maven") }`.
 Common code uses compile-only dependencies; each distributable loader JAR embeds the corresponding loader artifact:
 
 ```groovy
@@ -59,6 +62,7 @@ dependencies {
     compileOnly tml('turtymultiloader-common')
     compileOnly tml('turtymultiloader-gas-common')     // optional
     compileOnly tml('turtymultiloader-slurry-common') // optional
+    compileOnly tml('turtymultiloader-multiblock-common') // optional
 }
 
 // fabric/build.gradle
@@ -69,6 +73,8 @@ dependencies {
     include tml('turtymultiloader-gas-fabric')
     implementation tml('turtymultiloader-slurry-fabric')
     include tml('turtymultiloader-slurry-fabric')
+    implementation tml('turtymultiloader-multiblock-fabric')
+    include tml('turtymultiloader-multiblock-fabric')
 }
 
 // neoforge/build.gradle
@@ -79,6 +85,8 @@ dependencies {
     jarJar "${tmlGroup}:turtymultiloader-gas-neoforge-${minecraftVersion}:[${tmlVersion}]"
     implementation tml('turtymultiloader-slurry-neoforge')
     jarJar "${tmlGroup}:turtymultiloader-slurry-neoforge-${minecraftVersion}:[${tmlVersion}]"
+    implementation tml('turtymultiloader-multiblock-neoforge')
+    jarJar "${tmlGroup}:turtymultiloader-multiblock-neoforge-${minecraftVersion}:[${tmlVersion}]"
 }
 ```
 
@@ -855,6 +863,35 @@ classpath. Both use `81,000` neutral units per bucket. Their providers interoper
 generated Fabric lookups and NeoForge capabilities; integration with another mod's chemical API still requires a
 dedicated adapter.
 
+### Optional multiblock module
+
+The multiblock module ports `MultiblockLib` to common, Fabric, and NeoForge artifacts while retaining its
+`dev.turtywurty.multiblocklib` packages and `multiblocklib` mod ID. It provides data-pack definitions from
+`data/<namespace>/multiblocks/*.json`, block matchers, transforms, persistent formed-structure data, controller and
+part blocks, client rendering, built-in pattern factories, and typed ports.
+
+```groovy
+// Choose the matching dependency in each loader project.
+implementation project(':multiblock-fabric')
+implementation project(':multiblock-neoforge')
+```
+
+Built-in item, fluid, and energy ports now use TurtyMultiloader's neutral `ResourceStorage`, `ResourceVariant`, and
+transaction APIs. Custom ports can continue to use `PortType`, `PortRegistrar`, and `PortTransfer`. Register custom
+controller blocks with `MultiblockLib.registerControllerBlock(...)`; use
+`MULTIBLOCK_PART_HANDLE`, `MULTIBLOCK_CONTROLLER_HANDLE`, and `MULTIBLOCK_CONTROLLER_ENTITY_HANDLE` in declarations
+that run before registry application. The corresponding direct fields are populated during registration and are safe
+to use afterward.
+
+As with every TurtyMultiloader transfer provider, the consuming mod must call `TransferService.get().apply()` after it
+has declared its own providers. MultiblockLib deliberately does not flush that shared service from its dependency
+entrypoint, because doing so would make Fabric resolve a consuming mod's not-yet-applied registry handles. Its loader
+entrypoints initialize the module itself, including registry content, reload listeners, interaction hooks, and the
+client block-entity renderer.
+
+The original MultiblockLib code is LGPL-3.0; the module retains that license in `modules/multiblock/LICENSE` and in its
+published JARs rather than relicensing it under the core project's CC0 license.
+
 The Fabric module adapts its native `Storage`, `StorageView`, and `TransactionContext`, Team Reborn `EnergyStorage`,
 block/item/entity API lookups, and mutable container-item contexts. The NeoForge module adapts `ResourceHandler`,
 `EnergyHandler`, capabilities,
@@ -890,7 +927,7 @@ The `testmod-fabric` and `testmod-neoforge` Gradle projects are real consumer mo
 `turtymultiloader_testmod`. Their shared GameTests register content and storage providers through the public library
 API, compile and register every common/client event bridge, verify registries and holders, and exercise transactions,
 serialization, sided/combined and indexed views, component-bearing item/fluid resources, optional gas/slurry module
-resources and codecs, units,
+resources and codecs, units, the optional multiblock module's registration and neutral port storage,
 post-apply provider declarations, Team Reborn energy, and loader-native data generation in a running dedicated test
 server. These projects produce
 separate test-mod artifacts and are not packaged into either library artifact.
@@ -904,7 +941,7 @@ separate test-mod artifacts and are not packaged into either library artifact.
 
 The test projects depend on the loader library projects, never the reverse. They do not apply the publishing
 conventions, and their source sets and metadata are not included in either library JAR. In addition,
-`verifyPublishedConsumer` first publishes all nine artifacts and builds the standalone `consumer-template` exclusively
+`verifyPublishedConsumer` first publishes all twelve artifacts and builds the standalone `consumer-template` exclusively
 from their Maven coordinates. Its packaging assertions inspect Fabric `META-INF/jars` and NeoForge
 `META-INF/jarjar/metadata.json`, covering published Gradle/POM metadata, transitive module dependencies, `include`, and
 `jarJar` instead of silently substituting project dependencies.

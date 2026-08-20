@@ -24,10 +24,11 @@ dependencies {
     implementation project(path: ':neoforge')
     implementation project(path: ':gas-neoforge')
     implementation project(path: ':slurry-neoforge')
+    implementation project(path: ':multiblock-neoforge')
 
     // The loader projects compile these sources into their own output, but IntelliJ
     // models them as separate modules. Keep the module dependencies visible to the IDE.
-    [':common', ':gas-common', ':slurry-common'].each { commonProject ->
+    [':common', ':gas-common', ':slurry-common', ':multiblock-common'].each { commonProject ->
         compileOnly(project(commonProject)) {
             attributes {
                 attribute(loaderAttribute, 'common')

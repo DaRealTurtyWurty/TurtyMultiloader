@@ -1,0 +1,7 @@
+{
+    "variants": {
+        "": {
+            "model": "multiblocklib:block/multiblock_part"
+        }
+    }
+}

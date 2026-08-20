@@ -1,0 +1,31 @@
+modLoader = "javafml"
+loaderVersion = "${neoforge_loader_version_range}"
+license = "LGPL-3.0-only"
+
+[[mods]]
+modId = "multiblocklib"
+version = "${version}"
+displayName = "MultiblockLib"
+authors = "${mod_author}"
+description = '''A loader-neutral library for data-driven multiblocks.'''
+
+[[dependencies.multiblocklib]]
+modId = "neoforge"
+type = "required"
+versionRange = "[${neoforge_version},)"
+ordering = "NONE"
+side = "BOTH"
+
+[[dependencies.multiblocklib]]
+modId = "minecraft"
+type = "required"
+versionRange = "${minecraft_version_range}"
+ordering = "NONE"
+side = "BOTH"
+
+[[dependencies.multiblocklib]]
+modId = "turtymultiloader"
+type = "required"
+versionRange = "[${version},)"
+ordering = "AFTER"
+side = "BOTH"

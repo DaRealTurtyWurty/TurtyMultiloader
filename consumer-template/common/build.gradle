@@ -33,10 +33,12 @@ dependencies {
     compileOnly library('turtymultiloader-common')
     compileOnly library('turtymultiloader-gas-common')
     compileOnly library('turtymultiloader-slurry-common')
+    compileOnly library('turtymultiloader-multiblock-common')
 
     // Deliberately omit the core artifact: this configuration verifies published transitivity.
     turtymultiloaderTransitiveProbe library('turtymultiloader-gas-common')
     turtymultiloaderTransitiveProbe library('turtymultiloader-slurry-common')
+    turtymultiloaderTransitiveProbe library('turtymultiloader-multiblock-common')
 }
 
 sourceSets.main.resources.srcDir('src/generated/resources')
@@ -46,7 +48,7 @@ tasks.register('verifyTurtyMultiloaderTransitives') {
     doLast {
         Set<String> resolved = configurations.turtymultiloaderTransitiveProbe.files.collect { it.name } as Set
         if (!resolved.any { it.startsWith("turtymultiloader-common-${minecraft_version}-") })
-            throw new GradleException("Gas/slurry common metadata did not bring in the core common artifact: ${resolved}")
+            throw new GradleException("Optional common module metadata did not bring in the core common artifact: ${resolved}")
     }
 }
 

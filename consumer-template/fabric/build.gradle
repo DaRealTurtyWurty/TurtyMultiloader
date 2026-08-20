@@ -39,7 +39,7 @@ dependencies {
     implementation "net.fabricmc.fabric-api:fabric-gametest-api-v1:${fabric_gametest_api_version}"
 
     [library('turtymultiloader-fabric'), library('turtymultiloader-gas-fabric'),
-     library('turtymultiloader-slurry-fabric')].each { coordinate ->
+     library('turtymultiloader-slurry-fabric'), library('turtymultiloader-multiblock-fabric')].each { coordinate ->
         implementation coordinate
         include coordinate
     }
@@ -47,6 +47,7 @@ dependencies {
     // Deliberately omit the core artifact: this configuration verifies published transitivity.
     turtymultiloaderTransitiveProbe library('turtymultiloader-gas-fabric')
     turtymultiloaderTransitiveProbe library('turtymultiloader-slurry-fabric')
+    turtymultiloaderTransitiveProbe library('turtymultiloader-multiblock-fabric')
 }
 
 loom {
@@ -85,15 +86,15 @@ loom {
 
 processResources {
     def properties = [
-        version: project.version,
-        mod_id: mod_id,
-        mod_name: mod_name,
-        mod_author: mod_author,
-        mod_license: mod_license,
-        mod_description: mod_description,
-        minecraft_version: minecraft_version,
-        fabric_loader_version: fabric_loader_version,
-        fabric_api_version: fabric_api_version,
+        version                 : project.version,
+        mod_id                  : mod_id,
+        mod_name                : mod_name,
+        mod_author              : mod_author,
+        mod_license             : mod_license,
+        mod_description         : mod_description,
+        minecraft_version       : minecraft_version,
+        fabric_loader_version   : fabric_loader_version,
+        fabric_api_version      : fabric_api_version,
         turtymultiloader_version: turtymultiloader_version
     ]
     inputs.properties(properties)
@@ -109,7 +110,8 @@ tasks.register('verifyNestedLibraries') {
         File artifact = tasks.named('jar').get().archiveFile.get().asFile
         Set<String> nested = zipTree(artifact).matching { include 'META-INF/jars/*.jar' }
             .files.collect { it.name } as Set
-        ['turtymultiloader-fabric', 'turtymultiloader-gas-fabric', 'turtymultiloader-slurry-fabric'].each {
+        ['turtymultiloader-fabric', 'turtymultiloader-gas-fabric', 'turtymultiloader-slurry-fabric',
+         'turtymultiloader-multiblock-fabric'].each {
             if (!nested.any { name -> name.contains("${it}-${minecraft_version}-") })
                 throw new GradleException("Missing nested ${it} in ${artifact.name}: ${nested}")
         }
@@ -121,7 +123,7 @@ tasks.register('verifyTurtyMultiloaderTransitives') {
     doLast {
         Set<String> resolved = configurations.turtymultiloaderTransitiveProbe.files.collect { it.name } as Set
         if (!resolved.any { it.startsWith("turtymultiloader-fabric-${minecraft_version}-") })
-            throw new GradleException("Gas/slurry Fabric metadata did not bring in the core Fabric artifact: ${resolved}")
+            throw new GradleException("Optional Fabric module metadata did not bring in the core Fabric artifact: ${resolved}")
     }
 }
 

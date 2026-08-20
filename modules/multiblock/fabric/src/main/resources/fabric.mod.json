@@ -1,0 +1,28 @@
+{
+    "schemaVersion": 1,
+    "id": "multiblocklib",
+    "version": "${version}",
+    "name": "MultiblockLib",
+    "description": "A loader-neutral library for data-driven multiblocks.",
+    "authors": [
+        "${mod_author}"
+    ],
+    "license": "LGPL-3.0-only",
+    "icon": "assets/multiblocklib/icon.png",
+    "environment": "*",
+    "entrypoints": {
+        "main": [
+            "dev.turtywurty.multiblocklib.fabric.MultiblockLibFabric"
+        ],
+        "client": [
+            "dev.turtywurty.multiblocklib.fabric.MultiblockLibFabricClient"
+        ]
+    },
+    "depends": {
+        "fabricloader": ">=${fabric_loader_version}",
+        "fabric-api": ">=${fabric_api_version}",
+        "minecraft": "~${minecraft_version}",
+        "turtymultiloader": ">=${version}",
+        "java": ">=${java_version}"
+    }
+}

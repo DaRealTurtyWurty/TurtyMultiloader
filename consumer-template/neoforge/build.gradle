@@ -37,7 +37,7 @@ configurations.register('turtymultiloaderTransitiveProbe') {
 
 dependencies {
     ['turtymultiloader-neoforge', 'turtymultiloader-gas-neoforge',
-     'turtymultiloader-slurry-neoforge'].each { name ->
+     'turtymultiloader-slurry-neoforge', 'turtymultiloader-multiblock-neoforge'].each { name ->
         implementation library(name)
         jarJar "${turtymultiloader_group}:${artifact(name)}:[${turtymultiloader_version}]"
     }
@@ -45,6 +45,7 @@ dependencies {
     // Deliberately omit the core artifact: this configuration verifies published transitivity.
     turtymultiloaderTransitiveProbe library('turtymultiloader-gas-neoforge')
     turtymultiloaderTransitiveProbe library('turtymultiloader-slurry-neoforge')
+    turtymultiloaderTransitiveProbe library('turtymultiloader-multiblock-neoforge')
 }
 
 neoForge {
@@ -99,16 +100,16 @@ neoForge {
 
 processResources {
     def properties = [
-        version: project.version,
-        mod_id: mod_id,
-        mod_name: mod_name,
-        mod_author: mod_author,
-        mod_license: mod_license,
-        mod_description: mod_description,
-        minecraft_version_range: minecraft_version_range,
-        neoforge_version: neoforge_version,
+        version                      : project.version,
+        mod_id                       : mod_id,
+        mod_name                     : mod_name,
+        mod_author                   : mod_author,
+        mod_license                  : mod_license,
+        mod_description              : mod_description,
+        minecraft_version_range      : minecraft_version_range,
+        neoforge_version             : neoforge_version,
         neoforge_loader_version_range: neoforge_loader_version_range,
-        turtymultiloader_version: turtymultiloader_version
+        turtymultiloader_version     : turtymultiloader_version
     ]
     inputs.properties(properties)
     filesMatching('META-INF/neoforge.mods.toml') {
@@ -124,7 +125,7 @@ tasks.register('verifyJarJarLibraries') {
         Set<String> nested = zipTree(output).matching { include 'META-INF/jarjar/*.jar' }
             .files.collect { it.name } as Set
         ['turtymultiloader-neoforge', 'turtymultiloader-gas-neoforge',
-         'turtymultiloader-slurry-neoforge'].each {
+         'turtymultiloader-slurry-neoforge', 'turtymultiloader-multiblock-neoforge'].each {
             if (!nested.any { name -> name.contains("${it}-${minecraft_version}-") })
                 throw new GradleException("Missing jarJar ${it} in ${output.name}: ${nested}")
         }
@@ -138,7 +139,7 @@ tasks.register('verifyTurtyMultiloaderTransitives') {
     doLast {
         Set<String> resolved = configurations.turtymultiloaderTransitiveProbe.files.collect { it.name } as Set
         if (!resolved.any { it.startsWith("turtymultiloader-neoforge-${minecraft_version}-") })
-            throw new GradleException("Gas/slurry NeoForge metadata did not bring in the core NeoForge artifact: ${resolved}")
+            throw new GradleException("Optional NeoForge module metadata did not bring in the core NeoForge artifact: ${resolved}")
     }
 }
 

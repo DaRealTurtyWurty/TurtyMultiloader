@@ -7,7 +7,8 @@ plugins {
 def publishedProjects = [
     ':common', ':fabric', ':neoforge',
     ':gas-common', ':gas-fabric', ':gas-neoforge',
-    ':slurry-common', ':slurry-fabric', ':slurry-neoforge'
+    ':slurry-common', ':slurry-fabric', ':slurry-neoforge',
+    ':multiblock-common', ':multiblock-fabric', ':multiblock-neoforge'
 ]
 
 tasks.register('publishConsumerArtifacts') {

@@ -25,6 +25,7 @@
         "minecraft": "~${minecraft_version}",
         "turtymultiloader": "*",
         "gasapi": "*",
-        "slurryapi": "*"
+        "slurryapi": "*",
+        "multiblocklib": "*"
     }
 }
