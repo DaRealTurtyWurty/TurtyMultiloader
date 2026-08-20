@@ -12,6 +12,9 @@ import dev.turtywurty.slurryapi.api.storage.SlurryStorage;
 import dev.turtywurty.turtymultiloader.attachment.AttachmentType;
 import dev.turtywurty.turtymultiloader.attachment.Attachments;
 import dev.turtywurty.turtymultiloader.attachment.SavedStateType;
+import dev.turtywurty.turtymultiloader.menu.ExtendedMenuRegistration;
+import dev.turtywurty.turtymultiloader.menu.Menus;
+import dev.turtywurty.turtymultiloader.menu.sync.MenuSyncChannel;
 import dev.turtywurty.turtymultiloader.network.NetworkService;
 import dev.turtywurty.turtymultiloader.network.PayloadRegistrationOptions;
 import dev.turtywurty.turtymultiloader.registration.CustomRegistry;
@@ -26,6 +29,7 @@ import dev.turtywurty.turtymultiloader.transfer.resource.UnitResource;
 import dev.turtywurty.turtymultiloader.transfer.storage.SimpleSingleSlotStorage;
 import dev.turtywurty.turtymultiloader.transfer.storage.SimpleStorage;
 import net.minecraft.core.component.DataComponentType;
+import net.minecraft.core.BlockPos;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
@@ -97,6 +101,17 @@ public final class TestModContent {
         );
     public static final RegistrationHandle<RecipeBookCategory, RecipeBookCategory> TEST_RECIPE_BOOK_CATEGORY =
         REGISTRIES.registerRecipeBookCategory(id("test_recipe_book_category"), RecipeBookCategory::new);
+    public static final ExtendedMenuRegistration<TestMenu, BlockPos> TEST_MENU = Menus.registerExtended(
+        id("test_menu"),
+        TestMenu::new,
+        BlockPos.STREAM_CODEC
+    );
+    public static final MenuSyncChannel<TestMenu, Integer> TEST_MENU_SYNC = MenuSyncChannel.register(
+        id("test_menu_sync"),
+        TestMenu.class,
+        ByteBufCodecs.VAR_INT,
+        PayloadRegistrationOptions.optional("1")
+    );
 
     public static final CustomRegistry<TestValue> TEST_VALUE_REGISTRY = REGISTRIES.customRegistry(id("test_value"));
     public static final RegistrationHandle<TestValue, TestValue> TEST_VALUE = TEST_VALUE_REGISTRY.register(

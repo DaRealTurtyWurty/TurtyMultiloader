@@ -10,6 +10,7 @@ import net.neoforged.fml.common.Mod;
 public final class TurtyMultiloaderNeoForgeClient {
     public TurtyMultiloaderNeoForgeClient(IEventBus modBus) {
         NeoForgeClientEventService.bind(modBus);
+        NeoForgeClientMenuService.bind(modBus);
         NeoForgeNetworkService.bindClient(modBus);
         CommonClient.init();
     }

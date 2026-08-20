@@ -37,6 +37,16 @@ public final class TestModNeoForge {
                 }
             }
         );
+        var menuTestData = new TestData<>(environment, RegistryGameTests.EMPTY_STRUCTURE, 20, 0, true);
+        event.registerTest(
+            MenuGameTests.TEST_ID,
+            new FunctionGameTestInstance(BuiltinTestFunctions.ALWAYS_PASS, menuTestData) {
+                @Override
+                public void run(GameTestHelper helper) {
+                    MenuGameTests.verifyMenuService(helper);
+                }
+            }
+        );
         var attachmentTestData = new TestData<>(environment, RegistryGameTests.EMPTY_STRUCTURE, 20, 0, true);
         event.registerTest(
             AttachmentGameTests.TEST_ID,

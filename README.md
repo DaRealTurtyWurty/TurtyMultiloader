@@ -123,6 +123,83 @@ data components, consume effects, position sources, world-generation features, c
 and flammability. `register(...)` accepts any vanilla `ResourceKey<? extends Registry<R>>`, and
 `customRegistry(...)` creates custom registries whose entries use the same handles.
 
+### Menus and screens
+
+`Menus` registers extended menu types without exposing Fabric's `ExtendedMenuType` or NeoForge's container factory.
+The opening value can be any type with a vanilla `StreamCodec`; it does not need to be a packet payload. Menu and
+screen implementations that otherwise use only vanilla classes can stay in common:
+
+```java
+public static final ExtendedMenuRegistration<CrusherMenu, BlockPos> CRUSHER_MENU = Menus.registerExtended(
+    id("crusher"),
+    CrusherMenu::new,
+    BlockPos.STREAM_CODEC
+);
+
+// Client constructor used by the registration above.
+public CrusherMenu(int containerId, Inventory inventory, BlockPos pos) {
+    this(containerId, inventory, MenuOpeningData.requireBlockEntity(inventory, pos, CrusherBlockEntity.class));
+}
+```
+
+An extended provider is also vanilla apart from the small common interface. Open it only on the logical server:
+
+```java
+public final class CrusherBlockEntity extends BlockEntity implements ExtendedMenuProvider<BlockPos> {
+    @Override
+    public BlockPos getMenuOpeningData(ServerPlayer player) {
+        return getBlockPos();
+    }
+
+    // getDisplayName() and createMenu(...) are the normal vanilla MenuProvider methods.
+}
+
+Menus.open(serverPlayer, crusherBlockEntity, CRUSHER_MENU);
+```
+
+`Menus.open(player, provider)` covers ordinary vanilla menus. The overload accepting an explicit opening value is
+useful when that value is not naturally owned by the provider. The library encodes the same declared codec through
+Fabric's extended provider or NeoForge's additional-data writer.
+
+Register screens from the consuming mod's client initializer. `MenuScreenFactory` has the same three arguments as
+the vanilla constructor, while hiding loader registration timing:
+
+```java
+ClientMenus.register(CRUSHER_MENU, CrusherScreen::new);
+```
+
+For vanilla integer properties, `MenuDataSlots.builder()` creates a `ContainerData` view and includes boolean, enum,
+float, lossless `long`, and lossless `double` mappings. Longs and doubles occupy two vanilla data slots:
+
+```java
+ContainerData data = MenuDataSlots.builder()
+    .add(() -> progress, value -> progress = value)
+    .addLong(() -> storedEnergy, value -> storedEnergy = value)
+    .addEnum(Mode.class, () -> mode, value -> mode = value)
+    .build();
+
+// In the menu constructor, as usual:
+addDataSlots(data);
+```
+
+Vanilla slot synchronization remains the preferred path for `ItemStack` slots. For state that cannot be represented
+faithfully by vanilla slots or integer data slots, declare a typed menu channel during common initialization:
+
+```java
+MenuSyncChannel<CrusherMenu, MachineSnapshot> SNAPSHOT = MenuSyncChannel.register(
+    id("crusher_snapshot"),
+    CrusherMenu.class,
+    MachineSnapshot.STREAM_CODEC
+);
+```
+
+Attach its receiver during client initialization with `SNAPSHOT.registerClientReceiver(CrusherMenu::applySnapshot)`.
+On the server, a `MenuSyncTracker` sends an initial value and subsequent changes, scoped by container ID so stale
+packets cannot update a replacement menu. Call the tracker after `super.broadcastChanges()` in the menu. Use
+`MenuSyncTracker.immutable(...)` for records and other immutable values, or `copying(...)` with a snapshot function
+for mutable values. This path is intended for large counters, fluids/gases, recipe lists, or compound machine state;
+normal item slots and small integer properties should continue to use vanilla synchronization.
+
 ### Networking service
 
 `NetworkService` uses vanilla `CustomPacketPayload` records and `StreamCodec`s directly. It does not wrap buffers or
