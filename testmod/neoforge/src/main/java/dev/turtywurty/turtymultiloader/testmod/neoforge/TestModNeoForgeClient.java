@@ -3,6 +3,7 @@ package dev.turtywurty.turtymultiloader.testmod.neoforge;
 import dev.turtywurty.turtymultiloader.network.PayloadPhase;
 import dev.turtywurty.turtymultiloader.menu.client.ClientMenus;
 import dev.turtywurty.turtymultiloader.testmod.ClientEventSmokeTest;
+import dev.turtywurty.turtymultiloader.testmod.ClientRegistrationSmokeTest;
 import dev.turtywurty.turtymultiloader.testmod.TestModContent;
 import dev.turtywurty.turtymultiloader.testmod.TestMenuScreen;
 import net.neoforged.api.distmarker.Dist;
@@ -12,6 +13,7 @@ import net.neoforged.fml.common.Mod;
 public final class TestModNeoForgeClient {
     public TestModNeoForgeClient() {
         ClientEventSmokeTest.register();
+        ClientRegistrationSmokeTest.register();
         ClientMenus.register(TestModContent.TEST_MENU, TestMenuScreen::new);
         TestModContent.TEST_MENU_SYNC.registerClientReceiver((menu, value) -> {
         });

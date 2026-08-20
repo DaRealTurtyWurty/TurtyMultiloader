@@ -96,6 +96,58 @@ pose stack, buffer source, and the submit-node collector when that stage supplie
 common initialization and client callbacks during client initialization. Registrations are process-lifetime callbacks;
 the native Fabric and NeoForge event systems do not provide a shared unregister operation.
 
+### Client registration and rendering
+
+`ClientRegistrations` covers static client declarations whose implementations are vanilla types but whose registration
+timing differs between Fabric and NeoForge. NeoForge declarations are queued for the appropriate mod-bus event; Fabric
+applies them through its initialization registries. Register them from the consuming mod's client initializer:
+
+```java
+ClientRegistrations.registerEntityRenderer(RUBBER_BOAT, context ->
+    new BoatRenderer(context, RUBBER_BOAT_LAYER));
+ClientRegistrations.registerBlockEntityRenderer(CRUSHER_BLOCK_ENTITY, CrusherRenderer::new);
+ClientRegistrations.registerModelLayer(CRUSHER_LAYER, CrusherModel::createLayer);
+
+ClientRegistrations.registerBlockTintSources(List.of(RUBBER_LEAVES_TINT), RUBBER_LEAVES);
+ClientRegistrations.registerFluidModel(
+    new FluidModel.Unbaked(stillMaterial, flowingMaterial, overlayMaterial, tintSource),
+    CRUDE_OIL_STILL,
+    CRUDE_OIL_FLOWING
+);
+```
+
+The same facade registers data-driven client extension codecs:
+
+```java
+ClientRegistrations.registerItemTintSource(id("heated"), HeatedTintSource.CODEC);
+ClientRegistrations.registerItemModel(id("drill_head"), DrillHeadItemModel.Unbaked.CODEC);
+ClientRegistrations.registerSpecialModelRenderer(id("block_entity_item"),
+    IndustriaBlockEntityItemRenderer.Unbaked.CODEC);
+```
+
+Additional block-state models use a loader-neutral handle. Fabric backs it with an `ExtraModelKey`; NeoForge backs it
+with a `StandaloneModelKey`:
+
+```java
+AdditionalModel<BlockStateModel> scannerModel =
+    ClientRegistrations.registerAdditionalBlockStateModel(id("item/seismic_scanner_model"));
+
+BlockStateModel baked = scannerModel.getOrThrow(); // only after model reload has completed
+```
+
+Screens remain under `ClientMenus`. Key mappings, tooltip callbacks, resource reload listeners, and world-render stages
+remain under `ClientEvents`, since those are callback lifecycles rather than static renderer declarations.
+
+For state-dependent domain renderers such as conveyors, `SpecialBlockRendererRegistry` provides block/state factory
+registration, cached lookup, and reload handling. Register the registry itself with
+`ClientEvents.registerResourceReloadListener(...)`, then query it from a `ClientEvents.onRenderStage(...)` callback.
+The renderer interface and its domain render context stay in the consuming mod.
+
+Custom model implementations are intentionally not bridged. Shared pipe connection/state calculation and geometry
+data can live in common code, but Fabric's model-loading/renderer API and NeoForge's loader/geometry/baking pipeline
+should have separate adapters. The service only bridges vanilla model layers, fluid models, data-driven item codecs,
+and standalone model registration.
+
 ### Registry service
 
 `RegistryService` is the loader-neutral registration API. Its methods queue declarations rather than registering
