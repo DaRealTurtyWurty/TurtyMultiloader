@@ -12,6 +12,13 @@ import java.util.Objects;
  * Neutral single-slot slurry storage.
  */
 public class SingleSlurryStorage extends SimpleSingleSlotStorage<ResourceVariant<Slurry>> {
+    /**
+     * Constructor for subclasses with a dynamic {@link #getCapacity(ResourceVariant) capacity}.
+     */
+    public SingleSlurryStorage() {
+        super(SlurryApi.RESOURCE_FAMILY.type());
+    }
+
     public SingleSlurryStorage(long capacity) {
         this(capacity, TransferSupport.BOTH, () -> {
         });

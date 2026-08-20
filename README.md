@@ -649,10 +649,19 @@ try (TransferTransaction transaction = TransferTransaction.openRoot()) {
 ```
 
 `ResourceStorage` is indexed and exposes per-index resource, amount, capacity, validity, and insertion/extraction
-support.
-`SingleSlotStorage`, `CombinedStorage`, and `SidedStorage` provide the common views. Root and nested transactions
+support. `MutableResourceStorage` adds trusted transactional `insertInternal`, `extractInternal`, and exact `set`
+operations for machine owners and persistence. These bypass external transfer direction policy while retaining type,
+validity, and capacity invariants. `SimpleStorage` implements this contract and offers protected state access plus
+dynamic capacity hooks; `SimpleSingleSlotStorage` also has a no-fixed-capacity constructor for subclasses.
+
+Use `storage.restrictedTo(TransferSupport.INSERT_ONLY)` or `EXTRACT_ONLY` when exposing directional machine ports.
+The returned live view narrows automation access without restricting recipes or persistence on the owned backing
+storage. `SimpleEnergyStorage` provides the common capacity/max-input/max-output energy implementation.
+
+`SingleSlotStorage`, `CombinedStorage`, `RestrictedStorage`, and `SidedStorage` provide the common views. Root and nested transactions
 support commit, rollback-on-close, simulation, snapshot participants, close callbacks, and final commit callbacks.
-`StorageSnapshot`, `StorageCodecs`, and `StorageSynchronizer` cover persistence and synchronization.
+`StorageSnapshot`, `StorageCodecs`, and `StorageSynchronizer` cover persistence and synchronization; snapshots use the
+trusted exact replacement path when the destination implements `MutableResourceStorage`.
 
 Neutral fluid amounts use droplets (`81,000` per bucket), allowing exact conversion to Fabric units and NeoForge's
 `1,000`-unit bucket convention. Core defines item, fluid, and energy units. Optional resource modules register their

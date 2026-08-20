@@ -1,6 +1,7 @@
 package dev.turtywurty.turtymultiloader.transfer.serialization;
 
 import dev.turtywurty.turtymultiloader.transfer.resource.ResourceVariant;
+import dev.turtywurty.turtymultiloader.transfer.storage.MutableResourceStorage;
 import dev.turtywurty.turtymultiloader.transfer.storage.ResourceStorage;
 import dev.turtywurty.turtymultiloader.transfer.transaction.TransferContext;
 import dev.turtywurty.turtymultiloader.transfer.transaction.TransferTransaction;
@@ -50,6 +51,17 @@ public record StorageSnapshot<V extends ResourceVariant<?>>(List<Entry<V>> entri
         if (storage.size() != this.entries.size())
             return false;
         try (TransferTransactionScope operation = transaction.openNested()) {
+            if (storage instanceof MutableResourceStorage<?> mutableStorage) {
+                @SuppressWarnings("unchecked")
+                MutableResourceStorage<V> typedStorage = (MutableResourceStorage<V>) mutableStorage;
+                for (int index = 0; index < storage.size(); index++) {
+                    Entry<V> entry = this.entries.get(index);
+                    if (!typedStorage.set(index, entry.resource, entry.amount, operation))
+                        return false;
+                }
+                operation.commit();
+                return true;
+            }
             for (int index = 0; index < storage.size(); index++) {
                 V current = storage.resource(index);
                 long currentAmount = storage.amount(index);

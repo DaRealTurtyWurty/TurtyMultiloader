@@ -7,6 +7,7 @@ import dev.turtywurty.gasapi.api.GasVariant;
 import dev.turtywurty.gasapi.api.storage.GasStorage;
 import dev.turtywurty.gasapi.api.storage.InputSingleGasStorage;
 import dev.turtywurty.gasapi.api.storage.OutputSingleGasStorage;
+import dev.turtywurty.gasapi.api.storage.SingleGasStorage;
 import dev.turtywurty.gasapi.api.storage.item.EmptyItemGasStorage;
 import dev.turtywurty.gasapi.api.storage.item.FullItemGasStorage;
 import dev.turtywurty.slurryapi.SlurryApi;
@@ -14,6 +15,7 @@ import dev.turtywurty.slurryapi.api.Slurry;
 import dev.turtywurty.slurryapi.api.SlurryVariant;
 import dev.turtywurty.slurryapi.api.storage.InputSingleSlurryStorage;
 import dev.turtywurty.slurryapi.api.storage.OutputSingleSlurryStorage;
+import dev.turtywurty.slurryapi.api.storage.SingleSlurryStorage;
 import dev.turtywurty.slurryapi.api.storage.SlurryStorage;
 import dev.turtywurty.turtymultiloader.transfer.StorageTransfer;
 import dev.turtywurty.turtymultiloader.transfer.lookup.BlockStorageCache;
@@ -25,11 +27,7 @@ import dev.turtywurty.turtymultiloader.transfer.resource.ResourceVariantCodecs;
 import dev.turtywurty.turtymultiloader.transfer.resource.UnitResource;
 import dev.turtywurty.turtymultiloader.transfer.serialization.StorageSnapshot;
 import dev.turtywurty.turtymultiloader.transfer.serialization.StorageSynchronizer;
-import dev.turtywurty.turtymultiloader.transfer.storage.CombinedStorage;
-import dev.turtywurty.turtymultiloader.transfer.storage.ResourceStorage;
-import dev.turtywurty.turtymultiloader.transfer.storage.SidedStorage;
-import dev.turtywurty.turtymultiloader.transfer.storage.SimpleSingleSlotStorage;
-import dev.turtywurty.turtymultiloader.transfer.storage.TransferSupport;
+import dev.turtywurty.turtymultiloader.transfer.storage.*;
 import dev.turtywurty.turtymultiloader.transfer.transaction.TransferTransaction;
 import dev.turtywurty.turtymultiloader.transfer.unit.TransferUnit;
 import dev.turtywurty.turtymultiloader.transfer.unit.UnitDimension;
@@ -251,6 +249,81 @@ public final class TransferGameTests {
             slurry,
             "Slurry resource codec round-trip"
         );
+
+        InputSingleGasStorage inputGas = new InputSingleGasStorage(100);
+        OutputSingleGasStorage outputGas = new OutputSingleGasStorage(100);
+        try (TransferTransaction transaction = TransferTransaction.openRoot()) {
+            helper.assertValueEqual(inputGas.insert(gas, 40, transaction), 40L, "Input tank automation fill");
+            helper.assertValueEqual(
+                inputGas.extractInternal(gas, 10, transaction),
+                10L,
+                "Input tank owner extraction"
+            );
+            helper.assertValueEqual(outputGas.insert(gas, 10, transaction), 0L, "Output tank automation rejection");
+            helper.assertValueEqual(
+                outputGas.insertInternal(gas, 25, transaction),
+                25L,
+                "Output tank owner insertion"
+            );
+            transaction.commit();
+        }
+        helper.assertValueEqual(inputGas.amount(), 30L, "Input tank owner mutation amount");
+        helper.assertValueEqual(outputGas.amount(), 25L, "Output tank owner mutation amount");
+
+        SingleGasStorage emptyGas = new SingleGasStorage(100);
+        helper.assertTrue(StorageSnapshot.capture(emptyGas).apply(inputGas), "Input-only tank snapshot clear");
+        helper.assertValueEqual(inputGas.amount(), 0L, "Input-only tank was not cleared by snapshot");
+
+        SingleGasStorage filledGas = new SingleGasStorage(100);
+        try (TransferTransaction transaction = TransferTransaction.openRoot()) {
+            filledGas.insert(gas, 35, transaction);
+            transaction.commit();
+        }
+        helper.assertTrue(StorageSnapshot.capture(filledGas).apply(outputGas), "Output-only tank snapshot fill");
+        helper.assertValueEqual(outputGas.amount(), 35L, "Output-only tank was not filled by snapshot");
+
+        long[] gasCapacity = {10};
+        SingleGasStorage dynamicGas = new SingleGasStorage() {
+            @Override
+            protected long getCapacity(ResourceVariant<Gas> resource) {
+                return gasCapacity[0];
+            }
+        };
+        try (TransferTransaction transaction = TransferTransaction.openRoot()) {
+            helper.assertValueEqual(dynamicGas.insert(gas, 20, transaction), 10L, "Initial dynamic gas capacity");
+            transaction.commit();
+        }
+        gasCapacity[0] = 30;
+        try (TransferTransaction transaction = TransferTransaction.openRoot()) {
+            helper.assertValueEqual(dynamicGas.insert(gas, 20, transaction), 20L, "Expanded dynamic gas capacity");
+            transaction.commit();
+        }
+
+        SingleSlurryStorage dynamicSlurry = new SingleSlurryStorage() {
+            @Override
+            protected long getCapacity(ResourceVariant<Slurry> resource) {
+                return 50;
+            }
+        };
+        try (TransferTransaction transaction = TransferTransaction.openRoot()) {
+            helper.assertValueEqual(dynamicSlurry.insert(slurry, 75, transaction), 50L, "Dynamic slurry capacity");
+            transaction.commit();
+        }
+
+        SimpleEnergyStorage simpleEnergy = new SimpleEnergyStorage(100, 10, 5);
+        try (TransferTransaction transaction = TransferTransaction.openRoot()) {
+            helper.assertValueEqual(simpleEnergy.insert(50, transaction), 10L, "Energy maximum input");
+            helper.assertValueEqual(simpleEnergy.insertInternal(50, transaction), 50L, "Energy owner insertion");
+            helper.assertValueEqual(simpleEnergy.extract(50, transaction), 5L, "Energy maximum output");
+            transaction.commit();
+        }
+        helper.assertValueEqual(simpleEnergy.getAmount(), 55L, "Simple energy committed amount");
+
+        ResourceStorage<ResourceVariant<Gas>> inputView = filledGas.restrictedTo(TransferSupport.INSERT_ONLY);
+        try (TransferTransaction transaction = TransferTransaction.openRoot()) {
+            helper.assertValueEqual(inputView.extract(gas, 1, transaction), 0L, "Restricted view extraction");
+        }
+        helper.assertTrue(filledGas.supportsExtraction(), "Restricted view changed backing storage policy");
 
         SimpleSingleSlotStorage<ResourceVariant<Item>> itemContainer =
             new SimpleSingleSlotStorage<>(ResourceTypes.ITEM, 64);

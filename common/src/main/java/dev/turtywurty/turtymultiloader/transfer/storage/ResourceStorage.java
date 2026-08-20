@@ -60,6 +60,13 @@ public interface ResourceStorage<V extends ResourceVariant<?>> extends Iterable<
         return new ResourceStorageView<>(this, index);
     }
 
+    /**
+     * Creates a live external view with transfer access narrowed to {@code restriction}.
+     */
+    default ResourceStorage<V> restrictedTo(TransferSupport restriction) {
+        return new RestrictedStorage<>(this, restriction);
+    }
+
     @Override
     default Iterator<ResourceStorageView<V>> iterator() {
         return new Iterator<>() {

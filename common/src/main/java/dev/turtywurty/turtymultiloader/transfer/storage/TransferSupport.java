@@ -21,4 +21,10 @@ public enum TransferSupport {
     public boolean supportsExtraction() {
         return this.extraction;
     }
+
+    public TransferSupport and(TransferSupport other) {
+        if (this.insertion && other.insertion)
+            return this.extraction && other.extraction ? BOTH : INSERT_ONLY;
+        return this.extraction && other.extraction ? EXTRACT_ONLY : NONE;
+    }
 }

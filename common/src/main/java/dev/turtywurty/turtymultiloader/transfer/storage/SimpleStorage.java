@@ -16,7 +16,7 @@ import java.util.function.Consumer;
  * General fixed-size storage with per-index capacity, validity, and access policy.
  */
 public class SimpleStorage<V extends ResourceVariant<?>> extends TransactionParticipant<List<SimpleStorage.Slot<V>>>
-    implements ResourceStorage<V> {
+    implements MutableResourceStorage<V> {
     private final ResourceType<?> resourceType;
     private final long[] capacities;
     private final TransferSupport[] support;
@@ -28,6 +28,13 @@ public class SimpleStorage<V extends ResourceVariant<?>> extends TransactionPart
     public SimpleStorage(ResourceType<?> resourceType, int size, long capacity) {
         this(resourceType, filled(size, capacity), filled(size, TransferSupport.BOTH), (index, resource) -> true, storage -> {
         });
+    }
+
+    /**
+     * Constructor for storages whose subclasses provide dynamic capacities through {@link #getCapacity(int, ResourceVariant)}.
+     */
+    public SimpleStorage(ResourceType<?> resourceType, int size) {
+        this(resourceType, size, 0);
     }
 
     public SimpleStorage(
@@ -78,7 +85,13 @@ public class SimpleStorage<V extends ResourceVariant<?>> extends TransactionPart
     @Override
     public long capacity(int index, V resource) {
         checkType(resource);
-        return isValid(index, resource) ? this.capacities[StoragePreconditions.index(index, size())] : 0;
+        index = StoragePreconditions.index(index, size());
+        if (!isValid(index, resource))
+            return 0;
+        long capacity = getCapacity(index, resource);
+        if (capacity < 0)
+            throw new IllegalStateException("Capacity must not be negative");
+        return capacity;
     }
 
     @Override
@@ -97,11 +110,19 @@ public class SimpleStorage<V extends ResourceVariant<?>> extends TransactionPart
         StoragePreconditions.check(resource, maxAmount);
         checkType(resource);
         index = StoragePreconditions.index(index, size());
+        return support(index).supportsInsertion() ? insertInternal(index, resource, maxAmount, transaction) : 0;
+    }
+
+    @Override
+    public long insertInternal(int index, V resource, long maxAmount, TransferContext transaction) {
+        StoragePreconditions.check(resource, maxAmount);
+        Objects.requireNonNull(transaction, "transaction");
+        checkType(resource);
+        index = StoragePreconditions.index(index, size());
         Slot<V> current = this.slots.get(index);
-        if (!support(index).supportsInsertion() || !isValid(index, resource)
-            || current.amount() > 0 && !current.resource().equals(resource))
+        if (!isValid(index, resource) || current.amount() > 0 && !current.resource().equals(resource))
             return 0;
-        long inserted = Math.min(maxAmount, Math.max(0, this.capacities[index] - current.amount()));
+        long inserted = Math.min(maxAmount, Math.max(0, capacity(index, resource) - current.amount()));
         if (inserted > 0) {
             updateSnapshots(transaction);
             this.slots.set(index, new Slot<>(resource, current.amount() + inserted));
@@ -114,8 +135,17 @@ public class SimpleStorage<V extends ResourceVariant<?>> extends TransactionPart
         StoragePreconditions.check(resource, maxAmount);
         checkType(resource);
         index = StoragePreconditions.index(index, size());
+        return support(index).supportsExtraction() ? extractInternal(index, resource, maxAmount, transaction) : 0;
+    }
+
+    @Override
+    public long extractInternal(int index, V resource, long maxAmount, TransferContext transaction) {
+        StoragePreconditions.check(resource, maxAmount);
+        Objects.requireNonNull(transaction, "transaction");
+        checkType(resource);
+        index = StoragePreconditions.index(index, size());
         Slot<V> current = this.slots.get(index);
-        if (!support(index).supportsExtraction() || current.amount() == 0 || !current.resource().equals(resource))
+        if (current.amount() == 0 || !current.resource().equals(resource))
             return 0;
         long extracted = Math.min(maxAmount, current.amount());
         if (extracted > 0) {
@@ -124,6 +154,25 @@ public class SimpleStorage<V extends ResourceVariant<?>> extends TransactionPart
             this.slots.set(index, new Slot<>(remaining == 0 ? null : current.resource(), remaining));
         }
         return extracted;
+    }
+
+    @Override
+    public boolean set(int index, V resource, long amount, TransferContext transaction) {
+        Objects.requireNonNull(resource, "resource");
+        if (amount < 0)
+            throw new IllegalArgumentException("Amount must not be negative: " + amount);
+        Objects.requireNonNull(transaction, "transaction");
+        checkType(resource);
+        index = StoragePreconditions.index(index, size());
+        if (amount > 0 && (resource.isBlank() || !isValid(index, resource) || amount > capacity(index, resource)))
+            return false;
+
+        Slot<V> replacement = new Slot<>(amount == 0 ? null : resource, amount);
+        if (!this.slots.get(index).equals(replacement)) {
+            updateSnapshots(transaction);
+            this.slots.set(index, replacement);
+        }
+        return true;
     }
 
     @Override
@@ -147,7 +196,33 @@ public class SimpleStorage<V extends ResourceVariant<?>> extends TransactionPart
         if (!originalState.equals(this.slots)) {
             this.version++;
             this.changeListener.accept(this);
+            onFinalCommit();
         }
+    }
+
+    /**
+     * Called once after a changed root transaction commits.
+     */
+    protected void onFinalCommit() {
+    }
+
+    /**
+     * Dynamic capacity hook. Subclasses may override this instead of supplying fixed constructor capacities.
+     */
+    protected long getCapacity(int index, V resource) {
+        return this.capacities[StoragePreconditions.index(index, size())];
+    }
+
+    protected final V getStoredResource(int index) {
+        return resource(index);
+    }
+
+    protected final long getStoredAmount(int index) {
+        return amount(index);
+    }
+
+    protected final boolean setStored(int index, V resource, long amount, TransferContext transaction) {
+        return set(index, resource, amount, transaction);
     }
 
     private Slot<V> slot(int index) {

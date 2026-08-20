@@ -76,6 +76,15 @@ public final class TestModNeoForge {
                 }
             }
         );
+        event.registerTest(
+            NeoForgeTransferGameTests.TEST_ID,
+            new FunctionGameTestInstance(BuiltinTestFunctions.ALWAYS_PASS, transferTestData) {
+                @Override
+                public void run(GameTestHelper helper) {
+                    NeoForgeTransferGameTests.verifyNestedTransaction(helper);
+                }
+            }
+        );
         var worldGenerationTestData = new TestData<>(environment, RegistryGameTests.EMPTY_STRUCTURE, 20, 0, true);
         event.registerTest(
             WorldGenerationGameTests.TEST_ID,

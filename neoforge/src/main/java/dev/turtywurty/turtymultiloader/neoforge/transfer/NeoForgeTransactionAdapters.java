@@ -57,7 +57,20 @@ public final class NeoForgeTransactionAdapters {
         if (existing != null)
             return existing;
 
-        NeoForgeContext result = new NeoForgeContext(neoforge, null, new IdentityHashMap<>());
+        NeoForgeContext parent = null;
+        Map<TransactionParticipant<?>, ParticipantBridge> participants = null;
+        int depth = neoforge.depth();
+        for (NeoForgeContext context : map.values()) {
+            // NeoForge only permits one transaction hierarchy per thread. Reuse the
+            // hierarchy's participant bridges so one journal owns all depth snapshots.
+            participants = context.participants;
+            if (context.depth() == depth - 1)
+                parent = context;
+        }
+        if (participants == null)
+            participants = new IdentityHashMap<>();
+
+        NeoForgeContext result = new NeoForgeContext(neoforge, parent, participants);
         map.put(neoforge, result);
         try {
             ContextCleanupJournal cleanup = new ContextCleanupJournal(() -> {

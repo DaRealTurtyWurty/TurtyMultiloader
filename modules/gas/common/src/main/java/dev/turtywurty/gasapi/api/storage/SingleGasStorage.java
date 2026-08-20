@@ -12,6 +12,13 @@ import java.util.Objects;
  * Neutral single-slot gas storage.
  */
 public class SingleGasStorage extends SimpleSingleSlotStorage<ResourceVariant<Gas>> {
+    /**
+     * Constructor for subclasses with a dynamic {@link #getCapacity(ResourceVariant) capacity}.
+     */
+    public SingleGasStorage() {
+        super(GasApi.RESOURCE_FAMILY.type());
+    }
+
     public SingleGasStorage(long capacity) {
         this(capacity, TransferSupport.BOTH, () -> {
         });
