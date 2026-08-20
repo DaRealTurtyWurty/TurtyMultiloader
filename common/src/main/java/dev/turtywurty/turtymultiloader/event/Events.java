@@ -71,6 +71,13 @@ public final class Events {
         EventService.get().onPlayerRespawn(require(callback));
     }
 
+    /**
+     * Registers a callback that runs after a server player has entered another dimension.
+     */
+    public static void onPlayerDimensionChange(PlayerDimensionChangeCallback callback) {
+        EventService.get().onPlayerDimensionChange(require(callback));
+    }
+
     public static void onBlockBroken(BlockBreakCallback callback) {
         EventService.get().onBlockBroken(require(callback));
     }

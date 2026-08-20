@@ -3,6 +3,7 @@ package dev.turtywurty.turtymultiloader.network;
 import dev.turtywurty.turtymultiloader.platform.LogicalSide;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.permissions.Permission;
@@ -48,6 +49,14 @@ public interface PayloadContext {
     void reply(CustomPacketPayload payload);
 
     void disconnect(Component reason);
+
+    /**
+     * Completes the named active server configuration task. Call this from the server handler for the client's
+     * acknowledgement payload. It is only valid for a serverbound payload in the configuration phase.
+     */
+    default void completeConfigurationTask(Identifier taskId) {
+        throw new IllegalStateException("Configuration tasks can only be completed by a serverbound configuration payload");
+    }
 
     /**
      * Schedules follow-up work on the same main game thread used for this context.

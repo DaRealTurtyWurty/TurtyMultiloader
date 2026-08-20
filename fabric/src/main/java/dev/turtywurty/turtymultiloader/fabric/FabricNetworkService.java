@@ -8,11 +8,14 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.network.ConfigurationTask;
+import net.minecraft.server.network.ServerConfigurationPacketListenerImpl;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
@@ -30,6 +33,7 @@ public final class FabricNetworkService implements NetworkService {
     private final List<Consumer<ServerPlayer>> disconnectCallbacks = new ArrayList<>();
     private final List<Runnable> clientJoinCallbacks = new ArrayList<>();
     private final List<Runnable> clientDisconnectCallbacks = new ArrayList<>();
+    private final Map<Identifier, ServerConfigurationTask> configurationTasks = new LinkedHashMap<>();
     private final List<LoginSyncProvider> loginSyncProviders = new ArrayList<>();
     private final Set<PayloadKey> clientProbes = new HashSet<>();
     private boolean serverEventsRegistered;
@@ -206,6 +210,15 @@ public final class FabricNetworkService implements NetworkService {
     }
 
     @Override
+    public synchronized void registerConfigurationTask(ServerConfigurationTask task) {
+        Objects.requireNonNull(task, "task");
+        Identifier id = Objects.requireNonNull(task.id(), "task.id()");
+        if (configurationTasks.putIfAbsent(id, task) != null)
+            throw new IllegalStateException("Configuration task " + id + " is already registered");
+        registerServerEvents();
+    }
+
+    @Override
     public synchronized void addLoginSync(LoginSyncProvider provider) {
         loginSyncProviders.add(Objects.requireNonNull(provider, "provider"));
         registerServerEvents();
@@ -221,8 +234,10 @@ public final class FabricNetworkService implements NetworkService {
                 listener.getPacketContext().orElseThrow(PacketContext.CONNECTION),
                 listener.getOwner()
             );
+            if (!validateServerRequired(PayloadPhase.CONFIGURATION, listener))
+                return;
             server.execute(() -> connectionCallbacks.forEach(callback -> callback.accept(connectionContext)));
-            validateServerRequired(PayloadPhase.CONFIGURATION, listener);
+            configurationTasks.forEach((id, task) -> addConfigurationTask(listener, connectionContext, task));
         });
         ServerPlayConnectionEvents.JOIN.register((listener, sender, server) -> {
             ServerPlayer player = listener.getPlayer();
@@ -234,6 +249,33 @@ public final class FabricNetworkService implements NetworkService {
         ServerPlayConnectionEvents.DISCONNECT.register((listener, server) ->
             disconnectCallbacks.forEach(callback -> callback.accept(listener.getPlayer()))
         );
+    }
+
+    private void addConfigurationTask(
+        ServerConfigurationPacketListenerImpl listener,
+        ServerConnectionContext connection,
+        ServerConfigurationTask task
+    ) {
+        ConfigurationTask.Type type = new ConfigurationTask.Type(task.id().toString());
+        ((FabricServerConfigurationPacketListenerImpl) listener).addTask(new ConfigurationTask() {
+            @Override
+            public void start(Consumer<Packet<?>> sender) {
+                FabricConfigurationTaskContext context = new FabricConfigurationTaskContext(
+                    connection, listener, sender, type
+                );
+                try {
+                    task.run(context);
+                } catch (RuntimeException exception) {
+                    context.fail(Component.literal("Configuration task " + task.id() + " failed"));
+                    throw exception;
+                }
+            }
+
+            @Override
+            public Type type() {
+                return type;
+            }
+        });
     }
 
     private void send(Iterable<ServerPlayer> players, CustomPacketPayload payload) {
@@ -279,7 +321,8 @@ public final class FabricNetworkService implements NetworkService {
                     context.player(),
                     context.responseSender()::sendPacket,
                     context.player().connection::disconnect,
-                    context.server()
+                    context.server(),
+                    null
                 )
             ));
         } else {
@@ -294,7 +337,19 @@ public final class FabricNetworkService implements NetworkService {
                     null,
                     context.responseSender()::sendPacket,
                     context.packetListener()::disconnect,
-                    context.server()
+                    context.server(),
+                    id -> {
+                        try {
+                            ((FabricServerConfigurationPacketListenerImpl) context.packetListener()).completeTask(
+                                new ConfigurationTask.Type(id.toString())
+                            );
+                        } catch (IllegalStateException exception) {
+                            context.packetListener().disconnect(Component.literal(
+                                "Invalid configuration task acknowledgement " + id
+                            ));
+                            throw exception;
+                        }
+                    }
                 );
                 context.server().execute(() -> handler.handle(payload, payloadContext));
             });
@@ -432,7 +487,8 @@ public final class FabricNetworkService implements NetworkService {
         ServerPlayer rawSender,
         Consumer<CustomPacketPayload> reply,
         Consumer<Component> disconnector,
-        Executor executor
+        Executor executor,
+        Consumer<Identifier> configurationTaskCompleter
     ) implements PayloadContext {
         @Override
         public Optional<MinecraftServer> server() {
@@ -460,8 +516,86 @@ public final class FabricNetworkService implements NetworkService {
         }
 
         @Override
+        public void completeConfigurationTask(Identifier taskId) {
+            if (configurationTaskCompleter == null)
+                PayloadContext.super.completeConfigurationTask(taskId);
+            configurationTaskCompleter.accept(Objects.requireNonNull(taskId, "taskId"));
+        }
+
+        @Override
         public CompletableFuture<Void> enqueueWork(Runnable work) {
             return CompletableFuture.runAsync(Objects.requireNonNull(work, "work"), executor);
+        }
+    }
+
+    private final class FabricConfigurationTaskContext implements ServerConfigurationTaskContext {
+        private final ServerConnectionContext connection;
+        private final ServerConfigurationPacketListenerImpl listener;
+        private final Consumer<Packet<?>> sender;
+        private final ConfigurationTask.Type type;
+        private boolean finished;
+
+        private FabricConfigurationTaskContext(
+            ServerConnectionContext connection,
+            ServerConfigurationPacketListenerImpl listener,
+            Consumer<Packet<?>> sender,
+            ConfigurationTask.Type type
+        ) {
+            this.connection = connection;
+            this.listener = listener;
+            this.sender = sender;
+            this.type = type;
+        }
+
+        @Override
+        public ServerConnectionContext connection() {
+            return connection;
+        }
+
+        @Override
+        public boolean canSend(CustomPacketPayload.Type<?> payloadType) {
+            Objects.requireNonNull(payloadType, "payloadType");
+            PayloadDeclaration<?, ?> declaration = declaration(PayloadPhase.CONFIGURATION, payloadType.id());
+            return declaration != null
+                && declaration.flow() != PayloadFlow.SERVERBOUND
+                && ServerConfigurationNetworking.canSend(listener, payloadType)
+                && ServerConfigurationNetworking.canSend(listener, declaration.probe().type());
+        }
+
+        @Override
+        public boolean send(CustomPacketPayload payload) {
+            Objects.requireNonNull(payload, "payload");
+            if (finished)
+                throw new IllegalStateException("Configuration task " + type + " is already finished");
+            PayloadDeclaration<?, ?> declaration = declaration(PayloadPhase.CONFIGURATION, payload.type().id());
+            if (declaration == null || declaration.flow() == PayloadFlow.SERVERBOUND)
+                throw new IllegalStateException("Payload " + payload.type().id()
+                    + " is not registered as a clientbound configuration payload");
+            if (!canSend(payload.type())) {
+                if (declaration.options().support() == PayloadSupport.OPTIONAL)
+                    return false;
+                fail(incompatible(declaration));
+                throw new IllegalStateException("The client does not accept required configuration payload "
+                    + payload.type().id());
+            }
+            sender.accept(ServerConfigurationNetworking.createClientboundPacket(payload));
+            return true;
+        }
+
+        @Override
+        public void complete() {
+            if (finished)
+                throw new IllegalStateException("Configuration task " + type + " is already finished");
+            finished = true;
+            ((FabricServerConfigurationPacketListenerImpl) listener).completeTask(type);
+        }
+
+        @Override
+        public void fail(Component reason) {
+            if (finished)
+                return;
+            finished = true;
+            listener.disconnect(Objects.requireNonNull(reason, "reason"));
         }
     }
 }

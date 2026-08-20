@@ -5,7 +5,6 @@ import dev.turtywurty.turtymultiloader.datagen.model.ModelGenerationContext.Mode
 import net.minecraft.data.CachedOutput;
 import net.minecraft.data.DataProvider;
 import net.minecraft.data.PackOutput;
-import net.minecraft.resources.Identifier;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -45,14 +44,9 @@ public final class FunctionalModelProvider implements DataProvider {
     private Path path(ModelResource resource) {
         return switch (resource.type()) {
             case BLOCK_STATE -> blockStates.json(resource.id());
-            case BLOCK_MODEL -> models.json(prefixed(resource.id(), "block/"));
-            case ITEM_MODEL -> models.json(prefixed(resource.id(), "item/"));
+            case BLOCK_MODEL, ITEM_MODEL -> models.json(resource.id());
             case ITEM_DEFINITION -> itemDefinitions.json(resource.id());
         };
-    }
-
-    private static Identifier prefixed(Identifier id, String prefix) {
-        return Identifier.fromNamespaceAndPath(id.getNamespace(), prefix + id.getPath());
     }
 
     @Override

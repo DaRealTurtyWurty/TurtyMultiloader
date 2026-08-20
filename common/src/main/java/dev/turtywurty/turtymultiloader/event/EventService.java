@@ -47,6 +47,8 @@ public interface EventService {
 
     void onPlayerRespawn(Consumer<ServerPlayer> callback);
 
+    void onPlayerDimensionChange(PlayerDimensionChangeCallback callback);
+
     void onBlockBroken(BlockBreakCallback callback);
 
     void onLivingDamaged(LivingDamageCallback callback);

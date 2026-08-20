@@ -51,7 +51,9 @@ loom {
             property('fabric-api.gametest.report-file', file('build/gametest-results.xml').absolutePath)
         }
         dataGeneration {
-            server()
+            // Vanilla's block and item model generators are client-environment classes.
+            // Fabric API supports datagen from its client bootstrap as well as the server one.
+            client()
             setConfigName('TurtyMultiloader Fabric Data Generation')
             ideConfigGenerated(true)
             runDir('runs/datagen')

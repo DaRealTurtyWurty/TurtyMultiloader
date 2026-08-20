@@ -126,6 +126,11 @@ public interface NetworkService {
 
     void onClientDisconnect(Runnable callback);
 
+    /**
+     * Registers an ordered server configuration task. Declarations must be made during mod initialization.
+     */
+    void registerConfigurationTask(ServerConfigurationTask task);
+
     void addLoginSync(LoginSyncProvider provider);
 
     final class ServiceHolder {

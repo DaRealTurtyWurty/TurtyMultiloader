@@ -56,6 +56,12 @@ public final class AttachmentGameTests {
             "Block entity attachment");
 
         var serverTarget = AttachmentTarget.server(helper.getLevel().getServer());
+        serverTarget.remove(TestModContent.TEST_COUNTER);
+        serverTarget.set(TestModContent.TEST_COUNTER, 18);
+        helper.assertValueEqual(serverTarget.get(TestModContent.TEST_COUNTER).orElseThrow(), 18,
+            "Server attachment using shared type");
+        helper.assertValueEqual(levelTarget.get(TestModContent.TEST_COUNTER).orElseThrow(), 7,
+            "Server-global attachment aliased the overworld level attachment");
         serverTarget.remove(TestModContent.TEST_GLOBAL_COUNTER);
         serverTarget.set(TestModContent.TEST_GLOBAL_COUNTER, 19);
         helper.assertValueEqual(serverTarget.get(TestModContent.TEST_GLOBAL_COUNTER).orElseThrow(), 19,
@@ -78,6 +84,7 @@ public final class AttachmentGameTests {
         entityTarget.remove(TestModContent.TEST_COUNTER);
         chunkTarget.remove(TestModContent.TEST_COUNTER);
         blockEntityTarget.remove(TestModContent.TEST_COUNTER);
+        serverTarget.remove(TestModContent.TEST_COUNTER);
         serverTarget.remove(TestModContent.TEST_GLOBAL_COUNTER);
         levelTarget.remove(TestModContent.TEST_COUNTER);
         helper.succeed();

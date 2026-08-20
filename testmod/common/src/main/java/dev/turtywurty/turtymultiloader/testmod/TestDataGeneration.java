@@ -78,13 +78,23 @@ public final class TestDataGeneration {
             models.blockModel(id("test_block"), JsonParser.parseString(
                 "{\"parent\":\"minecraft:block/cube_all\",\"textures\":{\"all\":\"minecraft:block/stone\"}}"
             ));
+            models.blockModel(id("block/test_prefixed"), JsonParser.parseString(
+                "{\"parent\":\"minecraft:block/cube_all\",\"textures\":{\"all\":\"minecraft:block/stone\"}}"
+            ));
             models.itemModel(id("test_item"), JsonParser.parseString(
+                "{\"parent\":\"minecraft:item/generated\",\"textures\":{\"layer0\":\"minecraft:item/iron_ingot\"}}"
+            ));
+            models.itemModel(id("item/test_prefixed"), JsonParser.parseString(
                 "{\"parent\":\"minecraft:item/generated\",\"textures\":{\"layer0\":\"minecraft:item/iron_ingot\"}}"
             ));
             models.itemDefinition(id("test_item"), JsonParser.parseString(
                 "{\"model\":{\"type\":\"minecraft:model\",\"model\":\"turtymultiloader_testmod:item/test_item\"}}"
             ));
         })
+        .vanillaModels((blocks, items) -> blocks.createParticleOnlyBlock(
+            TestModContent.TEST_LOG.get(),
+            Blocks.STONE
+        ))
         .lootTables(
             Set.of(TEST_LOOT_TABLE),
             List.of(new LootTableProvider.SubProviderEntry(

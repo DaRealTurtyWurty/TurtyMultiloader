@@ -111,6 +111,7 @@ public final class ConfigurationManager {
         network.registerClientHandler(PayloadPhase.PLAY, SYNC_TYPE, (payload, context) ->
             applySynchronization(payload)
         );
+        network.onClientDisconnect(this::clientDisconnected);
         handles.values().stream()
             .filter(handle -> handle.spec().scope() == ConfigScope.CLIENT)
             .forEach(handle -> handle.load(null, ConfigLifecycle.LOAD));
@@ -147,6 +148,20 @@ public final class ConfigurationManager {
             .filter(handle -> handle.spec().scope() == ConfigScope.SERVER && handle.isLoaded())
             .forEach(handle -> handle.save(server));
         activeServer = null;
+        clearServerConfigurations();
+    }
+
+    private synchronized void clientDisconnected() {
+        // An integrated server owns this manager too. If its disconnect event runs before the server-stop event,
+        // leave the value installed so serverStopping can persist it; serverStopping clears it afterwards.
+        if (activeServer == null)
+            clearServerConfigurations();
+    }
+
+    private void clearServerConfigurations() {
+        handles.values().stream()
+            .filter(handle -> handle.spec().scope() == ConfigScope.SERVER)
+            .forEach(Handle::unload);
     }
 
     private synchronized List<SyncPayload> synchronizedPayloads() {
@@ -463,6 +478,15 @@ public final class ConfigurationManager {
             value = decoded;
             loaded = true;
             spec.listener().accept(value, lifecycle);
+        }
+
+        private synchronized void unload() {
+            if (!loaded && resolvedPath == null)
+                return;
+            value = defaultValue();
+            loaded = false;
+            resolvedPath = null;
+            spec.listener().accept(value, ConfigLifecycle.UNLOAD);
         }
 
         private T decode(JsonElement json) {

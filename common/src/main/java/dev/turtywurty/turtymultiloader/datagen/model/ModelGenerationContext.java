@@ -17,12 +17,20 @@ public final class ModelGenerationContext {
         add(ModelResourceType.BLOCK_STATE, blockId, json);
     }
 
+    /**
+     * Adds a block model. The ID may be relative to the block model folder ({@code example}) or already use the
+     * conventional models-relative path ({@code block/example}).
+     */
     public void blockModel(Identifier modelId, JsonElement json) {
-        add(ModelResourceType.BLOCK_MODEL, modelId, json);
+        add(ModelResourceType.BLOCK_MODEL, prefixed(modelId, "block/"), json);
     }
 
+    /**
+     * Adds an item model. The ID may be relative to the item model folder ({@code example}) or already use the
+     * conventional models-relative path ({@code item/example}).
+     */
     public void itemModel(Identifier modelId, JsonElement json) {
-        add(ModelResourceType.ITEM_MODEL, modelId, json);
+        add(ModelResourceType.ITEM_MODEL, prefixed(modelId, "item/"), json);
     }
 
     /**
@@ -40,6 +48,13 @@ public final class ModelGenerationContext {
         ModelResource resource = new ModelResource(type, Objects.requireNonNull(id, "id"));
         if (resources.putIfAbsent(resource, Objects.requireNonNull(json, "json")) != null)
             throw new IllegalArgumentException("Duplicate generated model resource: " + resource);
+    }
+
+    private static Identifier prefixed(Identifier id, String prefix) {
+        Objects.requireNonNull(id, "id");
+        return id.getPath().startsWith(prefix)
+            ? id
+            : Identifier.fromNamespaceAndPath(id.getNamespace(), prefix + id.getPath());
     }
 
     public record ModelResource(ModelResourceType type, Identifier id) {

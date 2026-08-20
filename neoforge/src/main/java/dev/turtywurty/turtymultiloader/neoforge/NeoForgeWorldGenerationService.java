@@ -2,17 +2,20 @@ package dev.turtywurty.turtymultiloader.neoforge;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
+import dev.turtywurty.turtymultiloader.TurtyMultiloader;
 import dev.turtywurty.turtymultiloader.worldgen.BiomeSelectionContext;
 import dev.turtywurty.turtymultiloader.worldgen.BiomeSelector;
 import dev.turtywurty.turtymultiloader.worldgen.BuiltInDatapackActivation;
 import dev.turtywurty.turtymultiloader.worldgen.WorldGenerationService;
 import net.minecraft.core.Holder;
+import net.minecraft.core.HolderGetter;
 import net.minecraft.core.Registry;
-import net.minecraft.core.RegistryAccess;
 import net.minecraft.core.RegistrySetBuilder;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
+import net.minecraft.resources.RegistryOps;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.packs.PackType;
 import net.minecraft.server.packs.repository.Pack;
@@ -28,12 +31,19 @@ import net.neoforged.neoforge.common.world.BiomeModifier;
 import net.neoforged.neoforge.common.world.ModifiableBiomeInfo;
 import net.neoforged.neoforge.event.AddPackFindersEvent;
 import net.neoforged.neoforge.registries.DataPackRegistryEvent;
+import net.neoforged.neoforge.registries.DeferredHolder;
+import net.neoforged.neoforge.registries.DeferredRegister;
+import net.neoforged.neoforge.registries.NeoForgeRegistries;
 import org.jspecify.annotations.Nullable;
 
 import java.util.*;
 import java.util.function.Supplier;
 
 public final class NeoForgeWorldGenerationService implements WorldGenerationService {
+    private static final DeferredRegister<MapCodec<? extends BiomeModifier>> BIOME_MODIFIER_SERIALIZERS =
+        DeferredRegister.create(NeoForgeRegistries.Keys.BIOME_MODIFIER_SERIALIZERS, TurtyMultiloader.MOD_ID);
+    private static final DeferredHolder<MapCodec<? extends BiomeModifier>, MapCodec<CodeBiomeModifier>>
+        CODE_BIOME_MODIFIER = BIOME_MODIFIER_SERIALIZERS.register("code", () -> CodeBiomeModifier.CODEC);
     private static volatile NeoForgeWorldGenerationService instance;
     private static volatile boolean bound;
 
@@ -59,6 +69,7 @@ public final class NeoForgeWorldGenerationService implements WorldGenerationServ
         if (bound)
             throw new IllegalStateException("NeoForge world-generation service is already bound to a mod event bus");
         bound = true;
+        BIOME_MODIFIER_SERIALIZERS.register(modBus);
         modBus.addListener(NeoForgeWorldGenerationService::handleDatapackRegistries);
         modBus.addListener(NeoForgeWorldGenerationService::handlePackFinders);
     }
@@ -175,33 +186,6 @@ public final class NeoForgeWorldGenerationService implements WorldGenerationServ
         ));
     }
 
-    /**
-     * Called by the NeoForge mixin immediately before native datapack biome modifiers are applied.
-     */
-    public static List<BiomeModifier> appendCodeModifiers(
-        List<BiomeModifier> datapackModifiers,
-        RegistryAccess registryAccess
-    ) {
-        NeoForgeWorldGenerationService service = instance;
-        if (service == null)
-            return datapackModifiers;
-        return service.createModifierList(datapackModifiers, registryAccess);
-    }
-
-    private synchronized List<BiomeModifier> createModifierList(
-        List<BiomeModifier> datapackModifiers,
-        RegistryAccess registryAccess
-    ) {
-        if (biomeModifications.isEmpty())
-            return datapackModifiers;
-        List<BiomeModifier> combined = new ArrayList<>(datapackModifiers.size() + biomeModifications.size());
-        combined.addAll(datapackModifiers);
-        biomeModifications.stream()
-            .map(declaration -> declaration.create(registryAccess))
-            .forEach(combined::add);
-        return List.copyOf(combined);
-    }
-
     private void addModification(BiomeModificationDeclaration declaration) {
         biomeModifications.add(declaration);
     }
@@ -288,7 +272,12 @@ public final class NeoForgeWorldGenerationService implements WorldGenerationServ
     }
 
     private sealed interface BiomeModificationDeclaration permits FeatureDeclaration, SpawnDeclaration {
-        BiomeModifier create(RegistryAccess registryAccess);
+        void modify(
+            Holder<Biome> biome,
+            BiomeModifier.Phase phase,
+            ModifiableBiomeInfo.BiomeInfo.Builder builder,
+            HolderGetter<PlacedFeature> placedFeatures
+        );
     }
 
     private record FeatureDeclaration(
@@ -299,10 +288,20 @@ public final class NeoForgeWorldGenerationService implements WorldGenerationServ
         boolean remove
     ) implements BiomeModificationDeclaration {
         @Override
-        public BiomeModifier create(RegistryAccess registryAccess) {
-            Holder<PlacedFeature> featureHolder = registryAccess.lookupOrThrow(Registries.PLACED_FEATURE)
-                .getOrThrow(feature);
-            return new CodeFeatureModifier(selector, step, featureHolder, remove);
+        public void modify(
+            Holder<Biome> biome,
+            BiomeModifier.Phase phase,
+            ModifiableBiomeInfo.BiomeInfo.Builder builder,
+            HolderGetter<PlacedFeature> placedFeatures
+        ) {
+            BiomeModifier.Phase expectedPhase = remove ? BiomeModifier.Phase.REMOVE : BiomeModifier.Phase.ADD;
+            if (phase != expectedPhase || !selector.test(selectionContext(biome)))
+                return;
+            Holder<PlacedFeature> featureHolder = placedFeatures.getOrThrow(feature);
+            if (remove)
+                builder.getGenerationSettings().getFeatures(step).removeIf(featureHolder::equals);
+            else
+                builder.getGenerationSettings().addFeature(step, featureHolder);
         }
     }
 
@@ -317,71 +316,56 @@ public final class NeoForgeWorldGenerationService implements WorldGenerationServ
         boolean remove
     ) implements BiomeModificationDeclaration {
         @Override
-        public BiomeModifier create(RegistryAccess registryAccess) {
+        public void modify(
+            Holder<Biome> biome,
+            BiomeModifier.Phase phase,
+            ModifiableBiomeInfo.BiomeInfo.Builder builder,
+            HolderGetter<PlacedFeature> placedFeatures
+        ) {
+            BiomeModifier.Phase expectedPhase = remove ? BiomeModifier.Phase.REMOVE : BiomeModifier.Phase.ADD;
+            if (phase != expectedPhase || !selector.test(selectionContext(biome)))
+                return;
             EntityType<?> type = Objects.requireNonNull(entityType.get(), "entityType supplier result");
             if (!remove && type.getCategory() != category) {
                 throw new IllegalArgumentException(
                     "Entity category " + type.getCategory() + " does not match requested category " + category
                 );
             }
-            return new CodeSpawnModifier(selector, category, type, weight, minimumGroupSize, maximumGroupSize, remove);
-        }
-    }
-
-    private record CodeFeatureModifier(
-        BiomeSelector selector,
-        GenerationStep.Decoration step,
-        Holder<PlacedFeature> feature,
-        boolean remove
-    ) implements BiomeModifier {
-        @Override
-        public void modify(Holder<Biome> biome, Phase phase, ModifiableBiomeInfo.BiomeInfo.Builder builder) {
-            Phase expectedPhase = remove ? Phase.REMOVE : Phase.ADD;
-            if (phase != expectedPhase || !selector.test(selectionContext(biome)))
-                return;
-            if (remove)
-                builder.getGenerationSettings().getFeatures(step).removeIf(feature::equals);
-            else
-                builder.getGenerationSettings().addFeature(step, feature);
-        }
-
-        @Override
-        public MapCodec<? extends BiomeModifier> codec() {
-            return MapCodec.unit(this);
-        }
-    }
-
-    private record CodeSpawnModifier(
-        BiomeSelector selector,
-        @Nullable MobCategory category,
-        EntityType<?> entityType,
-        int weight,
-        int minimumGroupSize,
-        int maximumGroupSize,
-        boolean remove
-    ) implements BiomeModifier {
-        @Override
-        public void modify(Holder<Biome> biome, Phase phase, ModifiableBiomeInfo.BiomeInfo.Builder builder) {
-            Phase expectedPhase = remove ? Phase.REMOVE : Phase.ADD;
-            if (phase != expectedPhase || !selector.test(selectionContext(biome)))
-                return;
             if (remove) {
                 for (MobCategory mobCategory : MobCategory.values()) {
                     builder.getMobSpawnSettings().getSpawner(mobCategory)
-                        .removeIf(spawner -> spawner.value().type() == entityType);
+                        .removeIf(spawner -> spawner.value().type() == type);
                 }
             } else {
                 builder.getMobSpawnSettings().addSpawn(
                     Objects.requireNonNull(category),
                     weight,
-                    new MobSpawnSettings.SpawnerData(entityType, minimumGroupSize, maximumGroupSize)
+                    new MobSpawnSettings.SpawnerData(type, minimumGroupSize, maximumGroupSize)
+                );
+            }
+        }
+    }
+
+    private record CodeBiomeModifier(HolderGetter<PlacedFeature> placedFeatures) implements BiomeModifier {
+        private static final MapCodec<CodeBiomeModifier> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
+            RegistryOps.<PlacedFeature, CodeBiomeModifier>retrieveGetter(Registries.PLACED_FEATURE)
+        ).apply(instance, CodeBiomeModifier::new));
+
+        @Override
+        public void modify(Holder<Biome> biome, Phase phase, ModifiableBiomeInfo.BiomeInfo.Builder builder) {
+            NeoForgeWorldGenerationService service = instance;
+            if (service == null)
+                return;
+            synchronized (service) {
+                service.biomeModifications.forEach(declaration ->
+                    declaration.modify(biome, phase, builder, placedFeatures)
                 );
             }
         }
 
         @Override
         public MapCodec<? extends BiomeModifier> codec() {
-            return MapCodec.unit(this);
+            return CODE_BIOME_MODIFIER.get();
         }
     }
 

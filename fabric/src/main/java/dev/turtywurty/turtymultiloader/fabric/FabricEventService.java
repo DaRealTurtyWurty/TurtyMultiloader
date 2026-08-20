@@ -4,7 +4,9 @@ import com.mojang.brigadier.CommandDispatcher;
 import dev.turtywurty.turtymultiloader.event.BlockBreakCallback;
 import dev.turtywurty.turtymultiloader.event.EventService;
 import dev.turtywurty.turtymultiloader.event.LivingDamageCallback;
+import dev.turtywurty.turtymultiloader.event.PlayerDimensionChangeCallback;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
+import net.fabricmc.fabric.api.entity.event.v1.ServerEntityLevelChangeEvents;
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLevelEvents;
@@ -88,6 +90,12 @@ public final class FabricEventService implements EventService {
         ServerPlayerEvents.AFTER_RESPAWN.register((oldPlayer, newPlayer, alive) ->
             require(callback).accept(newPlayer)
         );
+    }
+
+    @Override
+    public void onPlayerDimensionChange(PlayerDimensionChangeCallback callback) {
+        require(callback);
+        ServerEntityLevelChangeEvents.AFTER_PLAYER_CHANGE_LEVEL.register(callback::afterDimensionChange);
     }
 
     @Override

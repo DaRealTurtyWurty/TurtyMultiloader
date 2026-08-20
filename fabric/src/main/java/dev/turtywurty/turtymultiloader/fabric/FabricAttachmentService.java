@@ -6,6 +6,7 @@ import dev.turtywurty.turtymultiloader.attachment.AttachmentType;
 import net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry;
 import net.fabricmc.fabric.api.attachment.v1.GlobalAttachmentsProvider;
 import net.minecraft.resources.Identifier;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -20,7 +21,6 @@ import java.util.function.Consumer;
 public final class FabricAttachmentService implements AttachmentService {
     private final Map<AttachmentType<?>, net.fabricmc.fabric.api.attachment.v1.AttachmentType<?>> types =
         new IdentityHashMap<>();
-    private final Map<Object, AttachmentTarget> globalTargets = new IdentityHashMap<>();
 
     @Override
     public synchronized <T> AttachmentType<T> register(
@@ -37,7 +37,7 @@ public final class FabricAttachmentService implements AttachmentService {
                 nativeBuilder.copyOnDeath();
             type.streamCodec().ifPresent(codec -> nativeBuilder.syncWith(
                 codec,
-                (holder, player) -> type.syncPredicate().orElseThrow().test(wrap(holder), player)
+                (holder, player) -> type.syncPredicate().orElseThrow().test(wrap(holder, player), player)
             ));
         });
         types.put(type, nativeType);
@@ -79,28 +79,29 @@ public final class FabricAttachmentService implements AttachmentService {
     }
 
     private net.fabricmc.fabric.api.attachment.v1.AttachmentTarget nativeTarget(AttachmentTarget target) {
-        if (target.kind() == AttachmentTarget.Kind.SERVER) {
-            var holder = ((GlobalAttachmentsProvider) target.value()).globalAttachments();
-            synchronized (this) {
-                globalTargets.put(holder, target);
-            }
-            return holder;
-        }
+        if (target.kind() == AttachmentTarget.Kind.SERVER)
+            return ((GlobalAttachmentsProvider) target.value()).globalAttachments();
         return (net.fabricmc.fabric.api.attachment.v1.AttachmentTarget) target.value();
     }
 
-    private AttachmentTarget wrap(net.fabricmc.fabric.api.attachment.v1.AttachmentTarget holder) {
-        synchronized (this) {
-            AttachmentTarget global = globalTargets.get(holder);
-            if (global != null)
-                return global;
-        }
+    private static AttachmentTarget wrap(
+        net.fabricmc.fabric.api.attachment.v1.AttachmentTarget holder,
+        net.minecraft.server.level.ServerPlayer recipient
+    ) {
         return switch (holder) {
             case Entity entity -> AttachmentTarget.entity(entity);
             case BlockEntity blockEntity -> AttachmentTarget.blockEntity(blockEntity);
             case ChunkAccess chunk -> AttachmentTarget.chunk(chunk);
             case Level level -> AttachmentTarget.level(level);
-            default -> throw new IllegalArgumentException("Unsupported Fabric attachment target " + holder.getClass());
+            // Fabric's server-global attachment holder is deliberately opaque. The synchronization callback always
+            // has a server-side recipient, which gives us the owning server without retaining it in a global map.
+            default -> {
+                var server = ((ServerLevel) recipient.level()).getServer();
+                Object globalHolder = ((GlobalAttachmentsProvider) server).globalAttachments();
+                if (holder != globalHolder)
+                    throw new IllegalArgumentException("Unsupported Fabric attachment target " + holder.getClass());
+                yield AttachmentTarget.server(server);
+            }
         };
     }
 

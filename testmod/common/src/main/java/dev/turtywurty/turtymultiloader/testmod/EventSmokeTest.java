@@ -33,6 +33,8 @@ public final class EventSmokeTest {
         });
         Events.onPlayerRespawn(player -> {
         });
+        Events.onPlayerDimensionChange((player, origin, destination) -> {
+        });
         Events.onBlockBroken((level, player, pos, state, blockEntity) -> {
         });
         Events.onLivingDamaged((entity, source, damageTaken) -> {

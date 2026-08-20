@@ -12,6 +12,7 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerChunkCache;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.network.ConfigurationTask;
 import net.minecraft.server.network.ServerConfigurationPacketListenerImpl;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
@@ -23,8 +24,10 @@ import net.neoforged.neoforge.client.network.ClientPacketDistributor;
 import net.neoforged.neoforge.client.network.event.RegisterClientPayloadHandlersEvent;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.common.extensions.ICommonPacketListener;
+import net.neoforged.neoforge.common.extensions.IServerConfigurationPacketListenerExtension;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
+import net.neoforged.neoforge.network.configuration.ICustomConfigurationTask;
 import net.neoforged.neoforge.network.event.RegisterConfigurationTasksEvent;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
@@ -45,6 +48,7 @@ public final class NeoForgeNetworkService implements NetworkService {
     private final List<Consumer<ServerPlayer>> disconnectCallbacks = new ArrayList<>();
     private final List<Runnable> clientJoinCallbacks = new ArrayList<>();
     private final List<Runnable> clientDisconnectCallbacks = new ArrayList<>();
+    private final Map<Identifier, ServerConfigurationTask> configurationTasks = new LinkedHashMap<>();
     private final List<LoginSyncProvider> loginSyncProviders = new ArrayList<>();
 
     public static synchronized void bind(IEventBus bus) {
@@ -227,6 +231,14 @@ public final class NeoForgeNetworkService implements NetworkService {
     }
 
     @Override
+    public synchronized void registerConfigurationTask(ServerConfigurationTask task) {
+        Objects.requireNonNull(task, "task");
+        Identifier id = Objects.requireNonNull(task.id(), "task.id()");
+        if (configurationTasks.putIfAbsent(id, task) != null)
+            throw new IllegalStateException("Configuration task " + id + " is already registered");
+    }
+
+    @Override
     public synchronized void addLoginSync(LoginSyncProvider provider) {
         loginSyncProviders.add(Objects.requireNonNull(provider, "provider"));
     }
@@ -282,7 +294,40 @@ public final class NeoForgeNetworkService implements NetworkService {
             commonListener.getConnection(),
             listener.getOwner()
         );
+        configurationTasks.values().forEach(task -> event.register(createConfigurationTask(
+            task, listener, commonListener, context
+        )));
         server.execute(() -> connectionCallbacks.forEach(callback -> callback.accept(context)));
+    }
+
+    private ICustomConfigurationTask createConfigurationTask(
+        ServerConfigurationTask task,
+        ServerConfigurationPacketListenerImpl listener,
+        ICommonPacketListener commonListener,
+        ServerConnectionContext connection
+    ) {
+        ConfigurationTask.Type type = new ConfigurationTask.Type(task.id());
+        return new ICustomConfigurationTask() {
+            @Override
+            public void run(Consumer<CustomPacketPayload> sender) {
+                NeoForgeConfigurationTaskContext context = new NeoForgeConfigurationTaskContext(
+                    connection, listener, commonListener, sender, type
+                );
+                try {
+                    task.run(context);
+                } catch (RuntimeException exception) {
+                    context.fail(net.minecraft.network.chat.Component.literal(
+                        "Configuration task " + task.id() + " failed"
+                    ));
+                    throw exception;
+                }
+            }
+
+            @Override
+            public Type type() {
+                return type;
+            }
+        };
     }
 
     private void onPlayerJoin(PlayerEvent.PlayerLoggedInEvent event) {
@@ -358,8 +403,101 @@ public final class NeoForgeNetworkService implements NetworkService {
         }
 
         @Override
+        public void completeConfigurationTask(Identifier taskId) {
+            if (phase != PayloadPhase.CONFIGURATION || receptionSide != LogicalSide.SERVER)
+                PayloadContext.super.completeConfigurationTask(taskId);
+            Identifier checkedTaskId = Objects.requireNonNull(taskId, "taskId");
+            try {
+                delegate.finishCurrentTask(new ConfigurationTask.Type(checkedTaskId));
+            } catch (RuntimeException exception) {
+                delegate.disconnect(net.minecraft.network.chat.Component.literal(
+                    "Invalid configuration task acknowledgement " + checkedTaskId
+                ));
+                throw exception;
+            }
+        }
+
+        @Override
         public java.util.concurrent.CompletableFuture<Void> enqueueWork(Runnable work) {
             return delegate.enqueueWork(Objects.requireNonNull(work, "work"));
+        }
+    }
+
+    private final class NeoForgeConfigurationTaskContext implements ServerConfigurationTaskContext {
+        private final ServerConnectionContext connection;
+        private final ServerConfigurationPacketListenerImpl listener;
+        private final ICommonPacketListener commonListener;
+        private final Consumer<CustomPacketPayload> sender;
+        private final ConfigurationTask.Type type;
+        private boolean finished;
+
+        private NeoForgeConfigurationTaskContext(
+            ServerConnectionContext connection,
+            ServerConfigurationPacketListenerImpl listener,
+            ICommonPacketListener commonListener,
+            Consumer<CustomPacketPayload> sender,
+            ConfigurationTask.Type type
+        ) {
+            this.connection = connection;
+            this.listener = listener;
+            this.commonListener = commonListener;
+            this.sender = sender;
+            this.type = type;
+        }
+
+        @Override
+        public ServerConnectionContext connection() {
+            return connection;
+        }
+
+        @Override
+        public boolean canSend(CustomPacketPayload.Type<?> payloadType) {
+            Objects.requireNonNull(payloadType, "payloadType");
+            PayloadDeclaration<?, ?> declaration = payloads.get(payloadType.id());
+            return declaration != null
+                && declaration.phase() == PayloadPhase.CONFIGURATION
+                && declaration.flow() != PayloadFlow.SERVERBOUND
+                && commonListener.hasChannel(payloadType);
+        }
+
+        @Override
+        public boolean send(CustomPacketPayload payload) {
+            Objects.requireNonNull(payload, "payload");
+            if (finished)
+                throw new IllegalStateException("Configuration task " + type + " is already finished");
+            PayloadDeclaration<?, ?> declaration = payloads.get(payload.type().id());
+            if (declaration == null || declaration.phase() != PayloadPhase.CONFIGURATION
+                || declaration.flow() == PayloadFlow.SERVERBOUND)
+                throw new IllegalStateException("Payload " + payload.type().id()
+                    + " is not registered as a clientbound configuration payload");
+            if (!canSend(payload.type())) {
+                if (declaration.options().support() == PayloadSupport.OPTIONAL)
+                    return false;
+                fail(net.minecraft.network.chat.Component.literal(
+                    "Incompatible network payload " + declaration.type().id()
+                        + " (required protocol " + declaration.options().protocolVersion() + ")"
+                ));
+                throw new IllegalStateException("The client does not accept required configuration payload "
+                    + payload.type().id());
+            }
+            sender.accept(payload);
+            return true;
+        }
+
+        @Override
+        public void complete() {
+            if (finished)
+                throw new IllegalStateException("Configuration task " + type + " is already finished");
+            finished = true;
+            ((IServerConfigurationPacketListenerExtension) listener).finishCurrentTask(type);
+        }
+
+        @Override
+        public void fail(net.minecraft.network.chat.Component reason) {
+            if (finished)
+                return;
+            finished = true;
+            commonListener.disconnect(Objects.requireNonNull(reason, "reason"));
         }
     }
 }

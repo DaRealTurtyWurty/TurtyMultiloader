@@ -9,5 +9,9 @@ public enum ConfigLifecycle {
     SAVE,
     SET,
     COMMAND,
-    SYNCHRONIZE
+    SYNCHRONIZE,
+    /**
+     * The active server value was removed because the server stopped or the client disconnected.
+     */
+    UNLOAD
 }

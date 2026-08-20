@@ -4,17 +4,19 @@ import com.mojang.brigadier.CommandDispatcher;
 import dev.turtywurty.turtymultiloader.event.BlockBreakCallback;
 import dev.turtywurty.turtymultiloader.event.EventService;
 import dev.turtywurty.turtymultiloader.event.LivingDamageCallback;
+import dev.turtywurty.turtymultiloader.event.PlayerDimensionChangeCallback;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.LivingEntity;
+import net.neoforged.bus.api.EventPriority;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.OnDatapackSyncEvent;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
-import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
+import net.neoforged.neoforge.event.entity.living.LivingDropsEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.level.BlockDropsEvent;
 import net.neoforged.neoforge.event.level.LevelEvent;
@@ -44,6 +46,8 @@ public final class NeoForgeEventService implements EventService {
     private final CopyOnWriteArrayList<Consumer<ServerPlayer>> playerJoinCallbacks = new CopyOnWriteArrayList<>();
     private final CopyOnWriteArrayList<Consumer<ServerPlayer>> playerDisconnectCallbacks = new CopyOnWriteArrayList<>();
     private final CopyOnWriteArrayList<Consumer<ServerPlayer>> playerRespawnCallbacks = new CopyOnWriteArrayList<>();
+    private final CopyOnWriteArrayList<PlayerDimensionChangeCallback> playerDimensionChangeCallbacks =
+        new CopyOnWriteArrayList<>();
     private final CopyOnWriteArrayList<BlockBreakCallback> blockBreakCallbacks = new CopyOnWriteArrayList<>();
     private final CopyOnWriteArrayList<LivingDamageCallback> livingDamageCallbacks = new CopyOnWriteArrayList<>();
     private final CopyOnWriteArrayList<BiConsumer<LivingEntity, DamageSource>> livingKillCallbacks =
@@ -68,9 +72,13 @@ public final class NeoForgeEventService implements EventService {
         bus.addListener(PlayerEvent.PlayerLoggedInEvent.class, this::handlePlayerJoin);
         bus.addListener(PlayerEvent.PlayerLoggedOutEvent.class, this::handlePlayerDisconnect);
         bus.addListener(PlayerEvent.PlayerRespawnEvent.class, this::handlePlayerRespawn);
+        bus.addListener(PlayerEvent.PlayerChangedDimensionEvent.class, this::handlePlayerDimensionChange);
         bus.addListener(BlockDropsEvent.class, this::handleBlockDrops);
         bus.addListener(LivingDamageEvent.Post.class, this::handleLivingDamage);
-        bus.addListener(LivingDeathEvent.class, this::handleLivingDeath);
+        // LivingDeathEvent can still be cancelled by a later listener. LivingDropsEvent is reached only after the
+        // death has been accepted; receiving cancelled drop events is intentional because cancelling drops does not
+        // cancel the death itself.
+        bus.addListener(EventPriority.LOWEST, true, LivingDropsEvent.class, this::handleLivingDrops);
         bus.addListener(RegisterCommandsEvent.class, this::handleCommandRegistration);
         bus.addListener(OnDatapackSyncEvent.class, this::handleDatapackSync);
     }
@@ -138,6 +146,11 @@ public final class NeoForgeEventService implements EventService {
     @Override
     public void onPlayerRespawn(Consumer<ServerPlayer> callback) {
         playerRespawnCallbacks.add(require(callback));
+    }
+
+    @Override
+    public void onPlayerDimensionChange(PlayerDimensionChangeCallback callback) {
+        playerDimensionChangeCallbacks.add(require(callback));
     }
 
     @Override
@@ -224,6 +237,19 @@ public final class NeoForgeEventService implements EventService {
             playerRespawnCallbacks.forEach(callback -> callback.accept(player));
     }
 
+    private void handlePlayerDimensionChange(PlayerEvent.PlayerChangedDimensionEvent event) {
+        if (!(event.getEntity() instanceof ServerPlayer player))
+            return;
+        MinecraftServer server = ((ServerLevel) player.level()).getServer();
+        ServerLevel origin = server.getLevel(event.getFrom());
+        ServerLevel destination = server.getLevel(event.getTo());
+        if (origin == null || destination == null)
+            return;
+        playerDimensionChangeCallbacks.forEach(callback ->
+            callback.afterDimensionChange(player, origin, destination)
+        );
+    }
+
     private void handleBlockDrops(BlockDropsEvent event) {
         if (!(event.getBreaker() instanceof ServerPlayer player))
             return;
@@ -246,7 +272,7 @@ public final class NeoForgeEventService implements EventService {
         ));
     }
 
-    private void handleLivingDeath(LivingDeathEvent event) {
+    private void handleLivingDrops(LivingDropsEvent event) {
         if (event.getEntity().level().isClientSide())
             return;
         livingKillCallbacks.forEach(callback -> callback.accept(event.getEntity(), event.getSource()));

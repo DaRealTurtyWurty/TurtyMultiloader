@@ -19,6 +19,7 @@ import dev.turtywurty.turtymultiloader.menu.Menus;
 import dev.turtywurty.turtymultiloader.menu.sync.MenuSyncChannel;
 import dev.turtywurty.turtymultiloader.network.NetworkService;
 import dev.turtywurty.turtymultiloader.network.PayloadRegistrationOptions;
+import dev.turtywurty.turtymultiloader.network.ServerConfigurationTask;
 import dev.turtywurty.turtymultiloader.registration.CustomRegistry;
 import dev.turtywurty.turtymultiloader.registration.QueuedValue;
 import dev.turtywurty.turtymultiloader.registration.RegistrationHandle;
@@ -85,7 +86,13 @@ public final class TestModContent {
     );
     public static final AttachmentType<Integer> TEST_GLOBAL_COUNTER = Attachments.register(
         id("test_global_counter"),
-        builder -> builder.defaultFactory(() -> 0).persistent(Codec.INT)
+        builder -> builder.defaultFactory(() -> 0)
+            .persistent(Codec.INT)
+            .syncWith(ByteBufCodecs.VAR_INT, (target, player) -> {
+                if (target.kind() != dev.turtywurty.turtymultiloader.attachment.AttachmentTarget.Kind.SERVER)
+                    throw new IllegalStateException("Server attachment sync predicate received " + target.kind());
+                return true;
+            })
     );
     public static final AttachmentType<Integer> TEST_OWNER_COUNTER = Attachments.register(
         id("test_owner_counter"),
@@ -177,6 +184,10 @@ public final class TestModContent {
             PayloadRegistrationOptions.required("1")
         );
         NETWORK.addLoginSync(player -> List.of(new TestPayload(42)));
+        NETWORK.registerConfigurationTask(new ServerConfigurationTask(
+            id("immediate_configuration"),
+            context -> context.complete()
+        ));
         TRANSFERS.registerBlockProvider(StorageKeys.ITEM, (level, pos, state, blockEntity, side) -> TEST_ITEM_STORAGE,
             TEST_LOG);
         TRANSFERS.registerItemProvider(StorageKeys.ITEM, context -> TEST_ITEM_STORAGE, TEST_LOG_ITEM);

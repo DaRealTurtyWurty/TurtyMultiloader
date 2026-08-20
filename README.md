@@ -60,13 +60,15 @@ beneath the game directory.
 
 `Events` is the common callback facade. It covers server start/stop, level load/unload, server and level tick
 boundaries,
-player join/disconnect/respawn, successful player block breaks, post-damage/death, command registration, and successful
+player join/disconnect/respawn/dimension change, successful player block breaks, post-damage/death, command
+registration, and successful
 datapack reloads. Callback arguments are vanilla types, and observational callbacks do not expose either loader's event
 objects:
 
 ```java
 Events.onLevelLoad(level -> WorldPipeNetworks.getOrCreate(level));
 Events.onStartLevelTick(level -> pipeNetworks(level).forEach(network -> network.tick(level)));
+Events.onPlayerDimensionChange((player, origin, destination) -> resendLevelState(player, destination));
 Events.onBlockBroken((level, player, pos, state, blockEntity) -> removeFluidPocket(level, pos));
 Events.onLivingDamaged((entity, source, damageTaken) -> afterDamage(entity, source));
 Events.onCommandRegistration(dispatcher -> dispatcher.register(createIndustriaCommand()));
@@ -154,6 +156,8 @@ if (IndustriaConfigs.server().rubberTrees()) {
 `Events.onServerStarting`; on a remote client, the same handle becomes the server-synchronized value when the login
 packet arrives. Code that must run specifically when a value becomes active should use the spec's `onChange` callback
 and inspect `ConfigLifecycle`. `isLoaded()` distinguishes an installed file/network value from the pre-load default.
+When the server stops or a remote client disconnects, every `SERVER` handle returns to its default, becomes unloaded,
+and notifies its listener with `ConfigLifecycle.UNLOAD`, so values cannot leak into the next connection.
 
 For immutable record configs, replace the record to change a setting. `setAndSave` validates, writes, and synchronizes
 in one operation:
@@ -309,10 +313,10 @@ WorldGeneration.addSpawn(
 ```
 
 Selectors can match keys, tags, namespaces, existing placed/configured features, or compose custom predicates with
-`and`, `or`, and `negate`. Feature removal and entity-spawn removal are also available. On NeoForge, native datapack
-biome modifiers run first in each phase and code declarations retain their declaration order. For NeoForge-only static
-changes, prefer normal files under `data/<namespace>/neoforge/biome_modifier/`; do not also declare the same change in
-code.
+`and`, `or`, and `negate`. Feature removal and entity-spawn removal are also available. On NeoForge, code declarations
+are applied by a standard datapack biome modifier and retain their declaration order. Their position relative to other
+datapack modifiers follows NeoForge's biome-modifier registry ordering. For NeoForge-only static changes, prefer normal
+files under `data/<namespace>/neoforge/biome_modifier/`; do not also declare the same change in code.
 
 Custom registries whose entries are loaded from datapacks can be server-only or synchronized. Registration belongs in
 common initialization, before the loaders' registry events:
@@ -355,6 +359,7 @@ public static final DataGenerationSpec DATA = DataGeneration.spec(Industria.MOD_
     .entityTypeTags(IndustriaTags::generateEntityTypes)
     .language("en_us", IndustriaLanguage::generate)
     .models(IndustriaModels::generate)
+    .vanillaModels(IndustriaModels::generateTyped)
     .damageTypes(IndustriaDamageTypes::bootstrap)
     .worldGeneration(Registries.CONFIGURED_FEATURE, ConfiguredFeatureInit::bootstrap)
     .worldGeneration(Registries.PLACED_FEATURE, PlacedFeatureInit::bootstrap)
@@ -362,8 +367,12 @@ public static final DataGenerationSpec DATA = DataGeneration.spec(Industria.MOD_
 ```
 
 Tag callbacks receive a public vanilla `TagAppender<ResourceKey<T>, T>`. A tag for any other registry can be added with
-`tags(registryKey, callback)`. Model callbacks can declare `blockState`, `blockModel`, `itemModel`, and the modern
-`itemDefinition`; each accepts a vanilla `Identifier` and Gson `JsonElement`. Use
+`tags(registryKey, callback)`. Raw model callbacks can declare `blockState`, `blockModel`, `itemModel`, and the modern
+`itemDefinition`; each accepts a vanilla `Identifier` and Gson `JsonElement`. `blockModel` and `itemModel` accept either
+a short path such as `machine` or an already conventional `block/machine` or `item/machine` path; an existing prefix
+is never added twice. `vanillaModels((blocks, items) -> ...)` supplies common code with fully wired vanilla
+`BlockModelGenerators` and `ItemModelGenerators`, including blockstate, model, item-definition, and item-copy output.
+Use
 `provider(DataGenerationSide.CLIENT/SERVER, factory)` when a specialized vanilla provider is more appropriate.
 
 Convention tags never require Fabric or NeoForge imports in common source. `ConventionTags.item("ingots/tin")` and
@@ -397,7 +406,9 @@ modBus.addListener(GatherDataEvent.Server.class,
 ```
 
 NeoForge's client and server runs must use separate output roots so one hash cache cannot remove the other run's
-files. Add both roots to the main resources source set. Fabric has one combined run and one output root.
+files. Add both roots to the main resources source set. Fabric has one combined run and one output root. Configure
+that Loom run with `client()` when the spec uses `vanillaModels(...)`: vanilla's model generators are client-environment
+classes, and Fabric API's client datagen bootstrap runs the same combined providers before normal client startup.
 
 Existing bootstraps registered through `WorldGeneration.registerBootstrap(...)` can be included with
 `registeredWorldGeneration()`. The Fabric entrypoint must still pass the spec to `addRegistryBootstraps`; the NeoForge
@@ -559,6 +570,31 @@ NETWORK.addLoginSync(player -> List.of(
 Login sync providers run in registration order after the server join callbacks. Unsupported optional payloads are
 filtered per player. Networking declarations do not use `RegistryService.apply()`; Fabric registers them immediately
 and NeoForge consumes them from `RegisterPayloadHandlersEvent`.
+
+Configuration-phase work that must finish before the player enters the world uses an ordered server task. Register
+the request as a clientbound configuration payload and its acknowledgement as a serverbound configuration payload,
+then complete the named task from the acknowledgement handler:
+
+```java
+private static final Identifier RULES_TASK = id("rules_task");
+
+NETWORK.registerConfigurationClientbound(RulesPayload.TYPE, RulesPayload.CODEC,
+    PayloadRegistrationOptions.required("1"));
+NETWORK.registerConfigurationServerbound(RulesAcceptedPayload.TYPE, RulesAcceptedPayload.CODEC,
+    PayloadRegistrationOptions.required("1"),
+    (payload, context) -> context.completeConfigurationTask(RULES_TASK));
+
+NETWORK.registerConfigurationTask(new ServerConfigurationTask(RULES_TASK, context ->
+    context.send(createRulesPayload(context.connection().profile()))
+));
+```
+
+The client handler applies the request and calls `context.reply(new RulesAcceptedPayload())`. Configuration packets
+are ordered, so the acknowledgement is sent after that handler runs. The task waits until `complete()` or
+`completeConfigurationTask(...)` is called. `send(...)` rejects undeclared or wrongly-directed payloads, disconnects
+for an unsupported required payload, and returns `false` for an unsupported optional payload; an optional task can
+call `complete()` when there is nothing to send. `fail(Component)` disconnects explicitly. Both loaders install these
+as native configuration tasks rather than emulating the wait after the player joins.
 
 ### Data attachments and saved state
 

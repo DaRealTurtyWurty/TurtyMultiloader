@@ -1,9 +1,6 @@
 package dev.turtywurty.turtymultiloader.datagen;
 
-import dev.turtywurty.turtymultiloader.datagen.provider.FunctionalLanguageProvider;
-import dev.turtywurty.turtymultiloader.datagen.provider.FunctionalModelProvider;
-import dev.turtywurty.turtymultiloader.datagen.provider.FunctionalRecipeProvider;
-import dev.turtywurty.turtymultiloader.datagen.provider.FunctionalTagsProvider;
+import dev.turtywurty.turtymultiloader.datagen.provider.*;
 import dev.turtywurty.turtymultiloader.worldgen.WorldGeneration;
 import net.minecraft.core.Registry;
 import net.minecraft.core.RegistrySetBuilder;
@@ -54,6 +51,16 @@ public final class DataGenerationSpec {
                 DataGenerationSide.CLIENT,
                 context -> new FunctionalModelProvider(context.output(), models ->
                     modelGenerators.forEach(generator -> generator.generate(models))
+                )
+            ));
+        }
+        if (!builder.vanillaModelGenerators.isEmpty()) {
+            List<FunctionalVanillaModelProvider.ModelGenerator> modelGenerators =
+                List.copyOf(builder.vanillaModelGenerators);
+            composedProviders.add(new ProviderDeclaration(
+                DataGenerationSide.CLIENT,
+                context -> new FunctionalVanillaModelProvider(context.output(), (blocks, items) ->
+                    modelGenerators.forEach(generator -> generator.generate(blocks, items))
                 )
             ));
         }
@@ -175,6 +182,7 @@ public final class DataGenerationSpec {
         private final Map<String, List<FunctionalLanguageProvider.LanguageGenerator>> languageGenerators =
             new LinkedHashMap<>();
         private final List<FunctionalModelProvider.ModelGenerator> modelGenerators = new ArrayList<>();
+        private final List<FunctionalVanillaModelProvider.ModelGenerator> vanillaModelGenerators = new ArrayList<>();
         private final Set<ResourceKey<LootTable>> lootRequiredTables = new LinkedHashSet<>();
         private final List<SubProviderEntry> lootSubProviders = new ArrayList<>();
         private final List<RegistryBootstrapDeclaration<?>> registryBootstraps = new ArrayList<>();
@@ -238,6 +246,14 @@ public final class DataGenerationSpec {
         public Builder models(FunctionalModelProvider.ModelGenerator generator) {
             Objects.requireNonNull(generator, "generator");
             modelGenerators.add(generator);
+            return this;
+        }
+
+        /**
+         * Adds typed model declarations using vanilla's block and item model generators.
+         */
+        public Builder vanillaModels(FunctionalVanillaModelProvider.ModelGenerator generator) {
+            vanillaModelGenerators.add(Objects.requireNonNull(generator, "generator"));
             return this;
         }
 
