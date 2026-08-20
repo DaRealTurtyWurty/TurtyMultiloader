@@ -5,13 +5,7 @@ import net.minecraft.world.inventory.ContainerData;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.function.Consumer;
-import java.util.function.DoubleConsumer;
-import java.util.function.DoubleSupplier;
-import java.util.function.IntConsumer;
-import java.util.function.IntSupplier;
-import java.util.function.LongConsumer;
-import java.util.function.LongSupplier;
+import java.util.function.*;
 
 /**
  * Builds vanilla {@link ContainerData} views, including lossless long and double values split across two slots.

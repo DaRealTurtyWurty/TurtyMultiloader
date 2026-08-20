@@ -2,7 +2,6 @@ package dev.turtywurty.turtymultiloader.neoforge;
 
 import dev.turtywurty.turtymultiloader.menu.client.ClientMenuService;
 import dev.turtywurty.turtymultiloader.menu.client.MenuScreenFactory;
-import net.minecraft.client.gui.screens.MenuScreens;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.MenuAccess;
 import net.minecraft.world.inventory.AbstractContainerMenu;

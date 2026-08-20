@@ -2,11 +2,7 @@ package dev.turtywurty.turtymultiloader.testmod.fabric;
 
 import dev.turtywurty.turtymultiloader.fabric.transfer.FabricMutableItemContext;
 import dev.turtywurty.turtymultiloader.fabric.transfer.FabricResourceAdapters;
-import dev.turtywurty.turtymultiloader.testmod.AttachmentGameTests;
-import dev.turtywurty.turtymultiloader.testmod.MenuGameTests;
-import dev.turtywurty.turtymultiloader.testmod.RegistryGameTests;
-import dev.turtywurty.turtymultiloader.testmod.TestModContent;
-import dev.turtywurty.turtymultiloader.testmod.TransferGameTests;
+import dev.turtywurty.turtymultiloader.testmod.*;
 import dev.turtywurty.turtymultiloader.transfer.lookup.BlockStorageCache;
 import dev.turtywurty.turtymultiloader.transfer.lookup.StorageItemContext;
 import dev.turtywurty.turtymultiloader.transfer.lookup.StorageKeys;

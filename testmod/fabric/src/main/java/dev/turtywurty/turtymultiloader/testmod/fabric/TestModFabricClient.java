@@ -1,11 +1,11 @@
 package dev.turtywurty.turtymultiloader.testmod.fabric;
 
-import dev.turtywurty.turtymultiloader.network.PayloadPhase;
 import dev.turtywurty.turtymultiloader.menu.client.ClientMenus;
+import dev.turtywurty.turtymultiloader.network.PayloadPhase;
 import dev.turtywurty.turtymultiloader.testmod.ClientEventSmokeTest;
 import dev.turtywurty.turtymultiloader.testmod.ClientRegistrationSmokeTest;
-import dev.turtywurty.turtymultiloader.testmod.TestModContent;
 import dev.turtywurty.turtymultiloader.testmod.TestMenuScreen;
+import dev.turtywurty.turtymultiloader.testmod.TestModContent;
 import net.fabricmc.api.ClientModInitializer;
 
 public final class TestModFabricClient implements ClientModInitializer {

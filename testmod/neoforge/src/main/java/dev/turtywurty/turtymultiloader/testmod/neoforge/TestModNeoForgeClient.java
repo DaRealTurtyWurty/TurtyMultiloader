@@ -1,11 +1,11 @@
 package dev.turtywurty.turtymultiloader.testmod.neoforge;
 
-import dev.turtywurty.turtymultiloader.network.PayloadPhase;
 import dev.turtywurty.turtymultiloader.menu.client.ClientMenus;
+import dev.turtywurty.turtymultiloader.network.PayloadPhase;
 import dev.turtywurty.turtymultiloader.testmod.ClientEventSmokeTest;
 import dev.turtywurty.turtymultiloader.testmod.ClientRegistrationSmokeTest;
-import dev.turtywurty.turtymultiloader.testmod.TestModContent;
 import dev.turtywurty.turtymultiloader.testmod.TestMenuScreen;
+import dev.turtywurty.turtymultiloader.testmod.TestModContent;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.fml.common.Mod;
 
