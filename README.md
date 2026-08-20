@@ -248,6 +248,73 @@ WorldGeneration.registerBuiltInDatapack(
 Use `ALWAYS_ENABLED` only when disabling the pack would make the mod invalid. `NORMAL` leaves it disabled until the
 user selects it.
 
+### Data generation
+
+`DataGenerationSpec` keeps provider declarations in common code. It supports vanilla recipe callbacks and loot-table
+subproviders, key-based block/item/fluid/entity (or arbitrary registry) tags, language files, raw blockstate/model/item
+JSON, arbitrary vanilla `DataProvider` factories, and dynamic-registry bootstraps. Damage types and world generation
+are typed conveniences over the dynamic-registry path.
+
+```java
+private static final ConventionTag<Item> TIN_INGOTS = ConventionTags.item("ingots/tin");
+
+public static final DataGenerationSpec DATA = DataGeneration.spec(Industria.MOD_ID)
+    .recipes(IndustriaRecipes::generate)
+    .lootTables(Set.of(), IndustriaLootTables.SUB_PROVIDERS)
+    .blockTags(IndustriaTags::generateBlocks)
+    .itemTags((registries, tags) -> tags.tag(TIN_INGOTS).add(ModItems.TIN_INGOT.key()))
+    .fluidTags(IndustriaTags::generateFluids)
+    .entityTypeTags(IndustriaTags::generateEntityTypes)
+    .language("en_us", IndustriaLanguage::generate)
+    .models(IndustriaModels::generate)
+    .damageTypes(IndustriaDamageTypes::bootstrap)
+    .worldGeneration(Registries.CONFIGURED_FEATURE, ConfiguredFeatureInit::bootstrap)
+    .worldGeneration(Registries.PLACED_FEATURE, PlacedFeatureInit::bootstrap)
+    .build();
+```
+
+Tag callbacks receive a public vanilla `TagAppender<ResourceKey<T>, T>`. A tag for any other registry can be added with
+`tags(registryKey, callback)`. Model callbacks can declare `blockState`, `blockModel`, `itemModel`, and the modern
+`itemDefinition`; each accepts a vanilla `Identifier` and Gson `JsonElement`. Use
+`provider(DataGenerationSide.CLIENT/SERVER, factory)` when a specialized vanilla provider is more appropriate.
+
+Convention tags never require Fabric or NeoForge imports in common source. `ConventionTags.item("ingots/tin")` and
+the block/fluid/entity equivalents describe the logical `c:` tag, while `ConventionTags.mapped(...)` can describe a
+convention whose Fabric and common spellings differ. Calling `ConventionTag.key()` or using it in a tag callback asks
+the loader service for the correct key. This also means recipe code can use `TIN_INGOTS.key()` without leaking Fabric
+tag constants into common code.
+
+Fabric uses a normal data-generator entrypoint:
+
+```java
+public final class IndustriaFabricDataGeneration implements DataGeneratorEntrypoint {
+    public void onInitializeDataGenerator(FabricDataGenerator generator) {
+        FabricDataGeneration.run(generator, IndustriaDataGeneration.DATA);
+    }
+
+    public void buildRegistry(RegistrySetBuilder builder) {
+        DataGeneration.addRegistryBootstraps(IndustriaDataGeneration.DATA, builder);
+    }
+}
+```
+
+Register that class under the `fabric-datagen` entrypoint. On NeoForge 26.1, client and server generation are separate
+events; bind both on the consuming mod's event bus:
+
+```java
+modBus.addListener(GatherDataEvent.Client.class,
+    event -> NeoForgeDataGeneration.run(event, IndustriaDataGeneration.DATA));
+modBus.addListener(GatherDataEvent.Server.class,
+    event -> NeoForgeDataGeneration.run(event, IndustriaDataGeneration.DATA));
+```
+
+NeoForge's client and server runs must use separate output roots so one hash cache cannot remove the other run's
+files. Add both roots to the main resources source set. Fabric has one combined run and one output root.
+
+Existing bootstraps registered through `WorldGeneration.registerBootstrap(...)` can be included with
+`registeredWorldGeneration()`. The Fabric entrypoint must still pass the spec to `addRegistryBootstraps`; the NeoForge
+server runner performs that step itself.
+
 ### Menus and screens
 
 `Menus` registers extended menu types without exposing Fabric's `ExtendedMenuType` or NeoForge's container factory.
@@ -570,10 +637,10 @@ Optional integrations are registered as lazy factories through `OptionalModInteg
 `registerClient(...)`. A factory is instantiated only when its required mod is loaded. Register client integrations from
 client initialization code so their optional client API references are never linked on a dedicated server.
 
-To run data generation for NeoForge:
+To run the library's split data-generation configurations for NeoForge:
 
 ```shell
-./gradlew :neoforge:runData
+./gradlew :neoforge:runData :neoforge:runServerData
 ```
 
 ## Test mod
@@ -583,12 +650,15 @@ The `testmod-fabric` and `testmod-neoforge` Gradle projects are real consumer mo
 API, compile and register every common/client event bridge, verify registries and holders, and exercise transactions,
 serialization, sided/combined and indexed views, component-bearing item/fluid resources, optional gas/slurry module
 resources and codecs, units,
-post-apply provider declarations, and Team Reborn energy in a running dedicated test server. These projects produce
+post-apply provider declarations, Team Reborn energy, and loader-native data generation in a running dedicated test
+server. These projects produce
 separate test-mod artifacts and are not packaged into either library artifact.
 
 ```shell
 ./gradlew :testmod-fabric:runGameTest
 ./gradlew :testmod-neoforge:runGameTest
+./gradlew :testmod-fabric:runDataGeneration
+./gradlew :testmod-neoforge:runData :testmod-neoforge:runServerData
 ```
 
 The test projects depend on the loader library projects, never the reverse. They do not apply the publishing

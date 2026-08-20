@@ -38,6 +38,15 @@ loom {
             property('fabric-api.gametest', 'true')
             property('fabric-api.gametest.report-file', file('build/gametest-results.xml').absolutePath)
         }
+        dataGeneration {
+            server()
+            setConfigName('TurtyMultiloader Fabric Data Generation')
+            ideConfigGenerated(true)
+            runDir('runs/datagen')
+            property('fabric-api.datagen', 'true')
+            property('fabric-api.datagen.modid', 'turtymultiloader_testmod')
+            property('fabric-api.datagen.output-dir', file('build/generated-data').absolutePath)
+        }
     }
 }
 

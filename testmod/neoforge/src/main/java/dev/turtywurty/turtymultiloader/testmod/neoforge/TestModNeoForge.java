@@ -1,6 +1,7 @@
 package dev.turtywurty.turtymultiloader.testmod.neoforge;
 
 import dev.turtywurty.turtymultiloader.registration.RegistryService;
+import dev.turtywurty.turtymultiloader.neoforge.datagen.NeoForgeDataGeneration;
 import dev.turtywurty.turtymultiloader.testmod.*;
 import dev.turtywurty.turtymultiloader.transfer.TransferService;
 import net.minecraft.gametest.framework.*;
@@ -8,6 +9,7 @@ import net.minecraft.resources.Identifier;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.neoforge.event.RegisterGameTestsEvent;
+import net.neoforged.neoforge.data.event.GatherDataEvent;
 
 @Mod(TestModContent.MOD_ID)
 public final class TestModNeoForge {
@@ -21,6 +23,12 @@ public final class TestModNeoForge {
         TransferService.get().apply();
 
         modBus.addListener(RegisterGameTestsEvent.class, TestModNeoForge::registerGameTests);
+        modBus.addListener(GatherDataEvent.Client.class, event ->
+            NeoForgeDataGeneration.run(event, TestDataGeneration.SPEC)
+        );
+        modBus.addListener(GatherDataEvent.Server.class, event ->
+            NeoForgeDataGeneration.run(event, TestDataGeneration.SPEC)
+        );
     }
 
     private static void registerGameTests(RegisterGameTestsEvent event) {

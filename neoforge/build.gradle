@@ -25,7 +25,17 @@ neoForge {
             programArguments.addAll(
                 '--mod', project.mod_id,
                 '--all',
-                '--output', file('src/generated/resources/').absolutePath,
+                '--output', file('src/generated/client/').absolutePath,
+                '--existing', file('src/main/resources/').absolutePath
+            )
+        }
+        serverData {
+            serverData()
+            gameDirectory = mkdir(file('runs/serverData'))
+            programArguments.addAll(
+                '--mod', project.mod_id,
+                '--all',
+                '--output', file('src/generated/server/').absolutePath,
                 '--existing', file('src/main/resources/').absolutePath
             )
         }
@@ -42,7 +52,10 @@ neoForge {
     }
 }
 
-sourceSets.main.resources { srcDir 'src/generated/resources' }
+sourceSets.main.resources {
+    srcDir 'src/generated/client'
+    srcDir 'src/generated/server'
+}
 
 def loaderAttribute = Attribute.of('io.github.mcgradleconventions.loader', String)
 ['apiElements', 'runtimeElements', 'sourcesElements', 'javadocElements'].each { variant ->

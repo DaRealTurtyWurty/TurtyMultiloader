@@ -34,6 +34,28 @@ neoForge {
             gameDirectory = file('runs/gametest')
             systemProperty('neoforge.enabledGameTestNamespaces', 'turtymultiloader_testmod')
         }
+        data {
+            clientData()
+            ideName = 'TurtyMultiloader NeoForge Data Generation'
+            gameDirectory = file('runs/datagen')
+            programArguments.addAll(
+                '--mod', 'turtymultiloader_testmod',
+                '--all',
+                '--output', file('build/generated-client-data').absolutePath,
+                '--existing', file('src/main/resources').absolutePath
+            )
+        }
+        serverData {
+            serverData()
+            ideName = 'TurtyMultiloader NeoForge Server Data Generation'
+            gameDirectory = file('runs/serverDatagen')
+            programArguments.addAll(
+                '--mod', 'turtymultiloader_testmod',
+                '--all',
+                '--output', file('build/generated-server-data').absolutePath,
+                '--existing', file('src/main/resources').absolutePath
+            )
+        }
     }
 
     mods {

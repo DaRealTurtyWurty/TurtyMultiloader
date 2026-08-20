@@ -13,6 +13,9 @@
         ],
         "fabric-gametest": [
             "dev.turtywurty.turtymultiloader.testmod.fabric.TestModFabricGameTests"
+        ],
+        "fabric-datagen": [
+            "dev.turtywurty.turtymultiloader.testmod.fabric.TestModFabricDataGeneration"
         ]
     },
     "depends": {
