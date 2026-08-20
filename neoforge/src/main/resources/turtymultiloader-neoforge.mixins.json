@@ -1,6 +1,9 @@
 {
     "required": true,
     "package": "dev.turtywurty.turtymultiloader.neoforge.mixin",
+    "mixins": [
+        "world.ModifiableBiomeInfoMixin"
+    ],
     "client": [
         "client.LevelChunkMixin"
     ],

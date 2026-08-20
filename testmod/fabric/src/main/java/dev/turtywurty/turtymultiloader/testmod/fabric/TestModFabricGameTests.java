@@ -43,6 +43,11 @@ public final class TestModFabricGameTests {
     }
 
     @GameTest(structure = "minecraft:empty")
+    public void worldGenerationService(GameTestHelper helper) {
+        WorldGenerationGameTests.verifyWorldGenerationService(helper);
+    }
+
+    @GameTest(structure = "minecraft:empty")
     public void teamRebornEnergy(GameTestHelper helper) {
         BlockPos relative = new BlockPos(1, 1, 1);
         helper.setBlock(relative, TestModContent.TEST_LOG.get());

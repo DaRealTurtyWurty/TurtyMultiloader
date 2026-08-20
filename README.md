@@ -175,6 +175,79 @@ data components, consume effects, position sources, world-generation features, c
 and flammability. `register(...)` accepts any vanilla `ResourceKey<? extends Registry<R>>`, and
 `customRegistry(...)` creates custom registries whose entries use the same handles.
 
+### World generation
+
+`WorldGeneration` covers the loader lifecycle around datapack registries, built-in datapacks, data-generator
+bootstraps, and the small set of biome changes which must be expressed in code. Configured features, placed features,
+biome tags, and other vanilla world-generation objects should remain ordinary resources wherever possible.
+
+Industria's configured and placed feature bootstraps can be declared in common initialization and collected by either
+loader's data generator:
+
+```java
+WorldGeneration.registerBootstrap(Registries.CONFIGURED_FEATURE, ConfiguredFeatureInit::bootstrap);
+WorldGeneration.registerBootstrap(Registries.PLACED_FEATURE, PlacedFeatureInit::bootstrap);
+
+// In the loader data-generator callback:
+WorldGeneration.addBootstraps(registryBuilder);
+```
+
+Multiple declarations for the same registry are composed in registration order. The registration only describes data
+generation; runtime configured/placed features still come from the generated datapack resources.
+
+Biome tags are the preferred selection mechanism. When a cross-loader insertion genuinely needs code—for example,
+because Fabric has no equivalent data resource or the predicate comes from configuration—the same declaration works
+on both loaders:
+
+```java
+BiomeSelector overworld = BiomeSelectors.tag(BiomeTags.IS_OVERWORLD);
+
+WorldGeneration.addFeature(
+    id("bauxite_ore"),
+    overworld,
+    GenerationStep.Decoration.UNDERGROUND_ORES,
+    PlacedFeatureInit.BAUXITE_ORE
+);
+
+WorldGeneration.addSpawn(
+    id("example_spawn"),
+    BiomeSelectors.includeByKey(Biomes.PLAINS),
+    MobCategory.CREATURE,
+    () -> EntityType.COW,
+    10,
+    2,
+    4
+);
+```
+
+Selectors can match keys, tags, namespaces, existing placed/configured features, or compose custom predicates with
+`and`, `or`, and `negate`. Feature removal and entity-spawn removal are also available. On NeoForge, native datapack
+biome modifiers run first in each phase and code declarations retain their declaration order. For NeoForge-only static
+changes, prefer normal files under `data/<namespace>/neoforge/biome_modifier/`; do not also declare the same change in
+code.
+
+Custom registries whose entries are loaded from datapacks can be server-only or synchronized. Registration belongs in
+common initialization, before the loaders' registry events:
+
+```java
+WorldGeneration.registerDatapackRegistry(RESEARCH_KEY, Research.CODEC);
+WorldGeneration.registerSyncedDatapackRegistry(MATERIAL_KEY, Material.CODEC, Material.NETWORK_CODEC);
+```
+
+Optional or forced built-in datapacks live at `resourcepacks/<id path>` in the owning mod JAR. The identifier namespace
+must be the owning mod ID:
+
+```java
+WorldGeneration.registerBuiltInDatapack(
+    id("classic_ores"),
+    Component.translatable("pack.industria.classic_ores"),
+    BuiltInDatapackActivation.DEFAULT_ENABLED
+);
+```
+
+Use `ALWAYS_ENABLED` only when disabling the pack would make the mod invalid. `NORMAL` leaves it disabled until the
+user selects it.
+
 ### Menus and screens
 
 `Menus` registers extended menu types without exposing Fabric's `ExtendedMenuType` or NeoForge's container factory.

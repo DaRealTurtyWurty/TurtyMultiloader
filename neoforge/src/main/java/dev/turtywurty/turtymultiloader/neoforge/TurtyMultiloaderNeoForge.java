@@ -13,6 +13,7 @@ public final class TurtyMultiloaderNeoForge {
         NeoForgeRegistryService.bind(modBus);
         NeoForgeNetworkService.bind(modBus);
         NeoForgeTransferService.bind(modBus);
+        NeoForgeWorldGenerationService.bind(modBus);
         CommonMod.init();
         TransferService.get().apply();
     }

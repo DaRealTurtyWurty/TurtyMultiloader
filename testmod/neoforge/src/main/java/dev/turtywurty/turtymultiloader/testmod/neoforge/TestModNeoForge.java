@@ -13,6 +13,7 @@ import net.neoforged.neoforge.event.RegisterGameTestsEvent;
 public final class TestModNeoForge {
     public TestModNeoForge(IEventBus modBus) {
         EventSmokeTest.register();
+        WorldGenerationGameTests.register();
         TestModContent.initialize();
         RegistryService.get().apply();
         TransferService.get().apply();
@@ -64,6 +65,16 @@ public final class TestModNeoForge {
                 @Override
                 public void run(GameTestHelper helper) {
                     TransferGameTests.verifyTransferService(helper);
+                }
+            }
+        );
+        var worldGenerationTestData = new TestData<>(environment, RegistryGameTests.EMPTY_STRUCTURE, 20, 0, true);
+        event.registerTest(
+            WorldGenerationGameTests.TEST_ID,
+            new FunctionGameTestInstance(BuiltinTestFunctions.ALWAYS_PASS, worldGenerationTestData) {
+                @Override
+                public void run(GameTestHelper helper) {
+                    WorldGenerationGameTests.verifyWorldGenerationService(helper);
                 }
             }
         );
