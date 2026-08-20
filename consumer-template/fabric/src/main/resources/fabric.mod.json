@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "id": "${mod_id}",
+  "version": "${version}",
+  "name": "${mod_name}",
+  "description": "${mod_description}",
+  "authors": ["${mod_author}"],
+  "license": "${mod_license}",
+  "environment": "*",
+  "entrypoints": {
+    "main": ["com.example.examplemod.fabric.ExampleFabric"],
+    "client": ["com.example.examplemod.fabric.ExampleFabricClient"],
+    "fabric-datagen": ["com.example.examplemod.fabric.ExampleFabricDataGeneration"]
+  },
+  "accessWidener": "examplemod.accesswidener",
+  "depends": {
+    "fabricloader": ">=${fabric_loader_version}",
+    "fabric-api": ">=${fabric_api_version}",
+    "minecraft": "~${minecraft_version}",
+    "turtymultiloader": ">=${turtymultiloader_version}"
+  }
+}
+

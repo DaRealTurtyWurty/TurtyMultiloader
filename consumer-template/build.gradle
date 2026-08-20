@@ -1,0 +1,28 @@
+plugins {
+    id 'base'
+    id 'net.fabricmc.fabric-loom' version '1.15.5' apply false
+    id 'net.neoforged.moddev' version '2.0.141' apply false
+}
+
+allprojects {
+    group = mod_group
+    version = mod_version
+
+    repositories {
+        maven {
+            name = 'TurtyMultiloader'
+            url = rootProject.uri(providers.gradleProperty('turtymultiloaderRepository').get())
+        }
+        mavenCentral()
+    }
+}
+
+tasks.named('check') {
+    dependsOn(
+        ':common:check',
+        ':fabric:build',
+        ':fabric:verifyNestedLibraries',
+        ':neoforge:build',
+        ':neoforge:verifyJarJarLibraries'
+    )
+}

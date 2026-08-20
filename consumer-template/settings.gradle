@@ -1,0 +1,51 @@
+pluginManagement {
+    repositories {
+        gradlePluginPortal()
+        mavenCentral()
+        exclusiveContent {
+            forRepository {
+                maven {
+                    name = 'Fabric'
+                    url = uri('https://maven.fabricmc.net')
+                }
+            }
+            filter {
+                includeGroupAndSubgroups('net.fabricmc')
+            }
+        }
+    }
+}
+
+plugins {
+    id 'org.gradle.toolchains.foojay-resolver-convention' version '1.0.0'
+}
+
+rootProject.name = 'turtymultiloader-consumer-template'
+include('common', 'fabric', 'neoforge')
+
+// Opt into source substitution with -PturtymultiloaderSource=../TurtyMultiloader.
+// Explicit rules are required because the source project names differ from its published artifact IDs.
+def sourceBuild = providers.gradleProperty('turtymultiloaderSource').orNull
+if (sourceBuild != null && !sourceBuild.isBlank()) {
+    def libraryGroup = providers.gradleProperty('turtymultiloader_group').get()
+    def minecraftVersion = providers.gradleProperty('minecraft_version').get()
+    includeBuild(sourceBuild) {
+        dependencySubstitution {
+            [
+                common          : "turtymultiloader-common-${minecraftVersion}",
+                fabric          : "turtymultiloader-fabric-${minecraftVersion}",
+                neoforge        : "turtymultiloader-neoforge-${minecraftVersion}",
+                'gas-common'    : "turtymultiloader-gas-common-${minecraftVersion}",
+                'gas-fabric'    : "turtymultiloader-gas-fabric-${minecraftVersion}",
+                'gas-neoforge'  : "turtymultiloader-gas-neoforge-${minecraftVersion}",
+                'slurry-common' : "turtymultiloader-slurry-common-${minecraftVersion}",
+                'slurry-fabric' : "turtymultiloader-slurry-fabric-${minecraftVersion}",
+                'slurry-neoforge': "turtymultiloader-slurry-neoforge-${minecraftVersion}"
+            ].each { projectPath, artifact ->
+                substitute(module("${libraryGroup}:${artifact}"))
+                    .using(project(":${projectPath}"))
+            }
+        }
+    }
+}
+

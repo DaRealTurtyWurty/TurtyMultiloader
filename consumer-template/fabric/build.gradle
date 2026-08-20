@@ -1,0 +1,130 @@
+plugins {
+    id 'java-library'
+    id 'net.fabricmc.fabric-loom'
+}
+
+base {
+    archivesName = "${mod_id}-fabric-${minecraft_version}"
+}
+
+java {
+    toolchain.languageVersion = JavaLanguageVersion.of(java_version)
+}
+
+sourceSets.main.java.srcDir('../common/src/main/java')
+sourceSets.main.resources.srcDirs(
+    '../common/src/main/resources',
+    '../common/src/generated/resources'
+)
+
+def library = { String artifact ->
+    "${turtymultiloader_group}:${artifact}-${minecraft_version}:${turtymultiloader_version}"
+}
+
+def loaderAttribute = Attribute.of('io.github.mcgradleconventions.loader', String)
+configurations.register('turtymultiloaderTransitiveProbe') {
+    canBeConsumed = false
+    canBeResolved = true
+    attributes {
+        attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage, Usage.JAVA_RUNTIME))
+        attribute(Category.CATEGORY_ATTRIBUTE, objects.named(Category, Category.LIBRARY))
+        attribute(loaderAttribute, 'fabric')
+    }
+}
+
+dependencies {
+    minecraft "com.mojang:minecraft:${minecraft_version}"
+    implementation "net.fabricmc:fabric-loader:${fabric_loader_version}"
+    implementation "net.fabricmc.fabric-api:fabric-api:${fabric_api_version}"
+    implementation "net.fabricmc.fabric-api:fabric-gametest-api-v1:${fabric_gametest_api_version}"
+
+    [library('turtymultiloader-fabric'), library('turtymultiloader-gas-fabric'),
+     library('turtymultiloader-slurry-fabric')].each { coordinate ->
+        implementation coordinate
+        include coordinate
+    }
+
+    // Deliberately omit the core artifact: this configuration verifies published transitivity.
+    turtymultiloaderTransitiveProbe library('turtymultiloader-gas-fabric')
+    turtymultiloaderTransitiveProbe library('turtymultiloader-slurry-fabric')
+}
+
+loom {
+    def accessWidener = rootProject.project(':common').file("src/main/resources/${mod_id}.accesswidener")
+    if (accessWidener.exists())
+        accessWidenerPath.set(accessWidener)
+
+    runs {
+        client {
+            client()
+            runDir('runs/client')
+        }
+        server {
+            server()
+            runDir('runs/server')
+        }
+        gameTest {
+            server()
+            runDir('runs/gametest')
+            property('fabric-api.gametest', 'true')
+            property('fabric-api.gametest.report-file', file('build/gametest-results.xml').absolutePath)
+        }
+        dataGeneration {
+            // Typed vanilla model generators require Fabric's client-environment datagen bootstrap.
+            client()
+            runDir('runs/datagen')
+            property('fabric-api.datagen', 'true')
+            property('fabric-api.datagen.modid', mod_id)
+            property(
+                'fabric-api.datagen.output-dir',
+                rootProject.project(':common').file('src/generated/resources').absolutePath
+            )
+        }
+    }
+}
+
+processResources {
+    def properties = [
+        version: project.version,
+        mod_id: mod_id,
+        mod_name: mod_name,
+        mod_author: mod_author,
+        mod_license: mod_license,
+        mod_description: mod_description,
+        minecraft_version: minecraft_version,
+        fabric_loader_version: fabric_loader_version,
+        fabric_api_version: fabric_api_version,
+        turtymultiloader_version: turtymultiloader_version
+    ]
+    inputs.properties(properties)
+    filesMatching('fabric.mod.json') {
+        expand(properties.collectEntries { key, value -> [(key): value.toString().replace('\n', '\\n')] })
+    }
+}
+
+tasks.register('verifyNestedLibraries') {
+    group = 'verification'
+    dependsOn(tasks.named('jar'))
+    doLast {
+        File artifact = tasks.named('jar').get().archiveFile.get().asFile
+        Set<String> nested = zipTree(artifact).matching { include 'META-INF/jars/*.jar' }
+            .files.collect { it.name } as Set
+        ['turtymultiloader-fabric', 'turtymultiloader-gas-fabric', 'turtymultiloader-slurry-fabric'].each {
+            if (!nested.any { name -> name.contains("${it}-${minecraft_version}-") })
+                throw new GradleException("Missing nested ${it} in ${artifact.name}: ${nested}")
+        }
+    }
+}
+
+tasks.register('verifyTurtyMultiloaderTransitives') {
+    group = 'verification'
+    doLast {
+        Set<String> resolved = configurations.turtymultiloaderTransitiveProbe.files.collect { it.name } as Set
+        if (!resolved.any { it.startsWith("turtymultiloader-fabric-${minecraft_version}-") })
+            throw new GradleException("Gas/slurry Fabric metadata did not bring in the core Fabric artifact: ${resolved}")
+    }
+}
+
+tasks.named('check') {
+    dependsOn('verifyTurtyMultiloaderTransitives')
+}

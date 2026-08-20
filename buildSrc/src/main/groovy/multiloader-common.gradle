@@ -84,7 +84,12 @@ publishing {
     }
     repositories {
         maven {
-            url System.getenv('local_maven_url')
+            name = 'local'
+            def configuredUrl = providers.gradleProperty('localMavenUrl')
+                .orElse(providers.environmentVariable('LOCAL_MAVEN_URL'))
+            url = configuredUrl.isPresent()
+                ? uri(configuredUrl.get())
+                : rootProject.layout.buildDirectory.dir('local-maven')
         }
     }
 }

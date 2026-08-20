@@ -1,0 +1,147 @@
+plugins {
+    id 'java-library'
+    id 'net.neoforged.moddev'
+}
+
+base {
+    archivesName = "${mod_id}-neoforge-${minecraft_version}"
+}
+
+java {
+    toolchain.languageVersion = JavaLanguageVersion.of(java_version)
+}
+
+sourceSets.main.java.srcDir('../common/src/main/java')
+sourceSets.main.resources.srcDirs(
+    '../common/src/main/resources',
+    '../common/src/generated/resources',
+    'src/generated/client',
+    'src/generated/server'
+)
+
+def artifact = { String name -> "${name}-${minecraft_version}" }
+def library = { String name ->
+    "${turtymultiloader_group}:${artifact(name)}:${turtymultiloader_version}"
+}
+
+def loaderAttribute = Attribute.of('io.github.mcgradleconventions.loader', String)
+configurations.register('turtymultiloaderTransitiveProbe') {
+    canBeConsumed = false
+    canBeResolved = true
+    attributes {
+        attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage, Usage.JAVA_RUNTIME))
+        attribute(Category.CATEGORY_ATTRIBUTE, objects.named(Category, Category.LIBRARY))
+        attribute(loaderAttribute, 'neoforge')
+    }
+}
+
+dependencies {
+    ['turtymultiloader-neoforge', 'turtymultiloader-gas-neoforge',
+     'turtymultiloader-slurry-neoforge'].each { name ->
+        implementation library(name)
+        jarJar "${turtymultiloader_group}:${artifact(name)}:[${turtymultiloader_version}]"
+    }
+
+    // Deliberately omit the core artifact: this configuration verifies published transitivity.
+    turtymultiloaderTransitiveProbe library('turtymultiloader-gas-neoforge')
+    turtymultiloaderTransitiveProbe library('turtymultiloader-slurry-neoforge')
+}
+
+neoForge {
+    version = neoforge_version
+
+    def accessTransformer = rootProject.project(':common').file('src/main/resources/META-INF/accesstransformer.cfg')
+    if (accessTransformer.exists())
+        accessTransformers.from(accessTransformer.absolutePath)
+
+    runs {
+        client {
+            client()
+            gameDirectory = file('runs/client')
+        }
+        server {
+            server()
+            gameDirectory = file('runs/server')
+        }
+        gameTest {
+            type = 'gameTestServer'
+            gameDirectory = file('runs/gametest')
+            systemProperty('neoforge.enabledGameTestNamespaces', mod_id)
+        }
+        data {
+            clientData()
+            gameDirectory = file('runs/datagen')
+            programArguments.addAll(
+                '--mod', mod_id,
+                '--all',
+                '--output', file('src/generated/client').absolutePath,
+                '--existing', rootProject.project(':common').file('src/main/resources').absolutePath
+            )
+        }
+        serverData {
+            serverData()
+            gameDirectory = file('runs/serverDatagen')
+            programArguments.addAll(
+                '--mod', mod_id,
+                '--all',
+                '--output', file('src/generated/server').absolutePath,
+                '--existing', rootProject.project(':common').file('src/main/resources').absolutePath
+            )
+        }
+    }
+
+    mods {
+        "${mod_id}" {
+            sourceSet sourceSets.main
+        }
+    }
+}
+
+processResources {
+    def properties = [
+        version: project.version,
+        mod_id: mod_id,
+        mod_name: mod_name,
+        mod_author: mod_author,
+        mod_license: mod_license,
+        mod_description: mod_description,
+        minecraft_version_range: minecraft_version_range,
+        neoforge_version: neoforge_version,
+        neoforge_loader_version_range: neoforge_loader_version_range,
+        turtymultiloader_version: turtymultiloader_version
+    ]
+    inputs.properties(properties)
+    filesMatching('META-INF/neoforge.mods.toml') {
+        expand(properties)
+    }
+}
+
+tasks.register('verifyJarJarLibraries') {
+    group = 'verification'
+    dependsOn(tasks.named('jar'))
+    doLast {
+        File output = tasks.named('jar').get().archiveFile.get().asFile
+        Set<String> nested = zipTree(output).matching { include 'META-INF/jarjar/*.jar' }
+            .files.collect { it.name } as Set
+        ['turtymultiloader-neoforge', 'turtymultiloader-gas-neoforge',
+         'turtymultiloader-slurry-neoforge'].each {
+            if (!nested.any { name -> name.contains("${it}-${minecraft_version}-") })
+                throw new GradleException("Missing jarJar ${it} in ${output.name}: ${nested}")
+        }
+        if (zipTree(output).matching { include 'META-INF/jarjar/metadata.json' }.isEmpty())
+            throw new GradleException("Missing jarJar metadata in ${output.name}")
+    }
+}
+
+tasks.register('verifyTurtyMultiloaderTransitives') {
+    group = 'verification'
+    doLast {
+        Set<String> resolved = configurations.turtymultiloaderTransitiveProbe.files.collect { it.name } as Set
+        if (!resolved.any { it.startsWith("turtymultiloader-neoforge-${minecraft_version}-") })
+            throw new GradleException("Gas/slurry NeoForge metadata did not bring in the core NeoForge artifact: ${resolved}")
+    }
+}
+
+tasks.named('check') {
+    dependsOn('verifyTurtyMultiloaderTransitives')
+}

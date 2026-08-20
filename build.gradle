@@ -1,4 +1,64 @@
 plugins {
+    id 'base'
     id 'net.fabricmc.fabric-loom' version '1.15.5' apply false
     id 'net.neoforged.moddev' version '2.0.141' apply false
+}
+
+def publishedProjects = [
+    ':common', ':fabric', ':neoforge',
+    ':gas-common', ':gas-fabric', ':gas-neoforge',
+    ':slurry-common', ':slurry-fabric', ':slurry-neoforge'
+]
+
+tasks.register('publishConsumerArtifacts') {
+    group = 'publishing'
+    description = 'Publishes every consumer artifact to build/local-maven (or the configured local repository).'
+    dependsOn(publishedProjects.collect { "${it}:publishMavenJavaPublicationToLocalRepository" })
+}
+
+def verificationRepository = providers.gradleProperty('localMavenUrl')
+    .orElse(providers.environmentVariable('LOCAL_MAVEN_URL'))
+    .orElse(layout.buildDirectory.dir('local-maven').map { it.asFile.absolutePath })
+
+tasks.register('verifyPublishedConsumer', GradleBuild) {
+    group = 'verification'
+    description = 'Builds the standalone consumer template against locally published Maven artifacts.'
+    dependsOn('publishConsumerArtifacts')
+    dir = file('consumer-template')
+    tasks = ['check']
+    startParameter.projectProperties = [
+        turtymultiloaderRepository: verificationRepository.get()
+    ]
+}
+
+tasks.register('gameTest') {
+    group = 'verification'
+    description = 'Runs the Fabric and NeoForge dedicated-server GameTest suites.'
+    dependsOn(':testmod-fabric:runGameTest', ':testmod-neoforge:runGameTest')
+}
+
+tasks.register('dataGenerationTest') {
+    group = 'verification'
+    description = 'Runs Fabric combined datagen and NeoForge client/server datagen.'
+    dependsOn(
+        ':testmod-fabric:runDataGeneration',
+        ':testmod-neoforge:runData',
+        ':testmod-neoforge:runServerData'
+    )
+}
+
+tasks.register('clientSmokeTest') {
+    group = 'verification'
+    description = 'Launches both physical-client datagen bootstraps to exercise client entrypoints headlessly.'
+    dependsOn(':testmod-fabric:runDataGeneration', ':testmod-neoforge:runData')
+}
+
+tasks.named('check') {
+    dependsOn(
+        'publishConsumerArtifacts',
+        'gameTest',
+        'dataGenerationTest',
+        'clientSmokeTest',
+        'verifyPublishedConsumer'
+    )
 }

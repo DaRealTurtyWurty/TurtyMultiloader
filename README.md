@@ -29,6 +29,75 @@ Run the Gradle wrapper from the repository root:
 
 The built JARs are written to each loader module's `build/libs` directory.
 
+`build` and `check` are release checks: they publish to the verification Maven repository, build the standalone
+consumer, run both GameTest servers, and run Fabric plus NeoForge client/server datagen. The client datagen launches
+also exercise physical-client entrypoints in a headless environment; graphical rendering still belongs in manual
+client runs.
+
+## Consumer setup
+
+Releases use group `dev.turtywurty.turtymultiloader`, version `26.1.1.0`, and Minecraft-qualified artifact IDs:
+
+| Use | Common | Fabric | NeoForge |
+| --- | --- | --- | --- |
+| Core | `turtymultiloader-common-26.1.1` | `turtymultiloader-fabric-26.1.1` | `turtymultiloader-neoforge-26.1.1` |
+| Gas | `turtymultiloader-gas-common-26.1.1` | `turtymultiloader-gas-fabric-26.1.1` | `turtymultiloader-gas-neoforge-26.1.1` |
+| Slurry | `turtymultiloader-slurry-common-26.1.1` | `turtymultiloader-slurry-fabric-26.1.1` | `turtymultiloader-slurry-neoforge-26.1.1` |
+
+Add the Maven repository that contains the release to every consumer project. A local checkout publishes to
+`build/local-maven` by default, so a sibling build can use `maven { url = uri("../TurtyMultiloader/build/local-maven") }`.
+Common code uses compile-only dependencies; each distributable loader JAR embeds the corresponding loader artifact:
+
+```groovy
+def tmlGroup = 'dev.turtywurty.turtymultiloader'
+def tmlVersion = '26.1.1.0'
+def minecraftVersion = '26.1.1'
+def tml = { name -> "${tmlGroup}:${name}-${minecraftVersion}:${tmlVersion}" }
+
+// common/build.gradle
+dependencies {
+    compileOnly tml('turtymultiloader-common')
+    compileOnly tml('turtymultiloader-gas-common')     // optional
+    compileOnly tml('turtymultiloader-slurry-common') // optional
+}
+
+// fabric/build.gradle
+dependencies {
+    implementation tml('turtymultiloader-fabric')
+    include tml('turtymultiloader-fabric')
+    implementation tml('turtymultiloader-gas-fabric')
+    include tml('turtymultiloader-gas-fabric')
+    implementation tml('turtymultiloader-slurry-fabric')
+    include tml('turtymultiloader-slurry-fabric')
+}
+
+// neoforge/build.gradle
+dependencies {
+    implementation tml('turtymultiloader-neoforge')
+    jarJar "${tmlGroup}:turtymultiloader-neoforge-${minecraftVersion}:[${tmlVersion}]"
+    implementation tml('turtymultiloader-gas-neoforge')
+    jarJar "${tmlGroup}:turtymultiloader-gas-neoforge-${minecraftVersion}:[${tmlVersion}]"
+    implementation tml('turtymultiloader-slurry-neoforge')
+    jarJar "${tmlGroup}:turtymultiloader-slurry-neoforge-${minecraftVersion}:[${tmlVersion}]"
+}
+```
+
+The copy-ready [`consumer-template`](consumer-template) covers common/Fabric/NeoForge source and resource merging,
+access wideners, access transformers, metadata expansion, client/server/GameTest runs, split datagen, `include`,
+`jarJar`, and packaging assertions. It uses no convention from this repository's private `buildSrc`.
+
+For source development, plain `includeBuild("../TurtyMultiloader")` is not enough: Gradle sees source coordinates such
+as `dev.turtywurty.turtymultiloader:fabric`, while releases use
+`dev.turtywurty.turtymultiloader:turtymultiloader-fabric-26.1.1`. Use the explicit substitution block in
+[`consumer-template/settings.gradle`](consumer-template/settings.gradle), then enable it with:
+
+```shell
+./gradlew check -PturtymultiloaderSource=../TurtyMultiloader
+```
+
+To publish this checkout, run `./gradlew publishConsumerArtifacts`. The destination defaults to
+`build/local-maven`; override it with `-PlocalMavenUrl=/path/or/url` or the `LOCAL_MAVEN_URL` environment variable.
+
 ## Development
 
 Import the repository as a Gradle project in IntelliJ IDEA and use Java 25 for both the project SDK and Gradle JVM.
@@ -245,7 +314,8 @@ and standalone model registration.
 `RegistryService` is the loader-neutral registration API. Its methods queue declarations rather than registering
 immediately, allowing NeoForge to attach `DeferredRegister` instances at the correct time. Fabric applies the same
 declarations through its normal registries. The consuming mod's loader entrypoint calls `apply()` after declaring its
-common content; its NeoForge entrypoint first binds the service to that mod's event bus.
+common content. TurtyMultiloader's own NeoForge entrypoint already binds the singleton service to the library mod bus;
+consumers must not call `NeoForgeRegistryService.bind(...)` or bind it to their own bus.
 
 Identifiers and vanilla registry concepts remain explicit:
 
@@ -833,4 +903,8 @@ separate test-mod artifacts and are not packaged into either library artifact.
 ```
 
 The test projects depend on the loader library projects, never the reverse. They do not apply the publishing
-conventions, and their source sets and metadata are not included in either library JAR.
+conventions, and their source sets and metadata are not included in either library JAR. In addition,
+`verifyPublishedConsumer` first publishes all nine artifacts and builds the standalone `consumer-template` exclusively
+from their Maven coordinates. Its packaging assertions inspect Fabric `META-INF/jars` and NeoForge
+`META-INF/jarjar/metadata.json`, covering published Gradle/POM metadata, transitive module dependencies, `include`, and
+`jarJar` instead of silently substituting project dependencies.

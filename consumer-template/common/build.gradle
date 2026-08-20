@@ -1,0 +1,55 @@
+plugins {
+    id 'java-library'
+    id 'net.neoforged.moddev'
+}
+
+java {
+    toolchain.languageVersion = JavaLanguageVersion.of(java_version)
+}
+
+neoForge {
+    neoFormVersion = neo_form_version
+    def accessTransformer = file('src/main/resources/META-INF/accesstransformer.cfg')
+    if (accessTransformer.exists())
+        accessTransformers.from(accessTransformer.absolutePath)
+}
+
+def library = { String artifact ->
+    "${turtymultiloader_group}:${artifact}-${minecraft_version}:${turtymultiloader_version}"
+}
+
+def loaderAttribute = Attribute.of('io.github.mcgradleconventions.loader', String)
+configurations.register('turtymultiloaderTransitiveProbe') {
+    canBeConsumed = false
+    canBeResolved = true
+    attributes {
+        attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage, Usage.JAVA_RUNTIME))
+        attribute(Category.CATEGORY_ATTRIBUTE, objects.named(Category, Category.LIBRARY))
+        attribute(loaderAttribute, 'common')
+    }
+}
+
+dependencies {
+    compileOnly library('turtymultiloader-common')
+    compileOnly library('turtymultiloader-gas-common')
+    compileOnly library('turtymultiloader-slurry-common')
+
+    // Deliberately omit the core artifact: this configuration verifies published transitivity.
+    turtymultiloaderTransitiveProbe library('turtymultiloader-gas-common')
+    turtymultiloaderTransitiveProbe library('turtymultiloader-slurry-common')
+}
+
+sourceSets.main.resources.srcDir('src/generated/resources')
+
+tasks.register('verifyTurtyMultiloaderTransitives') {
+    group = 'verification'
+    doLast {
+        Set<String> resolved = configurations.turtymultiloaderTransitiveProbe.files.collect { it.name } as Set
+        if (!resolved.any { it.startsWith("turtymultiloader-common-${minecraft_version}-") })
+            throw new GradleException("Gas/slurry common metadata did not bring in the core common artifact: ${resolved}")
+    }
+}
+
+tasks.named('check') {
+    dependsOn('verifyTurtyMultiloaderTransitives')
+}
