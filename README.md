@@ -56,6 +56,46 @@ Logical side requires a `Level` because a physical client can also host a logica
 paths without creating them; `savesDirectory()` resolves to `saves` and `exportDirectory()` resolves to `exports`
 beneath the game directory.
 
+### Events and lifecycle
+
+`Events` is the common callback facade. It covers server start/stop, level load/unload, server and level tick
+boundaries,
+player join/disconnect/respawn, successful player block breaks, post-damage/death, command registration, and successful
+datapack reloads. Callback arguments are vanilla types, and observational callbacks do not expose either loader's event
+objects:
+
+```java
+Events.onLevelLoad(level -> WorldPipeNetworks.getOrCreate(level));
+Events.onStartLevelTick(level -> pipeNetworks(level).forEach(network -> network.tick(level)));
+Events.onBlockBroken((level, player, pos, state, blockEntity) -> removeFluidPocket(level, pos));
+Events.onLivingDamaged((entity, source, damageTaken) -> afterDamage(entity, source));
+Events.onCommandRegistration(dispatcher -> dispatcher.register(createIndustriaCommand()));
+```
+
+Client callbacks live under `event.client` so dedicated-server initialization never resolves client classes. They cover
+client and client-level ticks, client-level enter/leave, block-entity unload, play connection/disconnection, tooltip
+construction, key mappings, resource reload listeners, and the two render stages used by Industria:
+
+```java
+ClientEvents.onTooltip((stack, context, flag, lines) -> addMobJarTooltip(stack, lines));
+ClientEvents.onBlockEntityUnload((blockEntity, level) -> rendererCache.remove(blockEntity.getBlockPos()));
+
+KeyMapping debugKey = ClientEvents.registerKeyMapping(new KeyMapping(
+    "key.industria.toggle_debug_rendering",
+    GLFW.GLFW_KEY_F6,
+    INDUSTRIA_KEY_CATEGORY
+));
+
+ClientEvents.registerResourceReloadListener(id("conveyor_renderers"), reloadListener);
+ClientEvents.onRenderStage(RenderStage.COLLECT_SUBMITS, conveyorRenderer::render);
+ClientEvents.onRenderStage(RenderStage.AFTER_SOLID_FEATURES, debugRenderer::render);
+```
+
+`LevelRenderContext` contains only vanilla renderer objects: the client and level, game/level renderers, render state,
+pose stack, buffer source, and the submit-node collector when that stage supplies one. Register common callbacks during
+common initialization and client callbacks during client initialization. Registrations are process-lifetime callbacks;
+the native Fabric and NeoForge event systems do not provide a shared unregister operation.
+
 ### Registry service
 
 `RegistryService` is the loader-neutral registration API. Its methods queue declarations rather than registering
@@ -338,7 +378,7 @@ To run data generation for NeoForge:
 
 The `testmod-fabric` and `testmod-neoforge` Gradle projects are real consumer mods with the separate mod ID
 `turtymultiloader_testmod`. Their shared GameTests register content and storage providers through the public library
-API, verify registries and holders, and exercise transactions, native capability lookup, caching/invalidation,
+API, compile and register every common/client event bridge, verify registries and holders, and exercise transactions,
 serialization, sided/combined and indexed views, component-bearing item/fluid resources, optional gas/slurry module
 resources and codecs, units,
 post-apply provider declarations, and Team Reborn energy in a running dedicated test server. These projects produce

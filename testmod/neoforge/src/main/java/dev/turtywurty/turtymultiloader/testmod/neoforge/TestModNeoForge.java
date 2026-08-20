@@ -1,10 +1,7 @@
 package dev.turtywurty.turtymultiloader.testmod.neoforge;
 
 import dev.turtywurty.turtymultiloader.registration.RegistryService;
-import dev.turtywurty.turtymultiloader.testmod.AttachmentGameTests;
-import dev.turtywurty.turtymultiloader.testmod.RegistryGameTests;
-import dev.turtywurty.turtymultiloader.testmod.TestModContent;
-import dev.turtywurty.turtymultiloader.testmod.TransferGameTests;
+import dev.turtywurty.turtymultiloader.testmod.*;
 import dev.turtywurty.turtymultiloader.transfer.TransferService;
 import net.minecraft.gametest.framework.*;
 import net.minecraft.resources.Identifier;
@@ -15,6 +12,7 @@ import net.neoforged.neoforge.event.RegisterGameTestsEvent;
 @Mod(TestModContent.MOD_ID)
 public final class TestModNeoForge {
     public TestModNeoForge(IEventBus modBus) {
+        EventSmokeTest.register();
         TestModContent.initialize();
         RegistryService.get().apply();
         TransferService.get().apply();
