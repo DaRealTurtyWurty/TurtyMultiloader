@@ -23,10 +23,14 @@ public interface PayloadContext {
 
     Optional<MinecraftServer> server();
 
-    /** The receiving local player or sending server player during play; empty during configuration. */
+    /**
+     * The receiving local player or sending server player during play; empty during configuration.
+     */
     Optional<Player> player();
 
-    /** The authenticated sender of a serverbound play payload. */
+    /**
+     * The authenticated sender of a serverbound play payload.
+     */
     Optional<ServerPlayer> sender();
 
     default PermissionSet permissions() {
@@ -45,6 +49,8 @@ public interface PayloadContext {
 
     void disconnect(Component reason);
 
-    /** Schedules follow-up work on the same main game thread used for this context. */
+    /**
+     * Schedules follow-up work on the same main game thread used for this context.
+     */
     CompletableFuture<Void> enqueueWork(Runnable work);
 }

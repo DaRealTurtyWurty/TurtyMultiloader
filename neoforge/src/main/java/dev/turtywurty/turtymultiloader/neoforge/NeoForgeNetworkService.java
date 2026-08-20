@@ -244,7 +244,8 @@ public final class NeoForgeNetworkService implements NetworkService {
             } else {
                 switch (declaration.flow()) {
                     case CLIENTBOUND -> registrar.configurationToClient(declaration.type(), declaration.codec());
-                    case SERVERBOUND -> registrar.configurationToServer(declaration.type(), declaration.codec(), handler);
+                    case SERVERBOUND ->
+                        registrar.configurationToServer(declaration.type(), declaration.codec(), handler);
                     case BIDIRECTIONAL -> registrar.configurationBidirectional(
                         declaration.type(), declaration.codec(), handler
                     );

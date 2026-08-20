@@ -2,7 +2,9 @@ package dev.turtywurty.turtymultiloader.network;
 
 import java.util.Objects;
 
-/** Version and negotiation policy for one payload registration. */
+/**
+ * Version and negotiation policy for one payload registration.
+ */
 public record PayloadRegistrationOptions(String protocolVersion, PayloadSupport support) {
     public static final PayloadRegistrationOptions DEFAULT = required("1");
 

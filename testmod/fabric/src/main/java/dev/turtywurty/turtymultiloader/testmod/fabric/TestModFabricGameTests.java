@@ -2,6 +2,7 @@ package dev.turtywurty.turtymultiloader.testmod.fabric;
 
 import dev.turtywurty.turtymultiloader.fabric.transfer.FabricMutableItemContext;
 import dev.turtywurty.turtymultiloader.fabric.transfer.FabricResourceAdapters;
+import dev.turtywurty.turtymultiloader.testmod.AttachmentGameTests;
 import dev.turtywurty.turtymultiloader.testmod.RegistryGameTests;
 import dev.turtywurty.turtymultiloader.testmod.TestModContent;
 import dev.turtywurty.turtymultiloader.testmod.TransferGameTests;
@@ -24,6 +25,11 @@ import team.reborn.energy.api.EnergyStorage;
 import java.util.List;
 
 public final class TestModFabricGameTests {
+    @GameTest(structure = "minecraft:empty")
+    public void attachmentService(GameTestHelper helper) {
+        AttachmentGameTests.verifyAttachmentService(helper);
+    }
+
     @GameTest(structure = "minecraft:empty")
     public void registryService(GameTestHelper helper) {
         RegistryGameTests.verifyRegistryService(helper);

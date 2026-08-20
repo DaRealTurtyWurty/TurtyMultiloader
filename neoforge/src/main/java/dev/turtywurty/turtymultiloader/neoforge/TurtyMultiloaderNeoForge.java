@@ -9,6 +9,7 @@ import net.neoforged.fml.common.Mod;
 @Mod(TurtyMultiloader.MOD_ID)
 public final class TurtyMultiloaderNeoForge {
     public TurtyMultiloaderNeoForge(IEventBus modBus) {
+        NeoForgeAttachmentService.bind(modBus);
         NeoForgeRegistryService.bind(modBus);
         NeoForgeNetworkService.bind(modBus);
         NeoForgeTransferService.bind(modBus);

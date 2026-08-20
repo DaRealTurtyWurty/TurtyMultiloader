@@ -161,6 +161,66 @@ Login sync providers run in registration order after the server join callbacks. 
 filtered per player. Networking declarations do not use `RegistryService.apply()`; Fabric registers them immediately
 and NeoForge consumes them from `RegisterPayloadHandlersEvent`.
 
+### Data attachments and saved state
+
+`AttachmentService` hides Fabric and NeoForge attachment types and lifecycle hooks. Register attachment declarations
+during common initialization, then use `AttachmentTarget` for entities, block entities, chunks, levels, or the whole
+server:
+
+```java
+public static final AttachmentType<Integer> STOMACH_DESTRUCTION = Attachments.register(
+    id("stomach_destruction"),
+    builder -> builder.defaultFactory(() -> 0)
+        .persistent(Codec.INT)
+        .syncToOwner(ByteBufCodecs.INT)
+        .copyOnDeath()
+);
+
+public static final AttachmentType<Map<BlockPos, MultiblockData>> MULTIBLOCKS = Attachments.register(
+    id("multiblock"),
+    builder -> builder.defaultFactory(HashMap::new)
+        .persistent(Codec.unboundedMap(BLOCK_POS_STRING_CODEC, MultiblockData.CODEC))
+        .syncToTrackers(ByteBufCodecs.map(
+            HashMap::new,
+            BlockPos.STREAM_CODEC,
+            MultiblockData.STREAM_CODEC
+        ))
+);
+
+AttachmentTarget target = AttachmentTarget.entity(entity);
+int value = target.getOrCreate(STOMACH_DESTRUCTION);
+target.set(STOMACH_DESTRUCTION, value + 1);
+target.remove(STOMACH_DESTRUCTION);
+```
+
+Omit `persistent(...)` (or call `transientValue()`) for memory-only data. `syncWith(codec, predicate)` accepts a
+custom `(target, player)` predicate; `syncToOwner(...)` and `syncToTrackers(...)` cover the usual policies. `set`,
+`update`, and `remove` notify the native attachment system automatically. After changing a mutable value in place,
+call `markDirty`, or use `mutate`, which marks block entities/chunks for saving and sends the updated value:
+
+```java
+AttachmentTarget.chunk(chunk).mutate(MULTIBLOCKS, map -> map.put(pos, data));
+```
+
+World and server-global state can also be represented explicitly with vanilla saved-data wrappers. World state uses
+the selected dimension's data storage; server state uses the overworld data storage as the canonical global store:
+
+```java
+SavedStateType<MachineIndex> WORLD_INDEX = SavedStateType.world(
+    id("machine_index"), MachineIndex.CODEC, MachineIndex::new
+);
+SavedStateType<ResearchState> GLOBAL_RESEARCH = SavedStateType.server(
+    id("research"), ResearchState.CODEC, ResearchState::new
+);
+
+WORLD_INDEX.access(serverLevel).mutate(index -> index.add(machine));
+GLOBAL_RESEARCH.access(server).update(ResearchState::advance);
+```
+
+The returned saved-state view supports `get`, `set`, `update`, `mutate`, and `markDirty`. Attachment registration is
+immediate from common code and does not use `RegistryService.apply()`; NeoForge queues its native attachment registry
+entries on the library's already-bound mod event bus.
+
 ### Resource transfer service
 
 `TransferService` exposes storages without leaking loader API types into common code. A `ResourceVariant<T>` retains

@@ -1,6 +1,7 @@
 package dev.turtywurty.turtymultiloader.testmod.neoforge;
 
 import dev.turtywurty.turtymultiloader.registration.RegistryService;
+import dev.turtywurty.turtymultiloader.testmod.AttachmentGameTests;
 import dev.turtywurty.turtymultiloader.testmod.RegistryGameTests;
 import dev.turtywurty.turtymultiloader.testmod.TestModContent;
 import dev.turtywurty.turtymultiloader.testmod.TransferGameTests;
@@ -35,6 +36,16 @@ public final class TestModNeoForge {
                 @Override
                 public void run(GameTestHelper helper) {
                     RegistryGameTests.verifyRegistryService(helper);
+                }
+            }
+        );
+        var attachmentTestData = new TestData<>(environment, RegistryGameTests.EMPTY_STRUCTURE, 20, 0, true);
+        event.registerTest(
+            AttachmentGameTests.TEST_ID,
+            new FunctionGameTestInstance(BuiltinTestFunctions.ALWAYS_PASS, attachmentTestData) {
+                @Override
+                public void run(GameTestHelper helper) {
+                    AttachmentGameTests.verifyAttachmentService(helper);
                 }
             }
         );

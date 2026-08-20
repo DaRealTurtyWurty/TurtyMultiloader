@@ -6,8 +6,8 @@ import net.fabricmc.fabric.api.networking.v1.*;
 import net.fabricmc.fabric.api.networking.v1.context.PacketContext;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
@@ -353,9 +353,9 @@ public final class FabricNetworkService implements NetworkService {
                 continue;
             boolean supported = phase == PayloadPhase.PLAY
                 ? FabricClientNetworkHooks.canSend(PayloadPhase.PLAY, declaration.type())
-                    && FabricClientNetworkHooks.canSend(PayloadPhase.PLAY, declaration.probe().type())
+                  && FabricClientNetworkHooks.canSend(PayloadPhase.PLAY, declaration.probe().type())
                 : FabricClientNetworkHooks.canSend(PayloadPhase.CONFIGURATION, declaration.type())
-                    && FabricClientNetworkHooks.canSend(PayloadPhase.CONFIGURATION, declaration.probe().type());
+                  && FabricClientNetworkHooks.canSend(PayloadPhase.CONFIGURATION, declaration.probe().type());
             if (!supported) {
                 FabricClientNetworkHooks.disconnect(incompatible(declaration));
                 return false;

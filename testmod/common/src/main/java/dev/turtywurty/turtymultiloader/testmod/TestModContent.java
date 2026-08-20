@@ -9,9 +9,11 @@ import dev.turtywurty.slurryapi.SlurryApi;
 import dev.turtywurty.slurryapi.api.Slurry;
 import dev.turtywurty.slurryapi.api.storage.SingleSlurryStorage;
 import dev.turtywurty.slurryapi.api.storage.SlurryStorage;
+import dev.turtywurty.turtymultiloader.attachment.AttachmentType;
+import dev.turtywurty.turtymultiloader.attachment.Attachments;
+import dev.turtywurty.turtymultiloader.attachment.SavedStateType;
 import dev.turtywurty.turtymultiloader.network.NetworkService;
 import dev.turtywurty.turtymultiloader.network.PayloadRegistrationOptions;
-import dev.turtywurty.turtymultiloader.registration.*;
 import dev.turtywurty.turtymultiloader.transfer.TransferService;
 import dev.turtywurty.turtymultiloader.transfer.lookup.StorageKeys;
 import dev.turtywurty.turtymultiloader.transfer.resource.ResourceTypes;
@@ -35,6 +37,7 @@ import net.minecraft.world.level.block.state.properties.BlockSetType;
 import net.minecraft.world.level.block.state.properties.WoodType;
 import net.minecraft.world.level.material.Fluid;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public final class TestModContent {
@@ -42,6 +45,31 @@ public final class TestModContent {
     public static final RegistryService REGISTRIES = RegistryService.get();
     public static final NetworkService NETWORK = NetworkService.get();
     public static final TransferService TRANSFERS = TransferService.get();
+    public static final AttachmentType<Integer> TEST_COUNTER = Attachments.register(
+        id("test_counter"),
+        builder -> builder.defaultFactory(() -> 0)
+            .persistent(Codec.INT)
+            .syncToTrackers(ByteBufCodecs.VAR_INT)
+            .copyOnDeath()
+    );
+    public static final AttachmentType<ArrayList<Integer>> TEST_MUTABLE = Attachments.register(
+        id("test_mutable"),
+        builder -> builder.defaultFactory(ArrayList::new).transientValue()
+    );
+    public static final AttachmentType<Integer> TEST_GLOBAL_COUNTER = Attachments.register(
+        id("test_global_counter"),
+        builder -> builder.defaultFactory(() -> 0).persistent(Codec.INT)
+    );
+    public static final AttachmentType<Integer> TEST_OWNER_COUNTER = Attachments.register(
+        id("test_owner_counter"),
+        builder -> builder.defaultFactory(() -> 0).syncToOwner(ByteBufCodecs.VAR_INT)
+    );
+    public static final SavedStateType<Integer> TEST_WORLD_STATE = SavedStateType.world(
+        id("test_world_state"), Codec.INT, () -> 0
+    );
+    public static final SavedStateType<Integer> TEST_SERVER_STATE = SavedStateType.server(
+        id("test_server_state"), Codec.INT, () -> 0
+    );
 
     public static final RegistrationHandle<Block, Block> TEST_LOG = REGISTRIES.registerBlock(
         id("test_log"),

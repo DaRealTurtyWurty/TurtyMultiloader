@@ -7,7 +7,9 @@ import net.minecraft.server.MinecraftServer;
 
 import java.util.Objects;
 
-/** A server-side connection entering the configuration phase. */
+/**
+ * A server-side connection entering the configuration phase.
+ */
 public record ServerConnectionContext(
     MinecraftServer server,
     Connection connection,
