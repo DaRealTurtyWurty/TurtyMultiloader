@@ -13,6 +13,7 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.item.Item;
 
 import java.util.Objects;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 
 /**
@@ -21,7 +22,7 @@ import java.util.function.Function;
 public final class EmptyItemGasStorage implements SingleSlotStorage<ResourceVariant<Gas>> {
     private final MutableItemContext context;
     private final Item emptyItem;
-    private final Function<ResourceVariant<Item>, ResourceVariant<Item>> emptyToFull;
+    private final BiFunction<ResourceVariant<Item>, ResourceVariant<Gas>, ResourceVariant<Item>> emptyToFull;
     private final Gas insertableGas;
     private final long insertableAmount;
 
@@ -33,7 +34,7 @@ public final class EmptyItemGasStorage implements SingleSlotStorage<ResourceVari
     ) {
         this(
             context,
-            empty -> ResourceVariant.of(
+            (empty, insertedGas) -> ResourceVariant.of(
                 ResourceTypes.ITEM,
                 BuiltInRegistries.ITEM.wrapAsHolder(fullItem),
                 empty.components()
@@ -46,6 +47,18 @@ public final class EmptyItemGasStorage implements SingleSlotStorage<ResourceVari
     public EmptyItemGasStorage(
         MutableItemContext context,
         Function<ResourceVariant<Item>, ResourceVariant<Item>> emptyToFull,
+        Gas insertableGas,
+        long insertableAmount
+    ) {
+        this(context, (empty, insertedGas) -> emptyToFull.apply(empty), insertableGas, insertableAmount);
+    }
+
+    /**
+     * Creates an item storage whose transformation can encode the complete inserted gas variant, including components.
+     */
+    public EmptyItemGasStorage(
+        MutableItemContext context,
+        BiFunction<ResourceVariant<Item>, ResourceVariant<Gas>, ResourceVariant<Item>> emptyToFull,
         Gas insertableGas,
         long insertableAmount
     ) {
@@ -93,10 +106,12 @@ public final class EmptyItemGasStorage implements SingleSlotStorage<ResourceVari
         StoragePreconditions.check(resource, maxAmount);
         StoragePreconditions.index(index, 1);
         if (this.context.resource().value() != this.emptyItem
+            || this.insertableAmount == 0
+            || maxAmount == 0
             || !isValid(index, resource)
             || maxAmount < this.insertableAmount)
             return 0;
-        ResourceVariant<Item> full = this.emptyToFull.apply(this.context.resource());
+        ResourceVariant<Item> full = this.emptyToFull.apply(this.context.resource(), resource);
         return this.context.exchange(full, 1, transaction) == 1 ? this.insertableAmount : 0;
     }
 

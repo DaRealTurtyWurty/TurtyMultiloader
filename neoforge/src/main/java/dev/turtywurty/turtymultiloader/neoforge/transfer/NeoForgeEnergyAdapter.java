@@ -56,6 +56,8 @@ public final class NeoForgeEnergyAdapter {
             @Override
             public TransferSupport support(int index) {
                 StoragePreconditions.index(index, 1);
+                if (handler instanceof DirectionalEnergyHandler directional)
+                    return directional.support();
                 return TransferSupport.BOTH;
             }
 
@@ -82,17 +84,11 @@ public final class NeoForgeEnergyAdapter {
     }
 
     private static long move(long maxAmount, IntUnaryOperator operation) {
-        long remaining = maxAmount;
-        long movedTotal = 0;
-        while (remaining > 0) {
-            int requested = (int) Math.min(Integer.MAX_VALUE, remaining);
-            int moved = operation.applyAsInt(requested);
-            movedTotal += moved;
-            remaining -= moved;
-            if (moved < requested)
-                break;
-        }
-        return movedTotal;
+        if (maxAmount <= 0)
+            return 0;
+        // A neutral transfer may return a partial result. Issue one int-sized native operation so an unbounded request
+        // cannot turn into billions of calls when a long-capacity handler accepts every chunk.
+        return operation.applyAsInt((int) Math.min(Integer.MAX_VALUE, maxAmount));
     }
 
     public static EnergyHandler toNeoForge(ResourceStorage<ResourceVariant<UnitResource>> storage) {
@@ -104,7 +100,12 @@ public final class NeoForgeEnergyAdapter {
         ResourceType<UnitResource> type
     ) {
         ResourceVariant<UnitResource> scalar = type.of(Holder.direct(UnitResource.VALUE));
-        return new EnergyHandler() {
+        return new DirectionalEnergyHandler() {
+            @Override
+            public TransferSupport support() {
+                return storage.support(0);
+            }
+
             @Override
             public long getAmountAsLong() {
                 return storage.amount(0);
@@ -127,5 +128,9 @@ public final class NeoForgeEnergyAdapter {
                     NeoForgeTransactionAdapters.fromNeoForge(transaction)));
             }
         };
+    }
+
+    private interface DirectionalEnergyHandler extends EnergyHandler {
+        TransferSupport support();
     }
 }

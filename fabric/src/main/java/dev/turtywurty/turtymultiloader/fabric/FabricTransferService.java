@@ -9,6 +9,7 @@ import dev.turtywurty.turtymultiloader.transfer.lookup.*;
 import dev.turtywurty.turtymultiloader.transfer.resource.ResourceVariant;
 import dev.turtywurty.turtymultiloader.transfer.resource.UnitResource;
 import dev.turtywurty.turtymultiloader.transfer.storage.ResourceStorage;
+import net.fabricmc.fabric.api.lookup.v1.block.BlockApiCache;
 import net.fabricmc.fabric.api.lookup.v1.block.BlockApiLookup;
 import net.fabricmc.fabric.api.lookup.v1.entity.EntityApiLookup;
 import net.fabricmc.fabric.api.lookup.v1.item.ItemApiLookup;
@@ -24,7 +25,6 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.item.Item;
-import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -47,7 +47,6 @@ import java.util.function.Supplier;
 public final class FabricTransferService implements TransferService {
     private final Map<StorageKey<?>, Lookups<?>> lookups = new HashMap<>();
     private final List<Runnable> declarations = new ArrayList<>();
-    private final List<CachedLookup<?>> caches = new ArrayList<>();
     private boolean applied;
 
     public FabricTransferService() {
@@ -110,7 +109,9 @@ public final class FabricTransferService implements TransferService {
     ) {
         Lookups<V> lookups = lookups(key);
         declare(() -> lookups.item.registerForItems(
-            (stack, context) -> adapt(provider.find(stack, new FabricMutableItemContext(context)), lookups.toNative),
+            (stack, context) -> adapt(
+                provider.find(new FabricMutableItemContext(stack, context)), lookups.toNative
+            ),
             supplied(items, Item[]::new)
         ));
     }
@@ -132,34 +133,31 @@ public final class FabricTransferService implements TransferService {
     }
 
     @Override
-    public <V extends ResourceVariant<?>> ResourceStorage<V> findItem(StorageKey<V> key, ItemStack stack,
-                                                                      MutableItemContext context) {
+    public <V extends ResourceVariant<?>> ResourceStorage<V> findItem(
+        StorageKey<V> key,
+        MutableItemContext context
+    ) {
         Lookups<V> lookups = lookups(key);
         ContainerItemContext nativeContext = context instanceof FabricMutableItemContext fabricContext
             ? fabricContext.fabricContext()
             : FabricMutableItemContext.toFabric(context);
-        Object found = lookups.item.find(stack, nativeContext);
+        Object found = lookups.item.find(context.stack(), nativeContext);
         return found == null ? null : lookups.fromNative.apply(found);
     }
 
     @Override
     public <V extends ResourceVariant<?>> BlockStorageCache<V> createBlockCache(StorageKey<V> key, ServerLevel level,
                                                                                 BlockPos pos, Direction side) {
-        CachedLookup<V> cache = new CachedLookup<>(this, key, level, pos.immutable(), side);
-        this.caches.add(cache);
-        return cache;
+        Lookups<V> lookups = lookups(key);
+        BlockApiCache<Object, Direction> nativeCache = BlockApiCache.create(lookups.block, level, pos);
+        return new CachedLookup<>(nativeCache, lookups.fromNative, side);
     }
 
     @Override
     public void invalidateBlock(Level level, BlockPos pos) {
-        this.caches.forEach(cache -> {
-            if (cache.level == level && cache.pos.equals(pos))
-                cache.invalidate();
-        });
-    }
-
-    private void release(CachedLookup<?> cache) {
-        this.caches.remove(cache);
+        // BlockApiCache automatically invalidates its block entity and provider caches when blocks or block entities
+        // are replaced, loaded, or unloaded. It never retains the resolved API value, so no manual invalidation is
+        // necessary for Fabric.
     }
 
     @Override
@@ -177,7 +175,10 @@ public final class FabricTransferService implements TransferService {
     }
 
     private synchronized void declare(Runnable declaration) {
-        this.declarations.add(declaration);
+        if (this.applied)
+            declaration.run();
+        else
+            this.declarations.add(declaration);
     }
 
     @SuppressWarnings("unchecked")
@@ -261,21 +262,15 @@ public final class FabricTransferService implements TransferService {
     }
 
     private static final class CachedLookup<V extends ResourceVariant<?>> implements BlockStorageCache<V> {
-        private final FabricTransferService service;
-        private final StorageKey<V> key;
-        private final ServerLevel level;
-        private final BlockPos pos;
+        private final BlockApiCache<Object, Direction> nativeCache;
+        private final Function<Object, ResourceStorage<V>> fromNative;
         private final Direction side;
-        private ResourceStorage<V> value;
-        private boolean valid;
         private boolean closed;
 
-        private CachedLookup(FabricTransferService service, StorageKey<V> key, ServerLevel level, BlockPos pos,
-                             Direction side) {
-            this.service = service;
-            this.key = key;
-            this.level = level;
-            this.pos = pos;
+        private CachedLookup(BlockApiCache<Object, Direction> nativeCache,
+                             Function<Object, ResourceStorage<V>> fromNative, Direction side) {
+            this.nativeCache = nativeCache;
+            this.fromNative = fromNative;
             this.side = side;
         }
 
@@ -283,26 +278,21 @@ public final class FabricTransferService implements TransferService {
         public ResourceStorage<V> find() {
             if (this.closed)
                 throw new IllegalStateException("Cannot use a closed block storage cache");
-            if (!this.valid) {
-                this.value = this.service.findBlock(this.key, this.level, this.pos, this.side);
-                this.valid = true;
-            }
-            return this.value;
+            Object found = this.nativeCache.find(this.side);
+            return found == null ? null : this.fromNative.apply(found);
         }
 
         @Override
         public void invalidate() {
-            this.valid = false;
-            this.value = null;
+            // Native Fabric caches retain only the block entity/provider lookup and invalidate those automatically.
+            // The resolved API itself is queried on every find().
         }
 
         @Override
         public void close() {
             if (this.closed)
                 return;
-            invalidate();
             this.closed = true;
-            this.service.release(this);
         }
     }
 }

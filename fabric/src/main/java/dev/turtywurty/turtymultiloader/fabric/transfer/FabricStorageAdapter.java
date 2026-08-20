@@ -12,6 +12,7 @@ import net.fabricmc.fabric.api.transfer.v1.storage.SlottedStorage;
 import net.fabricmc.fabric.api.transfer.v1.storage.Storage;
 import net.fabricmc.fabric.api.transfer.v1.storage.StorageView;
 import net.fabricmc.fabric.api.transfer.v1.storage.base.SingleSlotStorage;
+import net.fabricmc.fabric.api.transfer.v1.transaction.Transaction;
 import net.fabricmc.fabric.api.transfer.v1.transaction.TransactionContext;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.material.Fluid;
@@ -78,15 +79,17 @@ public final class FabricStorageAdapter {
         }
 
         @Override
+        public boolean hasStableIndices() {
+            return this.fabric instanceof SingleSlotStorage<?> || this.fabric instanceof SlottedStorage<?>;
+        }
+
+        @Override
         public int size() {
             if (this.fabric instanceof SingleSlotStorage<?>)
                 return 1;
             if (this.fabric instanceof SlottedStorage<?> slotted)
                 return slotted.getSlotCount();
-            int count = 0;
-            for (var ignored : this.fabric)
-                count++;
-            return Math.max(1, count);
+            return 0;
         }
 
         @Override
@@ -102,9 +105,28 @@ public final class FabricStorageAdapter {
         }
 
         @Override
+        @SuppressWarnings("deprecation")
         public long capacity(int index, V resource) {
             var view = viewAt(index);
-            return view == null ? 0 : view.getCapacity();
+            if (resource.isBlank())
+                return 0;
+            N nativeResource = this.toNative.apply(resource);
+            boolean resourceMatches = view.isResourceBlank() || Objects.equals(view.getResource(), nativeResource);
+            if (!resourceMatches)
+                return 0;
+
+            long declaredCapacity = view.getCapacity();
+            if (!(view instanceof SingleSlotStorage<N> slot) || !slot.supportsInsertion())
+                return declaredCapacity;
+
+            long currentAmount = view.getAmount();
+            try (Transaction simulation = Transaction.openNested(Transaction.getCurrentUnsafe())) {
+                long insertable = slot.insert(nativeResource, Long.MAX_VALUE, simulation);
+                long measuredCapacity = insertable > Long.MAX_VALUE - currentAmount
+                    ? Long.MAX_VALUE
+                    : currentAmount + insertable;
+                return Math.max(declaredCapacity, measuredCapacity);
+            }
         }
 
         @Override
@@ -181,12 +203,7 @@ public final class FabricStorageAdapter {
                 return single;
             if (this.fabric instanceof SlottedStorage<N> slotted)
                 return slotted.getSlot(index);
-            int current = 0;
-            for (var view : this.fabric) {
-                if (current++ == index)
-                    return view;
-            }
-            return null;
+            throw new IllegalStateException("Storage reported stable indices without addressable slots");
         }
     }
 

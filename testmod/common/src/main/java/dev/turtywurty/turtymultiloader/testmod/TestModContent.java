@@ -24,6 +24,8 @@ import dev.turtywurty.turtymultiloader.registration.QueuedValue;
 import dev.turtywurty.turtymultiloader.registration.RegistrationHandle;
 import dev.turtywurty.turtymultiloader.registration.RegistryService;
 import dev.turtywurty.turtymultiloader.transfer.TransferService;
+import dev.turtywurty.turtymultiloader.transfer.fluid.FluidVariantAttributeHandler;
+import dev.turtywurty.turtymultiloader.transfer.fluid.FluidVariantAttributes;
 import dev.turtywurty.turtymultiloader.transfer.lookup.StorageKeys;
 import dev.turtywurty.turtymultiloader.transfer.resource.ResourceTypes;
 import dev.turtywurty.turtymultiloader.transfer.resource.ResourceVariant;
@@ -46,6 +48,7 @@ import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.properties.BlockSetType;
 import net.minecraft.world.level.block.state.properties.WoodType;
 import net.minecraft.world.level.material.Fluid;
+import net.minecraft.world.level.material.Fluids;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -157,6 +160,12 @@ public final class TestModContent {
         new SimpleSingleSlotStorage<>(ResourceTypes.ENERGY, 10_000);
     public static final SingleGasStorage TEST_GAS_STORAGE = new SingleGasStorage(162_000);
     public static final SingleSlurryStorage TEST_SLURRY_STORAGE = new SingleSlurryStorage(162_000);
+    public static final FluidVariantAttributeHandler TEST_WATER_ATTRIBUTES = new FluidVariantAttributeHandler() {
+        @Override
+        public int getViscosity(ResourceVariant<Fluid> variant, net.minecraft.world.level.Level level) {
+            return variant.hasComponents() ? 7_500 : 5_000;
+        }
+    };
 
     static {
         REGISTRIES.populateCreativeTab(CreativeModeTabs.BUILDING_BLOCKS, output -> output.accept(TEST_LOG_ITEM.get()));
@@ -170,7 +179,7 @@ public final class TestModContent {
         NETWORK.addLoginSync(player -> List.of(new TestPayload(42)));
         TRANSFERS.registerBlockProvider(StorageKeys.ITEM, (level, pos, state, blockEntity, side) -> TEST_ITEM_STORAGE,
             TEST_LOG);
-        TRANSFERS.registerItemProvider(StorageKeys.ITEM, (stack, context) -> TEST_ITEM_STORAGE, TEST_LOG_ITEM);
+        TRANSFERS.registerItemProvider(StorageKeys.ITEM, context -> TEST_ITEM_STORAGE, TEST_LOG_ITEM);
         TRANSFERS.registerBlockProvider(
             StorageKeys.ITEM,
             (level, pos, state, blockEntity, side) -> TEST_MULTI_ITEM_STORAGE,
@@ -188,7 +197,7 @@ public final class TestModContent {
         );
         TRANSFERS.registerItemProvider(
             StorageKeys.ENERGY,
-            (stack, context) -> TEST_ENERGY_STORAGE,
+            context -> TEST_ENERGY_STORAGE,
             TEST_LOG_ITEM
         );
         GasStorage.registerBlockProvider(
@@ -199,6 +208,7 @@ public final class TestModContent {
             (level, pos, state, blockEntity, side) -> TEST_SLURRY_STORAGE,
             TEST_LOG
         );
+        FluidVariantAttributes.register(Fluids.WATER, TEST_WATER_ATTRIBUTES);
     }
 
     private TestModContent() {
@@ -209,6 +219,7 @@ public final class TestModContent {
 
     /**
      * Declares a provider after the first TransferService.apply() call to verify multi-consumer lifecycle support.
+     * Fabric registers it immediately; NeoForge queues it until the capability-registration event.
      */
     public static void registerLateTransfers() {
         TRANSFERS.registerBlockProvider(

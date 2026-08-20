@@ -6,6 +6,7 @@ import dev.turtywurty.turtymultiloader.transfer.storage.SingleSlotStorage;
 import dev.turtywurty.turtymultiloader.transfer.storage.TransferSupport;
 import dev.turtywurty.turtymultiloader.transfer.transaction.TransferContext;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
 
 import java.util.List;
 import java.util.Objects;
@@ -38,6 +39,18 @@ public final class StorageItemContext implements MutableItemContext {
 
     public SingleSlotStorage<ResourceVariant<Item>> slot() {
         return this.slot;
+    }
+
+    @Override
+    public ItemStack stack() {
+        ResourceVariant<Item> resource = resource();
+        if (resource.isBlank() || amount() == 0)
+            return ItemStack.EMPTY;
+        return new ItemStack(
+            resource.holder(),
+            Math.toIntExact(Math.min(Integer.MAX_VALUE, amount())),
+            resource.components()
+        );
     }
 
     @Override

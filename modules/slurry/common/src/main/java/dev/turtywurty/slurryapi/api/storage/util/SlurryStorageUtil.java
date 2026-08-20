@@ -23,8 +23,15 @@ public final class SlurryStorageUtil {
         Player player,
         Item handItem
     ) {
+        requireStableIndices(storage, "storage");
+        requireStableIndices(heldItemStorage, "heldItemStorage");
         return moveFirst(storage, heldItemStorage, player, handItem, true)
             || moveFirst(heldItemStorage, storage, player, handItem, false);
+    }
+
+    private static void requireStableIndices(ResourceStorage<?> storage, String name) {
+        if (!storage.hasStableIndices())
+            throw new IllegalArgumentException(name + " must expose stable indices");
     }
 
     private static boolean moveFirst(

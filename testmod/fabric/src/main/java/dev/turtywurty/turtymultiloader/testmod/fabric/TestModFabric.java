@@ -16,6 +16,5 @@ public final class TestModFabric implements ModInitializer {
         RegistryService.get().apply();
         TransferService.get().apply();
         TestModContent.registerLateTransfers();
-        TransferService.get().apply();
     }
 }

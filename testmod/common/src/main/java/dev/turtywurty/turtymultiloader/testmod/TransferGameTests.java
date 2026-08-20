@@ -17,14 +17,15 @@ import dev.turtywurty.slurryapi.api.storage.InputSingleSlurryStorage;
 import dev.turtywurty.slurryapi.api.storage.OutputSingleSlurryStorage;
 import dev.turtywurty.slurryapi.api.storage.SingleSlurryStorage;
 import dev.turtywurty.slurryapi.api.storage.SlurryStorage;
+import dev.turtywurty.slurryapi.api.storage.item.EmptyItemSlurryStorage;
 import dev.turtywurty.turtymultiloader.transfer.StorageTransfer;
+import dev.turtywurty.turtymultiloader.transfer.fluid.FluidAttributeService;
+import dev.turtywurty.turtymultiloader.transfer.fluid.FluidVariantAttributes;
 import dev.turtywurty.turtymultiloader.transfer.lookup.BlockStorageCache;
+import dev.turtywurty.turtymultiloader.transfer.lookup.MutableItemContext;
 import dev.turtywurty.turtymultiloader.transfer.lookup.StorageItemContext;
 import dev.turtywurty.turtymultiloader.transfer.lookup.StorageKeys;
-import dev.turtywurty.turtymultiloader.transfer.resource.ResourceTypes;
-import dev.turtywurty.turtymultiloader.transfer.resource.ResourceVariant;
-import dev.turtywurty.turtymultiloader.transfer.resource.ResourceVariantCodecs;
-import dev.turtywurty.turtymultiloader.transfer.resource.UnitResource;
+import dev.turtywurty.turtymultiloader.transfer.resource.*;
 import dev.turtywurty.turtymultiloader.transfer.serialization.StorageSnapshot;
 import dev.turtywurty.turtymultiloader.transfer.serialization.StorageSynchronizer;
 import dev.turtywurty.turtymultiloader.transfer.storage.*;
@@ -35,9 +36,11 @@ import dev.turtywurty.turtymultiloader.transfer.unit.Units;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.Holder;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.RegistryOps;
+import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -59,6 +62,24 @@ public final class TransferGameTests {
 
     public static void verifyTransferService(GameTestHelper helper) {
         helper.assertTrue(TestModContent.TRANSFERS.isApplied(), "TransferService was not applied");
+
+        Identifier collidingTypeId = id("colliding_resource_type");
+        ResourceType<UnitResource> energyType = ResourceType.direct(
+            collidingTypeId,
+            UnitDimension.ENERGY,
+            ignored -> false,
+            () -> UnitResource.VALUE
+        );
+        ResourceType<UnitResource> fluidDimensionType = ResourceType.direct(
+            collidingTypeId,
+            UnitDimension.FLUID,
+            ignored -> true,
+            () -> UnitResource.VALUE
+        );
+        helper.assertTrue(
+            !energyType.equals(fluidDimensionType),
+            "Incompatible resource types with the same ID aliased"
+        );
 
         ResourceVariant<Item> item = ResourceVariant.of(
             ResourceTypes.ITEM,
@@ -134,6 +155,36 @@ public final class TransferGameTests {
         );
 
         ResourceVariant<Fluid> water = ResourceTypes.FLUID.of(Fluids.WATER.builtInRegistryHolder());
+        helper.assertValueEqual(
+            FluidVariantAttributes.getViscosity(water, helper.getLevel()),
+            5_000,
+            "Common fluid viscosity overlay"
+        );
+        ItemStack fluidComponentStack = new ItemStack(TestModContent.TEST_LOG_ITEM.get());
+        fluidComponentStack.set(TestModContent.TEST_NUMBER.get(), 42);
+        ResourceVariant<Fluid> componentWater = water.withComponents(fluidComponentStack.getComponentsPatch());
+        helper.assertValueEqual(
+            FluidVariantAttributes.getViscosity(componentWater, helper.getLevel()),
+            7_500,
+            "Variant-dependent fluid viscosity overlay"
+        );
+        helper.assertValueEqual(
+            FluidVariantAttributes.getTemperature(water),
+            FluidAttributeService.get().getTemperature(water),
+            "Fluid overlay masked loader-native temperature"
+        );
+        helper.assertValueEqual(
+            FluidVariantAttributes.getLuminance(water),
+            FluidAttributeService.get().getLuminance(water),
+            "Fluid overlay masked loader-native luminance"
+        );
+        helper.assertTrue(
+            FluidVariantAttributes.isLighterThanAir(water)
+                == FluidAttributeService.get().isLighterThanAir(water),
+            "Fluid overlay masked loader-native buoyancy"
+        );
+        ResourceVariant<Fluid> lava = ResourceTypes.FLUID.of(Fluids.LAVA.builtInRegistryHolder());
+        helper.assertTrue(FluidVariantAttributes.getLuminance(lava) > 0, "Native lava luminance was not exposed");
         clear(TestModContent.TEST_FLUID_STORAGE);
         ResourceStorage<ResourceVariant<Fluid>> exposedFluid = TestModContent.TRANSFERS.findBlock(
             StorageKeys.FLUID, helper.getLevel(), absolute, Direction.UP
@@ -168,6 +219,10 @@ public final class TransferGameTests {
             new OutputSingleGasStorage(1).support(0) == TransferSupport.EXTRACT_ONLY,
             "Output gas storage advertised insertion support"
         );
+        ResourceVariant<Gas> air = GasVariant.of(GasApi.AIR.holder());
+        InputSingleGasStorage filteredGas = new InputSingleGasStorage(100, gas::equals);
+        helper.assertTrue(!filteredGas.isValid(0, air), "Rejected gas was reported as valid");
+        helper.assertValueEqual(filteredGas.capacity(0, air), 0L, "Rejected gas reported capacity");
         var registryOps = RegistryOps.create(JsonOps.INSTANCE, helper.getLevel().registryAccess());
         var encodedGas = GasVariant.CODEC.encodeStart(registryOps, gas).getOrThrow();
         helper.assertValueEqual(
@@ -185,15 +240,22 @@ public final class TransferGameTests {
             transaction.commit();
         }
         StorageItemContext gasContainerContext = new StorageItemContext(gasContainerSlot);
+        ItemStack gasComponentSource = new ItemStack(TestModContent.TEST_LOG_ITEM.get());
+        gasComponentSource.set(TestModContent.TEST_NUMBER.get(), 73);
+        ResourceVariant<Gas> componentGas = gas.withComponents(gasComponentSource.getComponentsPatch());
         EmptyItemGasStorage emptyGasContainer = new EmptyItemGasStorage(
             gasContainerContext,
-            Items.GLASS_BOTTLE,
+            (empty, inserted) -> ResourceVariant.of(
+                ResourceTypes.ITEM,
+                BuiltInRegistries.ITEM.wrapAsHolder(Items.GLASS_BOTTLE),
+                inserted.components()
+            ),
             TestModContent.TEST_GAS.get(),
             1_000
         );
         try (TransferTransaction transaction = TransferTransaction.openRoot()) {
             helper.assertValueEqual(
-                emptyGasContainer.insert(gas, 1_000, transaction),
+                emptyGasContainer.insert(componentGas, 1_000, transaction),
                 1_000L,
                 "Empty gas container insertion"
             );
@@ -201,17 +263,17 @@ public final class TransferGameTests {
         }
         helper.assertTrue(gasContainerContext.resource().value() == Items.GLASS_BOTTLE,
             "Gas insertion did not exchange the container item");
-        helper.assertValueEqual(gasContainerContext.stack().get(TestModContent.TEST_NUMBER.get()), 42,
-            "Gas container exchange lost item components");
+        helper.assertValueEqual(gasContainerContext.stack().get(TestModContent.TEST_NUMBER.get()), 73,
+            "Gas container exchange lost inserted gas components");
         FullItemGasStorage fullGasContainer = new FullItemGasStorage(
             gasContainerContext,
             Items.BUCKET,
-            gas,
+            componentGas,
             1_000
         );
         try (TransferTransaction transaction = TransferTransaction.openRoot()) {
             helper.assertValueEqual(
-                fullGasContainer.extract(gas, 1_000, transaction),
+                fullGasContainer.extract(componentGas, 1_000, transaction),
                 1_000L,
                 "Full gas container extraction"
             );
@@ -219,6 +281,19 @@ public final class TransferGameTests {
         }
         helper.assertTrue(gasContainerContext.resource().value() == Items.BUCKET,
             "Gas extraction did not exchange the container item");
+        EmptyItemGasStorage zeroGasContainer = new EmptyItemGasStorage(
+            gasContainerContext,
+            Items.GLASS_BOTTLE,
+            TestModContent.TEST_GAS.get(),
+            0
+        );
+        try (TransferTransaction transaction = TransferTransaction.openRoot()) {
+            helper.assertValueEqual(zeroGasContainer.insert(gas, 0, transaction), 0L,
+                "Zero gas insertion amount");
+            transaction.commit();
+        }
+        helper.assertTrue(gasContainerContext.resource().value() == Items.BUCKET,
+            "Zero gas insertion mutated the container item");
 
         ResourceVariant<Slurry> slurry = SlurryVariant.of(TestModContent.TEST_SLURRY.holder());
         clear(TestModContent.TEST_SLURRY_STORAGE);
@@ -243,6 +318,57 @@ public final class TransferGameTests {
             new OutputSingleSlurryStorage(1).support(0) == TransferSupport.EXTRACT_ONLY,
             "Output slurry storage advertised insertion support"
         );
+        InputSingleSlurryStorage filteredSlurry = new InputSingleSlurryStorage(100, slurry::equals);
+        helper.assertTrue(!filteredSlurry.isValid(0, SlurryVariant.blank()),
+            "Rejected slurry was reported as valid");
+        helper.assertValueEqual(filteredSlurry.capacity(0, SlurryVariant.blank()), 0L,
+            "Rejected slurry reported capacity");
+        SimpleSingleSlotStorage<ResourceVariant<Item>> slurryContainerSlot =
+            new SimpleSingleSlotStorage<>(ResourceTypes.ITEM, 1);
+        try (TransferTransaction transaction = TransferTransaction.openRoot()) {
+            slurryContainerSlot.insert(ResourceVariant.ofItem(new ItemStack(Items.BUCKET)), 1, transaction);
+            transaction.commit();
+        }
+        StorageItemContext slurryContainerContext = new StorageItemContext(slurryContainerSlot);
+        ResourceVariant<Slurry> componentSlurry = slurry.withComponents(gasComponentSource.getComponentsPatch());
+        EmptyItemSlurryStorage emptySlurryContainer = new EmptyItemSlurryStorage(
+            slurryContainerContext,
+            (empty, inserted) -> ResourceVariant.of(
+                ResourceTypes.ITEM,
+                BuiltInRegistries.ITEM.wrapAsHolder(Items.GLASS_BOTTLE),
+                inserted.components()
+            ),
+            TestModContent.TEST_SLURRY.get(),
+            1_000
+        );
+        try (TransferTransaction transaction = TransferTransaction.openRoot()) {
+            helper.assertValueEqual(emptySlurryContainer.insert(componentSlurry, 1_000, transaction), 1_000L,
+                "Empty slurry container insertion");
+            transaction.commit();
+        }
+        helper.assertValueEqual(slurryContainerContext.stack().get(TestModContent.TEST_NUMBER.get()), 73,
+            "Slurry container exchange lost inserted slurry components");
+
+        SimpleSingleSlotStorage<ResourceVariant<Item>> zeroSlurrySlot =
+            new SimpleSingleSlotStorage<>(ResourceTypes.ITEM, 1);
+        try (TransferTransaction transaction = TransferTransaction.openRoot()) {
+            zeroSlurrySlot.insert(ResourceVariant.ofItem(new ItemStack(Items.BUCKET)), 1, transaction);
+            transaction.commit();
+        }
+        StorageItemContext zeroSlurryContext = new StorageItemContext(zeroSlurrySlot);
+        EmptyItemSlurryStorage zeroSlurryContainer = new EmptyItemSlurryStorage(
+            zeroSlurryContext,
+            Items.GLASS_BOTTLE,
+            TestModContent.TEST_SLURRY.get(),
+            0
+        );
+        try (TransferTransaction transaction = TransferTransaction.openRoot()) {
+            helper.assertValueEqual(zeroSlurryContainer.insert(slurry, 0, transaction), 0L,
+                "Zero slurry insertion amount");
+            transaction.commit();
+        }
+        helper.assertTrue(zeroSlurryContext.resource().value() == Items.BUCKET,
+            "Zero slurry insertion mutated the container item");
         var encodedSlurry = SlurryVariant.CODEC.encodeStart(registryOps, slurry).getOrThrow();
         helper.assertValueEqual(
             SlurryVariant.CODEC.parse(registryOps, encodedSlurry).getOrThrow(),
@@ -333,8 +459,7 @@ public final class TransferGameTests {
         }
         ResourceStorage<ResourceVariant<Item>> itemExposed = TestModContent.TRANSFERS.findItem(
             StorageKeys.ITEM,
-            new ItemStack(TestModContent.TEST_LOG_ITEM.get()),
-            new StorageItemContext(itemContainer)
+            MutableItemContext.ofSingleSlot(itemContainer)
         );
         helper.assertTrue(itemExposed != null, "Loader-native item exposure was not found");
         try (TransferTransaction transaction = TransferTransaction.openRoot()) {
@@ -342,13 +467,25 @@ public final class TransferGameTests {
             transaction.commit();
         }
         helper.assertValueEqual(TestModContent.TEST_ITEM_STORAGE.amount(), 9L, "Item adapter committed amount");
-        ResourceStorage<ResourceVariant<UnitResource>> itemEnergy = TestModContent.TRANSFERS.findItem(
-            StorageKeys.ENERGY,
-            new ItemStack(TestModContent.TEST_LOG_ITEM.get()),
-            new StorageItemContext(itemContainer)
+        MutableItemContext constantItem = MutableItemContext.withConstant(
+            new ItemStack(TestModContent.TEST_LOG_ITEM.get())
         );
+        ResourceStorage<ResourceVariant<UnitResource>> itemEnergy = constantItem.find(StorageKeys.ENERGY);
         helper.assertTrue(itemEnergy != null, "Loader-native energy item exposure was not found");
         helper.assertValueEqual(itemEnergy.amount(0), 251L, "Energy item adapter amount");
+        try (TransferTransaction transaction = TransferTransaction.openRoot()) {
+            helper.assertValueEqual(constantItem.extract(constantItem.resource(), 1, transaction), 0L,
+                "Constant item context mutation");
+        }
+
+        SimpleContainer inventory = new SimpleContainer(1);
+        inventory.setItem(0, new ItemStack(TestModContent.TEST_LOG_ITEM.get(), 2));
+        MutableItemContext inventorySlot = MutableItemContext.ofContainerSlot(inventory, 0);
+        try (TransferTransaction transaction = TransferTransaction.openRoot()) {
+            helper.assertValueEqual(inventorySlot.extract(item, 1, transaction), 1L,
+                "Inventory item context extraction");
+        }
+        helper.assertValueEqual(inventory.getItem(0).getCount(), 2, "Inventory item context rollback");
 
         try (BlockStorageCache<ResourceVariant<Item>> cache = TestModContent.TRANSFERS.createBlockCache(
             StorageKeys.ITEM, helper.getLevel(), absolute, Direction.UP
@@ -379,7 +516,7 @@ public final class TransferGameTests {
             helper.absolutePos(multiRelative),
             Direction.UP
         );
-        helper.assertTrue(lateEnergy != null, "Provider declared after the first apply() was not registered");
+        helper.assertTrue(lateEnergy != null, "Provider declared while registration was open was not registered");
 
         StorageSnapshot<ResourceVariant<Item>> snapshot = StorageSnapshot.capture(TestModContent.TEST_ITEM_STORAGE);
         SimpleSingleSlotStorage<ResourceVariant<Item>> restored =

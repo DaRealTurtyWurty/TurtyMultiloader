@@ -101,7 +101,8 @@ public final class FullItemGasStorage implements SingleSlotStorage<ResourceVaria
     public long extract(int index, ResourceVariant<Gas> resource, long maxAmount, TransferContext transaction) {
         StoragePreconditions.check(resource, maxAmount);
         StoragePreconditions.index(index, 1);
-        if (!isFullItem() || !resource.equals(this.containedGas) || maxAmount < this.containedAmount)
+        if (!isFullItem() || this.containedAmount == 0 || maxAmount == 0
+            || !resource.equals(this.containedGas) || maxAmount < this.containedAmount)
             return 0;
         ResourceVariant<Item> empty = this.fullToEmpty.apply(this.context.resource());
         return this.context.exchange(empty, 1, transaction) == 1 ? this.containedAmount : 0;

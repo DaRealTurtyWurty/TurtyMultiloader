@@ -12,7 +12,10 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 /**
- * Describes one family of transferable resources. Identity is its namespaced identifier.
+ * Describes one family of transferable resources.
+ *
+ * <p>Two types only compare equal when all of their defining semantics match. In particular, reusing an identifier
+ * for a different registry, dimension, or empty-value strategy does not make the types interchangeable.</p>
  */
 public final class ResourceType<T> {
     private final Identifier id;
@@ -88,12 +91,19 @@ public final class ResourceType<T> {
 
     @Override
     public boolean equals(Object object) {
-        return object instanceof ResourceType<?> other && this.id.equals(other.id);
+        if (this == object)
+            return true;
+        return object instanceof ResourceType<?> other
+            && this.id.equals(other.id)
+            && Objects.equals(this.registryKey, other.registryKey)
+            && this.unitDimension.equals(other.unitDimension)
+            && this.emptyPredicate.equals(other.emptyPredicate)
+            && this.emptyHolder.equals(other.emptyHolder);
     }
 
     @Override
     public int hashCode() {
-        return this.id.hashCode();
+        return Objects.hash(this.id, this.registryKey, this.unitDimension, this.emptyPredicate, this.emptyHolder);
     }
 
     @Override

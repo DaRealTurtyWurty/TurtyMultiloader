@@ -33,6 +33,11 @@ public final class RestrictedStorage<V extends ResourceVariant<?>> implements Re
     }
 
     @Override
+    public boolean hasStableIndices() {
+        return this.storage.hasStableIndices();
+    }
+
+    @Override
     public int size() {
         return this.storage.size();
     }
@@ -74,6 +79,28 @@ public final class RestrictedStorage<V extends ResourceVariant<?>> implements Re
         StoragePreconditions.check(resource, maxAmount);
         StoragePreconditions.index(index, size());
         return this.restriction.supportsExtraction() ? this.storage.extract(index, resource, maxAmount, transaction) : 0;
+    }
+
+    @Override
+    public long insert(V resource, long maxAmount, TransferContext transaction) {
+        StoragePreconditions.check(resource, maxAmount);
+        return this.restriction.supportsInsertion() ? this.storage.insert(resource, maxAmount, transaction) : 0;
+    }
+
+    @Override
+    public long extract(V resource, long maxAmount, TransferContext transaction) {
+        StoragePreconditions.check(resource, maxAmount);
+        return this.restriction.supportsExtraction() ? this.storage.extract(resource, maxAmount, transaction) : 0;
+    }
+
+    @Override
+    public boolean supportsInsertion() {
+        return this.restriction.supportsInsertion() && this.storage.supportsInsertion();
+    }
+
+    @Override
+    public boolean supportsExtraction() {
+        return this.restriction.supportsExtraction() && this.storage.supportsExtraction();
     }
 
     @Override

@@ -5,6 +5,8 @@ import dev.turtywurty.turtymultiloader.transfer.transaction.TransferContext;
 
 public record ResourceStorageView<V extends ResourceVariant<?>>(ResourceStorage<V> storage, int index) {
     public ResourceStorageView {
+        if (!storage.hasStableIndices())
+            throw new IllegalArgumentException("Storage does not expose stable indexed slots");
         if (index < 0 || index >= storage.size())
             throw new IndexOutOfBoundsException(index);
     }

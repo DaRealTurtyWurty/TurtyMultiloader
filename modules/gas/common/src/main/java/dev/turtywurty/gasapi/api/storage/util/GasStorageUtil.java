@@ -16,7 +16,14 @@ public final class GasStorageUtil {
         ResourceStorage<ResourceVariant<Gas>> storage,
         ResourceStorage<ResourceVariant<Gas>> heldItemStorage
     ) {
+        requireStableIndices(storage, "storage");
+        requireStableIndices(heldItemStorage, "heldItemStorage");
         return moveFirst(storage, heldItemStorage) || moveFirst(heldItemStorage, storage);
+    }
+
+    private static void requireStableIndices(ResourceStorage<?> storage, String name) {
+        if (!storage.hasStableIndices())
+            throw new IllegalArgumentException(name + " must expose stable indices");
     }
 
     private static boolean moveFirst(

@@ -7,9 +7,20 @@ import dev.turtywurty.turtymultiloader.transfer.transaction.TransferContext;
 import java.util.Iterator;
 
 /**
- * Indexed, transactional storage. All amounts use the unit declared by its StorageKey.
+ * Transactional storage. All amounts use the unit declared by its StorageKey.
+ *
+ * <p>Most implementations expose stable indexed slots. An adapter for a native aggregate storage may instead report
+ * {@link #hasStableIndices()} as {@code false} and {@link #size()} as zero. Such a storage still supports the aggregate
+ * insert/extract and direction-query methods, but cannot be inspected, serialized, or mutated by index.</p>
  */
 public interface ResourceStorage<V extends ResourceVariant<?>> extends Iterable<ResourceStorageView<V>> {
+    /**
+     * Whether the indices exposed by this storage are stable, individually addressable slots.
+     */
+    default boolean hasStableIndices() {
+        return true;
+    }
+
     int size();
 
     V resource(int index);
@@ -69,6 +80,8 @@ public interface ResourceStorage<V extends ResourceVariant<?>> extends Iterable<
 
     @Override
     default Iterator<ResourceStorageView<V>> iterator() {
+        if (!hasStableIndices())
+            throw new UnsupportedOperationException("Storage does not expose stable indexed slots");
         return new Iterator<>() {
             private int index;
 

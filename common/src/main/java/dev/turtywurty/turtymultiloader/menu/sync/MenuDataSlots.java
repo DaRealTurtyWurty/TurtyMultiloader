@@ -8,7 +8,8 @@ import java.util.Objects;
 import java.util.function.*;
 
 /**
- * Builds vanilla {@link ContainerData} views, including lossless long and double values split across two slots.
+ * Builds vanilla {@link ContainerData} views whose values remain valid after Vanilla's signed 16-bit menu-data
+ * packet encoding.
  */
 public final class MenuDataSlots implements ContainerData {
     private final List<Entry> entries;
@@ -49,6 +50,10 @@ public final class MenuDataSlots implements ContainerData {
         private Builder() {
         }
 
+        /**
+         * Adds one raw Vanilla data slot. Values must remain in the signed-short range ({@value Short#MIN_VALUE} to
+         * {@value Short#MAX_VALUE}); use one of the wide-value helpers when all bits must be preserved.
+         */
         public Builder add(IntSupplier getter, IntConsumer setter) {
             entries.add(new Entry(
                 Objects.requireNonNull(getter, "getter"),
@@ -66,7 +71,7 @@ public final class MenuDataSlots implements ContainerData {
         public Builder addFloat(DoubleSupplier getter, DoubleConsumer setter) {
             Objects.requireNonNull(getter, "getter");
             Objects.requireNonNull(setter, "setter");
-            return add(
+            return addIntBits(
                 () -> Float.floatToRawIntBits((float) getter.getAsDouble()),
                 value -> setter.accept(Float.intBitsToFloat(value))
             );
@@ -75,14 +80,17 @@ public final class MenuDataSlots implements ContainerData {
         public Builder addLong(LongSupplier getter, LongConsumer setter) {
             Objects.requireNonNull(getter, "getter");
             Objects.requireNonNull(setter, "setter");
-            add(
-                () -> (int) getter.getAsLong(),
-                low -> setter.accept((getter.getAsLong() & 0xFFFFFFFF00000000L) | Integer.toUnsignedLong(low))
-            );
-            add(
-                () -> (int) (getter.getAsLong() >>> 32),
-                high -> setter.accept(((long) high << 32) | (getter.getAsLong() & 0xFFFFFFFFL))
-            );
+            for (int shift = 0; shift < Long.SIZE; shift += Short.SIZE) {
+                int chunkShift = shift;
+                add(
+                    () -> (int) (getter.getAsLong() >>> chunkShift) & 0xFFFF,
+                    chunk -> {
+                        long mask = 0xFFFFL << chunkShift;
+                        long bits = (long) (chunk & 0xFFFF) << chunkShift;
+                        setter.accept((getter.getAsLong() & ~mask) | bits);
+                    }
+                );
+            }
             return this;
         }
 
@@ -117,6 +125,21 @@ public final class MenuDataSlots implements ContainerData {
 
         public MenuDataSlots build() {
             return new MenuDataSlots(entries);
+        }
+
+        private Builder addIntBits(IntSupplier getter, IntConsumer setter) {
+            for (int shift = 0; shift < Integer.SIZE; shift += Short.SIZE) {
+                int chunkShift = shift;
+                add(
+                    () -> getter.getAsInt() >>> chunkShift & 0xFFFF,
+                    chunk -> {
+                        int mask = 0xFFFF << chunkShift;
+                        int bits = (chunk & 0xFFFF) << chunkShift;
+                        setter.accept(getter.getAsInt() & ~mask | bits);
+                    }
+                );
+            }
+            return this;
         }
     }
 

@@ -16,7 +16,6 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.item.Item;
-import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -32,6 +31,7 @@ import net.neoforged.neoforge.transfer.fluid.FluidResource;
 import net.neoforged.neoforge.transfer.item.ItemResource;
 
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.function.IntFunction;
 import java.util.function.Supplier;
@@ -60,7 +60,7 @@ public final class NeoForgeTransferService implements TransferService {
     }
 
     @Override
-    public <V extends ResourceVariant<?>> void registerStorageKey(StorageKey<V> key) {
+    public synchronized <V extends ResourceVariant<?>> void registerStorageKey(StorageKey<V> key) {
         ensureOpen();
         this.capabilities.computeIfAbsent(key, this::createCapabilities);
     }
@@ -113,7 +113,7 @@ public final class NeoForgeTransferService implements TransferService {
         CapabilitiesForKey<V> capabilities = capabilities(key);
         this.declarations.add(event -> event.registerItem(capabilities.item,
             (stack, itemAccess) -> adapt(
-                provider.find(stack, new NeoForgeMutableItemContext(itemAccess)), capabilities.toNative
+                provider.find(new NeoForgeMutableItemContext(stack, itemAccess)), capabilities.toNative
             ), supplied(items, Item[]::new)));
     }
 
@@ -136,13 +136,15 @@ public final class NeoForgeTransferService implements TransferService {
     }
 
     @Override
-    public <V extends ResourceVariant<?>> ResourceStorage<V> findItem(StorageKey<V> key, ItemStack stack,
-                                                                      MutableItemContext context) {
+    public <V extends ResourceVariant<?>> ResourceStorage<V> findItem(
+        StorageKey<V> key,
+        MutableItemContext context
+    ) {
         CapabilitiesForKey<V> capabilities = capabilities(key);
         ItemAccess itemAccess = context instanceof NeoForgeMutableItemContext neoforgeContext
             ? neoforgeContext.itemAccess()
             : NeoForgeMutableItemContext.toNeoForge(context);
-        Object found = stack.getCapability(capabilities.item, itemAccess);
+        Object found = context.stack().getCapability(capabilities.item, itemAccess);
         return found == null ? null : capabilities.fromNative.apply(found);
     }
 
@@ -150,24 +152,35 @@ public final class NeoForgeTransferService implements TransferService {
     public <V extends ResourceVariant<?>> BlockStorageCache<V> createBlockCache(StorageKey<V> key, ServerLevel level,
                                                                                 BlockPos pos, Direction side) {
         CapabilitiesForKey<V> capabilities = capabilities(key);
+        AtomicBoolean open = new AtomicBoolean(true);
         BlockCapabilityCache<Object, Direction> nativeCache = BlockCapabilityCache.create(
-            capabilities.block, level, pos, side
+            capabilities.block,
+            level,
+            pos,
+            side,
+            open::get,
+            () -> {
+            }
         );
         return new BlockStorageCache<>() {
-            private boolean manuallyInvalidated;
-
             @Override
             public ResourceStorage<V> find() {
-                if (this.manuallyInvalidated)
-                    this.manuallyInvalidated = false;
+                if (!open.get())
+                    throw new IllegalStateException("Cannot use a closed block storage cache");
                 Object found = nativeCache.getCapability();
                 return found == null ? null : capabilities.fromNative.apply(found);
             }
 
             @Override
             public void invalidate() {
-                this.manuallyInvalidated = true;
-                level.invalidateCapabilities(pos);
+                if (open.get())
+                    level.invalidateCapabilities(pos);
+            }
+
+            @Override
+            public void close() {
+                if (open.getAndSet(false))
+                    level.invalidateCapabilities(pos);
             }
         };
     }

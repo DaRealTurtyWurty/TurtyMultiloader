@@ -10,6 +10,7 @@ import net.fabricmc.fabric.api.transfer.v1.item.ItemVariant;
 import net.fabricmc.fabric.api.transfer.v1.storage.base.SingleSlotStorage;
 import net.fabricmc.fabric.api.transfer.v1.transaction.TransactionContext;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
 
 import java.util.List;
 
@@ -21,6 +22,12 @@ public final class FabricMutableItemContext implements MutableItemContext {
 
     public FabricMutableItemContext(ContainerItemContext fabric) {
         this.fabric = fabric;
+    }
+
+    public FabricMutableItemContext(ItemStack stack, ContainerItemContext fabric) {
+        this(fabric);
+        if (!ResourceVariant.ofItem(stack).equals(resource()) || stack.getCount() != amount())
+            throw new IllegalArgumentException("The Fabric item context does not describe the supplied stack");
     }
 
     public ContainerItemContext fabricContext() {
@@ -150,6 +157,18 @@ public final class FabricMutableItemContext implements MutableItemContext {
                 return neutral.capacity(0, neutral.resource(0));
             }
         };
+    }
+
+    @Override
+    public ItemStack stack() {
+        ResourceVariant<Item> resource = resource();
+        if (resource.isBlank() || amount() == 0)
+            return ItemStack.EMPTY;
+        return new ItemStack(
+            resource.holder(),
+            Math.toIntExact(Math.min(Integer.MAX_VALUE, amount())),
+            resource.components()
+        );
     }
 
     @Override

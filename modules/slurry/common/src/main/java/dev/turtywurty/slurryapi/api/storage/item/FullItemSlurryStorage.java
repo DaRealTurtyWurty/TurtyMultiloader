@@ -101,7 +101,8 @@ public final class FullItemSlurryStorage implements SingleSlotStorage<ResourceVa
     public long extract(int index, ResourceVariant<Slurry> resource, long maxAmount, TransferContext transaction) {
         StoragePreconditions.check(resource, maxAmount);
         StoragePreconditions.index(index, 1);
-        if (!isFullItem() || !resource.equals(this.containedSlurry) || maxAmount < this.containedAmount)
+        if (!isFullItem() || this.containedAmount == 0 || maxAmount == 0
+            || !resource.equals(this.containedSlurry) || maxAmount < this.containedAmount)
             return 0;
         ResourceVariant<Item> empty = this.fullToEmpty.apply(this.context.resource());
         return this.context.exchange(empty, 1, transaction) == 1 ? this.containedAmount : 0;

@@ -122,47 +122,49 @@ public final class NeoForgeStorageAdapter {
         @Override
         public TransferSupport support(int index) {
             StoragePreconditions.index(index, size());
+            if (this.handler instanceof DirectionalResourceHandler<?> directional)
+                return directional.support(index);
+            // ResourceHandler has no native direction metadata. Unknown third-party implementations must retain the
+            // legacy assumption, while handlers produced by this adapter can round-trip their exact support below.
             return TransferSupport.BOTH;
         }
 
         @Override
         public long insert(int index, V resource, long maxAmount, TransferContext transaction) {
             StoragePreconditions.check(resource, maxAmount);
-            long nativeRemaining = convert(maxAmount, this.neutralUnit, this.nativeUnit);
-            long inserted = 0;
             N nativeResource = this.toNative.apply(resource);
             var nativeTransaction = NeoForgeTransactionAdapters.toNeoForge(transaction);
-            while (nativeRemaining > 0) {
-                int request = (int) Math.min(Integer.MAX_VALUE, nativeRemaining);
-                int moved = this.handler.insert(index, nativeResource, request, nativeTransaction);
-                inserted += moved;
-                nativeRemaining -= moved;
-                if (moved < request)
-                    break;
-            }
+            // ResourceHandler requests are int-sized. Returning a partial transfer keeps this call bounded even when
+            // the neutral caller requests Long.MAX_VALUE from a long-capacity native handler.
+            int request = (int) Math.min(
+                Integer.MAX_VALUE,
+                convert(maxAmount, this.neutralUnit, this.nativeUnit)
+            );
+            if (request == 0)
+                return 0;
+            int inserted = this.handler.insert(index, nativeResource, request, nativeTransaction);
             return convert(inserted, this.nativeUnit, this.neutralUnit);
         }
 
         @Override
         public long extract(int index, V resource, long maxAmount, TransferContext transaction) {
             StoragePreconditions.check(resource, maxAmount);
-            long nativeRemaining = convert(maxAmount, this.neutralUnit, this.nativeUnit);
-            long extracted = 0;
             N nativeResource = this.toNative.apply(resource);
             var nativeTransaction = NeoForgeTransactionAdapters.toNeoForge(transaction);
-            while (nativeRemaining > 0) {
-                int request = (int) Math.min(Integer.MAX_VALUE, nativeRemaining);
-                int moved = this.handler.extract(index, nativeResource, request, nativeTransaction);
-                extracted += moved;
-                nativeRemaining -= moved;
-                if (moved < request)
-                    break;
-            }
+            // See insert: one neutral transfer maps to at most one native operation.
+            int request = (int) Math.min(
+                Integer.MAX_VALUE,
+                convert(maxAmount, this.neutralUnit, this.nativeUnit)
+            );
+            if (request == 0)
+                return 0;
+            int extracted = this.handler.extract(index, nativeResource, request, nativeTransaction);
             return convert(extracted, this.nativeUnit, this.neutralUnit);
         }
     }
 
-    private static final class ToNeoForge<N extends Resource, V extends ResourceVariant<?>> implements ResourceHandler<N> {
+    private static final class ToNeoForge<N extends Resource, V extends ResourceVariant<?>>
+        implements DirectionalResourceHandler<N> {
         private final ResourceStorage<V> storage;
         private final Function<N, V> fromNative;
         private final Function<V, N> toNative;
@@ -203,6 +205,11 @@ public final class NeoForgeStorageAdapter {
         @Override
         public boolean isValid(int index, N resource) {
             return this.storage.isValid(index, this.fromNative.apply(resource));
+        }
+
+        @Override
+        public TransferSupport support(int index) {
+            return this.storage.support(index);
         }
 
         @Override
@@ -256,6 +263,10 @@ public final class NeoForgeStorageAdapter {
                 return nativeAmount;
             }
         }
+    }
+
+    private interface DirectionalResourceHandler<N extends Resource> extends ResourceHandler<N> {
+        TransferSupport support(int index);
     }
 
     private static void validateDimensions(TransferUnit neutralUnit, TransferUnit nativeUnit) {

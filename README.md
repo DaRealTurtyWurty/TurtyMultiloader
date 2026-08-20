@@ -449,7 +449,9 @@ ClientMenus.register(CRUSHER_MENU, CrusherScreen::new);
 ```
 
 For vanilla integer properties, `MenuDataSlots.builder()` creates a `ContainerData` view and includes boolean, enum,
-float, lossless `long`, and lossless `double` mappings. Longs and doubles occupy two vanilla data slots:
+float, lossless `long`, and lossless `double` mappings. Vanilla transmits only 16 bits for each data slot, so raw
+`add(...)` integer values are limited to the signed-short range. Floats occupy two slots; longs and doubles occupy
+four:
 
 ```java
 ContainerData data = MenuDataSlots.builder()
@@ -658,14 +660,44 @@ Use `storage.restrictedTo(TransferSupport.INSERT_ONLY)` or `EXTRACT_ONLY` when e
 The returned live view narrows automation access without restricting recipes or persistence on the owned backing
 storage. `SimpleEnergyStorage` provides the common capacity/max-input/max-output energy implementation.
 
-`SingleSlotStorage`, `CombinedStorage`, `RestrictedStorage`, and `SidedStorage` provide the common views. Root and nested transactions
+`SingleSlotStorage`, `CombinedStorage`, `RestrictedStorage`, and `SidedStorage` provide the common views. Root and
+nested transactions
 support commit, rollback-on-close, simulation, snapshot participants, close callbacks, and final commit callbacks.
 `StorageSnapshot`, `StorageCodecs`, and `StorageSynchronizer` cover persistence and synchronization; snapshots use the
 trusted exact replacement path when the destination implements `MutableResourceStorage`.
 
+Item-contained storage lookups take a single `MutableItemContext`; its `stack()` is the authoritative lookup stack, so
+a context can no longer be paired with an unrelated `ItemStack`. Neutral factories cover detached constants,
+single-slot storages, container/inventory slots, player hands, and carried cursor stacks:
+
+```java
+MutableItemContext context = MutableItemContext.withConstant(stack);
+ResourceStorage<ResourceVariant<UnitResource>> energy = context.find(StorageKeys.ENERGY);
+```
+
 Neutral fluid amounts use droplets (`81,000` per bucket), allowing exact conversion to Fabric units and NeoForge's
 `1,000`-unit bucket convention. Core defines item, fluid, and energy units. Optional resource modules register their
 own dimensions and units. All standard and mod-defined units are canonical entries in `Units.REGISTRY`:
+
+Fluid properties are available through the loader-neutral `FluidVariantAttributes`. A handler registered for a still
+or flowing `Fluid` is a variant-aware overlay: methods it does not override continue to read the active loader's
+native name, sounds, luminance, temperature, viscosity, density, and lighter-than-air value. NeoForge queries the
+component-bearing `FluidStack` overloads of `FluidType` where available.
+
+```java
+FluidVariantAttributes.register(CRUDE_OIL.get(), new FluidVariantAttributeHandler() {
+    @Override
+    public int getViscosity(ResourceVariant<Fluid> variant, @Nullable Level level) {
+        return variant.hasComponents() ? 8_000 : 7_500;
+    }
+});
+
+int viscosity = FluidVariantAttributes.getViscosity(oilVariant, level);
+int light = FluidVariantAttributes.getLuminance(oilVariant);
+boolean rises = FluidVariantAttributes.isLighterThanAir(oilVariant);
+```
+
+Unit registration uses the same neutral registry:
 
 ```java
 TransferUnit doubleEnergy = Units.REGISTRY.register(
@@ -721,9 +753,15 @@ The Fabric module adapts its native `Storage`, `StorageView`, and `TransactionCo
 block/item/entity API lookups, and mutable container-item contexts. The NeoForge module adapts `ResourceHandler`,
 `EnergyHandler`, capabilities,
 its native `TransactionContext`, and `ItemAccess`; custom resources use the same capability machinery. Provider
-declarations are queued until `TransferService.apply()`. Fabric may call `apply()` again to flush declarations made by
-a later consumer. NeoForge's library entrypoint owns its event-bus hookup and accepts declarations until the
-capability-registration event fires; consuming mods do not bind the service to their own event bus.
+declarations are queued until `TransferService.apply()`. On Fabric, declarations made after the first `apply()` are
+registered immediately; another `apply()` call is harmless but unnecessary. NeoForge's library entrypoint owns its
+event-bus hookup and accepts declarations until the capability-registration event fires, then rejects late
+declarations explicitly; consuming mods do not bind the service to their own event bus.
+
+Only native storages with stable, addressable slots expose indexed access. Arbitrary Fabric `Storage` implementations
+remain usable through aggregate insert/extract operations, but report `hasStableIndices() == false` and zero indexed
+slots. Indexed snapshots, synchronization, and views reject these storages instead of capturing a misleading empty
+inventory. For stable Fabric slots, resource-dependent capacity is measured with a rolled-back insertion simulation.
 
 ### Initialization
 

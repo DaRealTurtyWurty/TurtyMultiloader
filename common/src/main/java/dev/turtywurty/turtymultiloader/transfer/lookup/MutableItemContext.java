@@ -1,19 +1,97 @@
 package dev.turtywurty.turtymultiloader.transfer.lookup;
 
+import dev.turtywurty.turtymultiloader.transfer.TransferService;
 import dev.turtywurty.turtymultiloader.transfer.resource.ResourceVariant;
 import dev.turtywurty.turtymultiloader.transfer.storage.ResourceStorage;
+import dev.turtywurty.turtymultiloader.transfer.storage.SingleSlotStorage;
 import dev.turtywurty.turtymultiloader.transfer.storage.TransferSupport;
 import dev.turtywurty.turtymultiloader.transfer.transaction.TransferContext;
 import dev.turtywurty.turtymultiloader.transfer.transaction.TransferTransactionScope;
+import net.minecraft.world.Container;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Transactional access to the item location used for an item-storage lookup.
  */
 public interface MutableItemContext {
+    static MutableItemContext withConstant(ItemStack stack) {
+        return new ConstantItemContext(stack);
+    }
+
+    static MutableItemContext ofSingleSlot(SingleSlotStorage<ResourceVariant<Item>> slot) {
+        return new StorageItemContext(slot);
+    }
+
+    static MutableItemContext ofContainerSlot(Container container, int slot) {
+        Objects.requireNonNull(container, "container");
+        if (slot < 0 || slot >= container.getContainerSize())
+            throw new IndexOutOfBoundsException(slot);
+        return new StackReferenceItemContext(
+            () -> container.getItem(slot),
+            stack -> container.setItem(slot, stack),
+            stack -> container.canPlaceItem(slot, stack),
+            container::getMaxStackSize,
+            container::setChanged
+        );
+    }
+
+    static MutableItemContext ofInventorySlot(Inventory inventory, int slot) {
+        return ofContainerSlot(inventory, slot);
+    }
+
+    static MutableItemContext ofPlayerHand(Player player, InteractionHand hand) {
+        Objects.requireNonNull(player, "player");
+        Objects.requireNonNull(hand, "hand");
+        return new StackReferenceItemContext(
+            () -> player.getItemInHand(hand),
+            stack -> player.setItemInHand(hand, stack),
+            ignored -> true,
+            ItemStack::getMaxStackSize,
+            () -> player.getInventory().setChanged()
+        );
+    }
+
+    static MutableItemContext ofCursor(AbstractContainerMenu menu) {
+        Objects.requireNonNull(menu, "menu");
+        return new StackReferenceItemContext(
+            menu::getCarried,
+            menu::setCarried,
+            ignored -> true,
+            ItemStack::getMaxStackSize,
+            () -> {
+            }
+        );
+    }
+
+    static MutableItemContext ofPlayerCursor(Player player) {
+        Objects.requireNonNull(player, "player");
+        return ofCursor(player.containerMenu);
+    }
+
+    static MutableItemContext ofPlayerCursor(Player player, AbstractContainerMenu menu) {
+        Objects.requireNonNull(player, "player");
+        return ofCursor(menu);
+    }
+
+    /**
+     * The current stack in the primary item location. Item lookup implementations must use this value rather than
+     * accepting a separate stack argument.
+     */
+    ItemStack stack();
+
+    default <V extends ResourceVariant<?>> ResourceStorage<V> find(StorageKey<V> key) {
+        Objects.requireNonNull(key, "key");
+        return stack().isEmpty() ? null : TransferService.get().findItem(key, this);
+    }
+
     ResourceVariant<Item> resource();
 
     long amount();
@@ -75,10 +153,4 @@ public interface MutableItemContext {
         return 0;
     }
 
-    default ItemStack stack() {
-        ResourceVariant<Item> resource = resource();
-        if (resource.isBlank() || amount() == 0)
-            return ItemStack.EMPTY;
-        return new ItemStack(resource.holder(), Math.toIntExact(Math.min(Integer.MAX_VALUE, amount())), resource.components());
-    }
 }

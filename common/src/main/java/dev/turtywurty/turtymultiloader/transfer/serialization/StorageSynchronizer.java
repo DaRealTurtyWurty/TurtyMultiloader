@@ -15,6 +15,8 @@ public final class StorageSynchronizer<V extends ResourceVariant<?>> {
 
     public StorageSynchronizer(ResourceStorage<V> storage) {
         this.storage = Objects.requireNonNull(storage, "storage");
+        if (!storage.hasStableIndices())
+            throw new IllegalArgumentException("Storage synchronization requires stable indexed slots");
     }
 
     public boolean sendIfChanged(Consumer<StorageSnapshot<V>> sender) {

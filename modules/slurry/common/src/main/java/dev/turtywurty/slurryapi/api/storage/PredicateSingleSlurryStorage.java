@@ -26,6 +26,11 @@ public class PredicateSingleSlurryStorage extends SingleSlurryStorage {
     }
 
     @Override
+    public boolean isValid(int index, ResourceVariant<Slurry> resource) {
+        return super.isValid(index, resource) && (this.canInsert.test(resource) || this.canExtract.test(resource));
+    }
+
+    @Override
     public long insert(int index, ResourceVariant<Slurry> resource, long maxAmount, TransferContext transaction) {
         return this.canInsert.test(resource) ? super.insert(index, resource, maxAmount, transaction) : 0;
     }

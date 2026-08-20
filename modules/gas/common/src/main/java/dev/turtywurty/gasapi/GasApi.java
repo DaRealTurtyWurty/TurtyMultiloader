@@ -5,6 +5,7 @@ import dev.turtywurty.turtymultiloader.registration.CustomRegistry;
 import dev.turtywurty.turtymultiloader.registration.CustomRegistryOptions;
 import dev.turtywurty.turtymultiloader.registration.RegistrationHandle;
 import dev.turtywurty.turtymultiloader.registration.RegistryService;
+import dev.turtywurty.turtymultiloader.transfer.TransferService;
 import dev.turtywurty.turtymultiloader.transfer.resource.ResourceFamily;
 import dev.turtywurty.turtymultiloader.transfer.resource.ResourceTypes;
 import dev.turtywurty.turtymultiloader.transfer.unit.TransferUnit;
@@ -49,6 +50,7 @@ public final class GasApi {
      * Forces the module declarations to load before the owning mod applies registration.
      */
     public static void initialize() {
+        TransferService.get().registerStorageKey(RESOURCE_FAMILY.storageKey());
     }
 
     public static RegistrationHandle<Gas, Gas> register(String path) {

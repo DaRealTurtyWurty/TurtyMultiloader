@@ -26,6 +26,11 @@ public class PredicateSingleGasStorage extends SingleGasStorage {
     }
 
     @Override
+    public boolean isValid(int index, ResourceVariant<Gas> resource) {
+        return super.isValid(index, resource) && (this.canInsert.test(resource) || this.canExtract.test(resource));
+    }
+
+    @Override
     public long insert(int index, ResourceVariant<Gas> resource, long maxAmount, TransferContext transaction) {
         return this.canInsert.test(resource) ? super.insert(index, resource, maxAmount, transaction) : 0;
     }

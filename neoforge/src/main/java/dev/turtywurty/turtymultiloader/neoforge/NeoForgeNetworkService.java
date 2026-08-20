@@ -9,6 +9,7 @@ import net.minecraft.network.protocol.PacketFlow;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerChunkCache;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.network.ServerConfigurationPacketListenerImpl;
@@ -148,24 +149,25 @@ public final class NeoForgeNetworkService implements NetworkService {
 
     @Override
     public void sendToTracking(Entity entity, CustomPacketPayload payload) {
-        Objects.requireNonNull(payload, "payload");
-        PacketDistributor.sendToPlayersTrackingEntity(Objects.requireNonNull(entity, "entity"), payload);
+        Objects.requireNonNull(entity, "entity");
+        if (entity.level().isClientSide())
+            throw new IllegalStateException("Cannot send clientbound payloads on the client");
+        if (entity.level().getChunkSource() instanceof ServerChunkCache chunkCache)
+            send(chunkCache.chunkMap.getPlayersWatching(entity), payload);
     }
 
     @Override
     public void sendToTracking(ServerLevel level, BlockPos pos, CustomPacketPayload payload) {
-        Objects.requireNonNull(payload, "payload");
-        PacketDistributor.sendToPlayersTrackingChunk(
-            Objects.requireNonNull(level, "level"),
+        Objects.requireNonNull(level, "level");
+        send(level.getChunkSource().chunkMap.getPlayers(
             ChunkPos.containing(Objects.requireNonNull(pos, "pos")),
-            payload
-        );
+            false
+        ), payload);
     }
 
     @Override
     public void sendToDimension(ServerLevel level, CustomPacketPayload payload) {
-        Objects.requireNonNull(payload, "payload");
-        PacketDistributor.sendToPlayersInDimension(Objects.requireNonNull(level, "level"), payload);
+        send(Objects.requireNonNull(level, "level").players(), payload);
     }
 
     @Override
@@ -173,15 +175,12 @@ public final class NeoForgeNetworkService implements NetworkService {
         if (radius < 0)
             throw new IllegalArgumentException("radius must be non-negative");
         Objects.requireNonNull(position, "position");
-        PacketDistributor.sendToPlayersNear(
-            Objects.requireNonNull(level, "level"),
-            null,
-            position.x(),
-            position.y(),
-            position.z(),
-            radius,
-            Objects.requireNonNull(payload, "payload")
-        );
+        Objects.requireNonNull(payload, "payload");
+        double radiusSquared = radius * radius;
+        for (ServerPlayer player : Objects.requireNonNull(level, "level").players()) {
+            if (player.position().distanceToSqr(position) < radiusSquared)
+                sendToPlayer(player, payload);
+        }
     }
 
     @Override
@@ -194,6 +193,12 @@ public final class NeoForgeNetworkService implements NetworkService {
     public boolean canSend(ServerPlayer player, CustomPacketPayload.Type<?> type) {
         return ((ICommonPacketListener) Objects.requireNonNull(player, "player").connection)
             .hasChannel(Objects.requireNonNull(type, "type"));
+    }
+
+    private void send(Iterable<ServerPlayer> players, CustomPacketPayload payload) {
+        Objects.requireNonNull(payload, "payload");
+        for (ServerPlayer player : players)
+            sendToPlayer(player, payload);
     }
 
     @Override

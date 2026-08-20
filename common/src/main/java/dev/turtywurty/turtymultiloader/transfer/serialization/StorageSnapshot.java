@@ -20,6 +20,8 @@ public record StorageSnapshot<V extends ResourceVariant<?>>(List<Entry<V>> entri
     }
 
     public static <V extends ResourceVariant<?>> StorageSnapshot<V> capture(ResourceStorage<V> storage) {
+        Objects.requireNonNull(storage, "storage");
+        requireStableIndices(storage);
         List<Entry<V>> entries = new ArrayList<>(storage.size());
         for (int index = 0; index < storage.size(); index++)
             entries.add(new Entry<>(storage.resource(index), storage.amount(index)));
@@ -48,6 +50,7 @@ public record StorageSnapshot<V extends ResourceVariant<?>>(List<Entry<V>> entri
     public boolean apply(ResourceStorage<V> storage, TransferContext transaction) {
         Objects.requireNonNull(storage, "storage");
         Objects.requireNonNull(transaction, "transaction");
+        requireStableIndices(storage);
         if (storage.size() != this.entries.size())
             return false;
         try (TransferTransactionScope operation = transaction.openNested()) {
@@ -74,6 +77,11 @@ public record StorageSnapshot<V extends ResourceVariant<?>>(List<Entry<V>> entri
             operation.commit();
             return true;
         }
+    }
+
+    private static void requireStableIndices(ResourceStorage<?> storage) {
+        if (!storage.hasStableIndices())
+            throw new IllegalArgumentException("Storage snapshots require stable indexed slots");
     }
 
     public record Entry<V extends ResourceVariant<?>>(V resource, long amount) {

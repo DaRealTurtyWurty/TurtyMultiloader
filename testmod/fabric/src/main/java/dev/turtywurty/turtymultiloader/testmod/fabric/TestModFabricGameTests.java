@@ -2,23 +2,36 @@ package dev.turtywurty.turtymultiloader.testmod.fabric;
 
 import dev.turtywurty.turtymultiloader.fabric.transfer.FabricMutableItemContext;
 import dev.turtywurty.turtymultiloader.fabric.transfer.FabricResourceAdapters;
+import dev.turtywurty.turtymultiloader.fabric.transfer.FabricStorageAdapter;
 import dev.turtywurty.turtymultiloader.testmod.*;
 import dev.turtywurty.turtymultiloader.transfer.lookup.BlockStorageCache;
 import dev.turtywurty.turtymultiloader.transfer.lookup.StorageItemContext;
 import dev.turtywurty.turtymultiloader.transfer.lookup.StorageKeys;
 import dev.turtywurty.turtymultiloader.transfer.resource.ResourceTypes;
 import dev.turtywurty.turtymultiloader.transfer.resource.ResourceVariant;
+import dev.turtywurty.turtymultiloader.transfer.serialization.StorageSnapshot;
+import dev.turtywurty.turtymultiloader.transfer.storage.ResourceStorage;
 import dev.turtywurty.turtymultiloader.transfer.storage.SimpleSingleSlotStorage;
+import dev.turtywurty.turtymultiloader.transfer.storage.TransferSupport;
+import dev.turtywurty.turtymultiloader.transfer.transaction.TransferTransaction;
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
 import net.fabricmc.fabric.api.transfer.v1.context.ContainerItemContext;
+import net.fabricmc.fabric.api.transfer.v1.item.ItemVariant;
+import net.fabricmc.fabric.api.transfer.v1.storage.Storage;
+import net.fabricmc.fabric.api.transfer.v1.storage.StorageView;
+import net.fabricmc.fabric.api.transfer.v1.storage.base.SingleVariantStorage;
 import net.fabricmc.fabric.api.transfer.v1.transaction.Transaction;
+import net.fabricmc.fabric.api.transfer.v1.transaction.TransactionContext;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.level.block.Blocks;
 import team.reborn.energy.api.EnergyStorage;
 
+import java.util.Iterator;
 import java.util.List;
 
 public final class TestModFabricGameTests {
@@ -107,6 +120,68 @@ public final class TestModFabricGameTests {
             "Neutral context did not preserve Fabric additional slots"
         );
 
+        SingleVariantStorage<ItemVariant> resourceDependent = new SingleVariantStorage<>() {
+            @Override
+            protected ItemVariant getBlankVariant() {
+                return ItemVariant.blank();
+            }
+
+            @Override
+            protected long getCapacity(ItemVariant variant) {
+                return variant.isBlank() ? 0 : 7;
+            }
+        };
+        ResourceStorage<ResourceVariant<Item>> indexed = FabricStorageAdapter.fromFabricItems(resourceDependent);
+        helper.assertValueEqual(indexed.capacity(0, item), 7L, "Fabric resource-dependent slot capacity");
+        helper.assertValueEqual(resourceDependent.getAmount(), 0L, "Capacity simulation mutated Fabric storage");
+
+        Storage<ItemVariant> aggregate = new Storage<>() {
+            @Override
+            public long insert(ItemVariant resource, long maxAmount, TransactionContext transaction) {
+                return resourceDependent.insert(resource, maxAmount, transaction);
+            }
+
+            @Override
+            public long extract(ItemVariant resource, long maxAmount, TransactionContext transaction) {
+                return resourceDependent.extract(resource, maxAmount, transaction);
+            }
+
+            @Override
+            public Iterator<StorageView<ItemVariant>> iterator() {
+                return resourceDependent.iterator();
+            }
+
+            @Override
+            public long getVersion() {
+                return resourceDependent.getVersion();
+            }
+        };
+        ResourceStorage<ResourceVariant<Item>> aggregateNeutral = FabricStorageAdapter.fromFabricItems(aggregate);
+        helper.assertTrue(!aggregateNeutral.hasStableIndices(), "Arbitrary Fabric storage claimed stable indices");
+        helper.assertValueEqual(aggregateNeutral.size(), 0, "Arbitrary Fabric storage exposed pseudo-slots");
+        try (TransferTransaction transaction = TransferTransaction.openRoot()) {
+            helper.assertValueEqual(
+                aggregateNeutral.restrictedTo(TransferSupport.INSERT_ONLY).insert(item, 2, transaction),
+                2L,
+                "Aggregate-only Fabric insertion"
+            );
+            transaction.commit();
+        }
+        helper.assertValueEqual(resourceDependent.getAmount(), 2L, "Aggregate-only Fabric insertion amount");
+        ResourceVariant<Item> differentItem = ResourceTypes.ITEM.of(Items.STONE.builtInRegistryHolder());
+        helper.assertValueEqual(
+            indexed.capacity(0, differentItem),
+            0L,
+            "Fabric slot capacity for a resource incompatible with its current contents"
+        );
+        boolean rejectedSnapshot = false;
+        try {
+            StorageSnapshot.capture(aggregateNeutral);
+        } catch (IllegalArgumentException ignored) {
+            rejectedSnapshot = true;
+        }
+        helper.assertTrue(rejectedSnapshot, "Aggregate-only Fabric storage allowed an indexed snapshot");
+
         BlockPos relative = new BlockPos(2, 1, 1);
         helper.setBlock(relative, TestModContent.TEST_LOG.get());
         BlockStorageCache<ResourceVariant<Item>> cache = TestModContent.TRANSFERS.createBlockCache(
@@ -116,6 +191,10 @@ public final class TestModFabricGameTests {
             Direction.UP
         );
         helper.assertTrue(cache.find() != null, "Fabric cache did not resolve");
+        helper.setBlock(relative, Blocks.AIR);
+        helper.assertTrue(cache.find() == null, "Fabric cache retained the provider after block replacement");
+        helper.setBlock(relative, TestModContent.TEST_LOG.get());
+        helper.assertTrue(cache.find() != null, "Fabric cache did not recover after block replacement");
         cache.close();
         boolean rejectedClosedLookup = false;
         try {

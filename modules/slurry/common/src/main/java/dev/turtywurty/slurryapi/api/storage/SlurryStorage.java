@@ -12,7 +12,6 @@ import dev.turtywurty.turtymultiloader.transfer.storage.ResourceStorage;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.item.Item;
-import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 
@@ -47,7 +46,7 @@ public final class SlurryStorage {
         return TransferService.get().findBlock(KEY, level, pos, side);
     }
 
-    public static ResourceStorage<ResourceVariant<Slurry>> findItem(ItemStack stack, MutableItemContext context) {
-        return TransferService.get().findItem(KEY, stack, context);
+    public static ResourceStorage<ResourceVariant<Slurry>> findItem(MutableItemContext context) {
+        return TransferService.get().findItem(KEY, context);
     }
 }

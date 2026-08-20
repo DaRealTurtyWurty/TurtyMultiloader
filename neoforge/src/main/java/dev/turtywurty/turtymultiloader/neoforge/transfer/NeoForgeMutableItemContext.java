@@ -4,6 +4,7 @@ import dev.turtywurty.turtymultiloader.transfer.lookup.MutableItemContext;
 import dev.turtywurty.turtymultiloader.transfer.resource.ResourceVariant;
 import dev.turtywurty.turtymultiloader.transfer.transaction.TransferContext;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.transfer.access.ItemAccess;
 import net.neoforged.neoforge.transfer.item.ItemResource;
 import net.neoforged.neoforge.transfer.transaction.TransactionContext;
@@ -13,6 +14,12 @@ public final class NeoForgeMutableItemContext implements MutableItemContext {
 
     public NeoForgeMutableItemContext(ItemAccess itemAccess) {
         this.itemAccess = itemAccess;
+    }
+
+    public NeoForgeMutableItemContext(ItemStack stack, ItemAccess itemAccess) {
+        this(itemAccess);
+        if (!ResourceVariant.ofItem(stack).equals(resource()) || stack.getCount() != amount())
+            throw new IllegalArgumentException("The NeoForge item context does not describe the supplied stack");
     }
 
     public ItemAccess itemAccess() {
@@ -49,6 +56,18 @@ public final class NeoForgeMutableItemContext implements MutableItemContext {
                     NeoForgeTransactionAdapters.fromNeoForge(transaction)));
             }
         };
+    }
+
+    @Override
+    public ItemStack stack() {
+        ResourceVariant<Item> resource = resource();
+        if (resource.isBlank() || amount() == 0)
+            return ItemStack.EMPTY;
+        return new ItemStack(
+            resource.holder(),
+            Math.toIntExact(Math.min(Integer.MAX_VALUE, amount())),
+            resource.components()
+        );
     }
 
     @Override

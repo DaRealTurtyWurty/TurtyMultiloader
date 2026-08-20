@@ -9,7 +9,6 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.item.Item;
-import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -21,6 +20,10 @@ import java.util.function.Supplier;
 
 /**
  * Loader-neutral storage exposure and lookup service. Provider declarations are applied at loader-safe timing.
+ *
+ * <p>On Fabric, declarations made after the first {@link #apply()} are registered immediately. On NeoForge,
+ * declarations remain queued after {@code apply()} until the capability-registration event, and attempts made after
+ * that event are rejected. Calling {@code apply()} more than once is always safe and has no additional effect.</p>
  */
 public interface TransferService {
     static TransferService get() {
@@ -79,7 +82,6 @@ public interface TransferService {
 
     <V extends ResourceVariant<?>> ResourceStorage<V> findItem(
         StorageKey<V> key,
-        ItemStack stack,
         MutableItemContext context
     );
 
@@ -90,6 +92,10 @@ public interface TransferService {
         Direction side
     );
 
+    /**
+     * Requests invalidation of loader-native lookup state for a block. Fabric's native cache lifecycle already tracks
+     * block and block-entity replacement and therefore needs no additional action.
+     */
     void invalidateBlock(Level level, BlockPos pos);
 
     void apply();

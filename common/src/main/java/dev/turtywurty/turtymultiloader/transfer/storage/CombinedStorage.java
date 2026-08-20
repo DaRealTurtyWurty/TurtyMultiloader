@@ -21,8 +21,13 @@ public final class CombinedStorage<V extends ResourceVariant<?>> implements Reso
     }
 
     @Override
+    public boolean hasStableIndices() {
+        return this.parts.stream().allMatch(ResourceStorage::hasStableIndices);
+    }
+
+    @Override
     public int size() {
-        return this.parts.stream().mapToInt(ResourceStorage::size).sum();
+        return hasStableIndices() ? this.parts.stream().mapToInt(ResourceStorage::size).sum() : 0;
     }
 
     @Override
@@ -65,6 +70,40 @@ public final class CombinedStorage<V extends ResourceVariant<?>> implements Reso
     public long extract(int index, V resource, long maxAmount, TransferContext transaction) {
         Located<V> located = locate(index);
         return located.storage.extract(located.index, resource, maxAmount, transaction);
+    }
+
+    @Override
+    public long insert(V resource, long maxAmount, TransferContext transaction) {
+        StoragePreconditions.check(resource, maxAmount);
+        long inserted = 0;
+        for (ResourceStorage<V> part : this.parts) {
+            if (inserted >= maxAmount)
+                break;
+            inserted += part.insert(resource, maxAmount - inserted, transaction);
+        }
+        return inserted;
+    }
+
+    @Override
+    public long extract(V resource, long maxAmount, TransferContext transaction) {
+        StoragePreconditions.check(resource, maxAmount);
+        long extracted = 0;
+        for (ResourceStorage<V> part : this.parts) {
+            if (extracted >= maxAmount)
+                break;
+            extracted += part.extract(resource, maxAmount - extracted, transaction);
+        }
+        return extracted;
+    }
+
+    @Override
+    public boolean supportsInsertion() {
+        return this.parts.stream().anyMatch(ResourceStorage::supportsInsertion);
+    }
+
+    @Override
+    public boolean supportsExtraction() {
+        return this.parts.stream().anyMatch(ResourceStorage::supportsExtraction);
     }
 
     @Override
