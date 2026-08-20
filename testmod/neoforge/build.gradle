@@ -18,10 +18,22 @@ repositories {
 sourceSets.main.java.srcDir('../common/src/main/java')
 sourceSets.main.resources.srcDir('../common/src/main/resources')
 
+def loaderAttribute = Attribute.of('io.github.mcgradleconventions.loader', String)
+
 dependencies {
     implementation project(path: ':neoforge')
     implementation project(path: ':gas-neoforge')
     implementation project(path: ':slurry-neoforge')
+
+    // The loader projects compile these sources into their own output, but IntelliJ
+    // models them as separate modules. Keep the module dependencies visible to the IDE.
+    [':common', ':gas-common', ':slurry-common'].each { commonProject ->
+        compileOnly(project(commonProject)) {
+            attributes {
+                attribute(loaderAttribute, 'common')
+            }
+        }
+    }
 }
 
 neoForge {
