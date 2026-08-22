@@ -18,7 +18,9 @@ import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.shapes.BooleanOp;
 import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
@@ -63,7 +65,8 @@ public class MultiblockPartBlock extends Block implements EntityBlock {
         BlockState controllerState = level.getBlockState(controllerPos);
         VoxelShape controllerShape = controllerState.getShape(level, controllerPos, context);
         BlockPos offset = pos.subtract(controllerPos);
-        return controllerShape.move(-offset.getX(), -offset.getY(), -offset.getZ());
+        VoxelShape translatedShape = controllerShape.move(-offset.getX(), -offset.getY(), -offset.getZ());
+        return Shapes.join(translatedShape, Shapes.block(), BooleanOp.AND).optimize();
     }
 
     @Override
