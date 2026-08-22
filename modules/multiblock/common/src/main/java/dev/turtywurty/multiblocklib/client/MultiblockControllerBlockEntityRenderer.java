@@ -16,6 +16,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import org.jspecify.annotations.Nullable;
 
@@ -105,6 +106,22 @@ public class MultiblockControllerBlockEntityRenderer implements BlockEntityRende
         return true;
     }
 
+    @Override
+    public boolean shouldRender(final MultiblockControllerBlockEntity blockEntity, final Vec3 cameraPos) {
+        AABB renderBounds = createMultiblockRenderBounds(blockEntity);
+        if (renderBounds == null) {
+            return BlockEntityRenderer.super.shouldRender(blockEntity, cameraPos);
+        }
+
+        double viewDistance = getViewDistance();
+        return distanceToSqr(renderBounds, cameraPos) < viewDistance * viewDistance;
+    }
+
+    public AABB getRenderBoundingBox(final MultiblockControllerBlockEntity blockEntity) {
+        AABB renderBounds = createMultiblockRenderBounds(blockEntity);
+        return renderBounds != null ? renderBounds : new AABB(blockEntity.getBlockPos());
+    }
+
     private static MovingBlockRenderState createMovingBlock(final BlockPos pos, final BlockState blockState, final ClientLevel level) {
         MovingBlockRenderState renderState = new MovingBlockRenderState();
         renderState.randomSeedPos = pos;
@@ -137,5 +154,45 @@ public class MultiblockControllerBlockEntityRenderer implements BlockEntityRende
         }
 
         return true;
+    }
+
+    private static AABB createMultiblockRenderBounds(final MultiblockControllerBlockEntity controller) {
+        List<MultiblockPartEntry> parts = controller.getParts();
+        if (!controller.isFormed() || parts.isEmpty()) {
+            return null;
+        }
+
+        int minX = 0;
+        int minY = 0;
+        int minZ = 0;
+        int maxX = 1;
+        int maxY = 1;
+        int maxZ = 1;
+        for (MultiblockPartEntry entry : parts) {
+            BlockPos offset = entry.offset();
+            minX = Math.min(minX, offset.getX());
+            minY = Math.min(minY, offset.getY());
+            minZ = Math.min(minZ, offset.getZ());
+            maxX = Math.max(maxX, offset.getX() + 1);
+            maxY = Math.max(maxY, offset.getY() + 1);
+            maxZ = Math.max(maxZ, offset.getZ() + 1);
+        }
+
+        BlockPos controllerPos = controller.getBlockPos();
+        return new AABB(
+                controllerPos.getX() + minX,
+                controllerPos.getY() + minY,
+                controllerPos.getZ() + minZ,
+                controllerPos.getX() + maxX,
+                controllerPos.getY() + maxY,
+                controllerPos.getZ() + maxZ
+        );
+    }
+
+    private static double distanceToSqr(final AABB bounds, final Vec3 pos) {
+        double dx = Math.max(Math.max(bounds.minX - pos.x, 0.0D), pos.x - bounds.maxX);
+        double dy = Math.max(Math.max(bounds.minY - pos.y, 0.0D), pos.y - bounds.maxY);
+        double dz = Math.max(Math.max(bounds.minZ - pos.z, 0.0D), pos.z - bounds.maxZ);
+        return dx * dx + dy * dy + dz * dz;
     }
 }

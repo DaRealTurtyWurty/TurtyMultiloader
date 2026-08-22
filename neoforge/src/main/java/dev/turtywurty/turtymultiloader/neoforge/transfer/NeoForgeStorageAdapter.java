@@ -198,6 +198,10 @@ public final class NeoForgeStorageAdapter {
 
         @Override
         public long getCapacityAsLong(int index, N resource) {
+            if (resource.isEmpty()) {
+                return convert(generalCapacity(index), this.neutralUnit, this.nativeUnit);
+            }
+
             return convert(this.storage.capacity(index, this.fromNative.apply(resource)),
                 this.neutralUnit, this.nativeUnit);
         }
@@ -262,6 +266,19 @@ public final class NeoForgeStorageAdapter {
                 nested.commit();
                 return nativeAmount;
             }
+        }
+
+        private long generalCapacity(int index) {
+            if (!this.storage.support(index).supportsInsertion()) {
+                return this.storage.amount(index);
+            }
+
+            V currentResource = this.storage.resource(index);
+            if (!currentResource.isBlank()) {
+                return this.storage.capacity(index, currentResource);
+            }
+
+            return Integer.MAX_VALUE;
         }
     }
 

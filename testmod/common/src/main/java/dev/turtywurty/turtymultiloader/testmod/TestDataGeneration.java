@@ -45,6 +45,7 @@ public final class TestDataGeneration {
     );
 
     public static final DataGenerationSpec SPEC = DataGeneration.spec(TestModContent.MOD_ID)
+        .woodSet(TestModContent.TEST_WOOD_SET)
         .recipes((registries, output) -> ShapelessRecipeBuilder.shapeless(
                 registries.lookupOrThrow(Registries.ITEM),
                 RecipeCategory.MISC,

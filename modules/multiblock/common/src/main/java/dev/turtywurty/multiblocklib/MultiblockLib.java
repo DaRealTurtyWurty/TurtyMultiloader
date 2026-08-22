@@ -40,7 +40,6 @@ public final class MultiblockLib {
     public static final ResourceKey<Block> MULTIBLOCK_CONTROLLER_KEY = ResourceKey.create(Registries.BLOCK, Identifier.parse(MOD_ID + ":multiblock_controller"));
     public static MultiblockControllerBlock MULTIBLOCK_CONTROLLER;
     private static final Set<Block> CONTROLLER_BLOCKS = new HashSet<>();
-    public static BlockEntityType<MultiblockControllerBlockEntity> MULTIBLOCK_CONTROLLER_ENTITY;
     public static RegistrationHandle<Block, MultiblockPartBlock> MULTIBLOCK_PART_HANDLE;
     public static RegistrationHandle<Block, MultiblockControllerBlock> MULTIBLOCK_CONTROLLER_HANDLE;
     public static RegistrationHandle<BlockEntityType<?>, BlockEntityType<MultiblockControllerBlockEntity>>
@@ -64,13 +63,11 @@ public final class MultiblockLib {
             CONTROLLER_BLOCKS.add(MULTIBLOCK_CONTROLLER);
             return MULTIBLOCK_CONTROLLER;
         });
-        MULTIBLOCK_CONTROLLER_ENTITY_HANDLE = registries.registerBlockEntityType(id("multiblock_controller"), () -> {
-            MULTIBLOCK_CONTROLLER_ENTITY = MultiblockPlatformService.get().createBlockEntityType(
-                MultiblockControllerBlockEntity::new,
-                MULTIBLOCK_CONTROLLER_HANDLE.get()
-            );
-            return MULTIBLOCK_CONTROLLER_ENTITY;
-        });
+        MULTIBLOCK_CONTROLLER_ENTITY_HANDLE = registries.registerBlockEntityType(
+            id("multiblock_controller"),
+            MultiblockControllerBlockEntity::new,
+            builder -> builder.validBlock(MULTIBLOCK_CONTROLLER_HANDLE)
+        );
         registries.apply();
     }
 

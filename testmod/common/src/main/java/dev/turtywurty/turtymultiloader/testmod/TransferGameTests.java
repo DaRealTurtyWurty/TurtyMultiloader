@@ -41,11 +41,13 @@ import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.RegistryOps;
 import net.minecraft.world.SimpleContainer;
+import net.minecraft.world.WorldlyContainer;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
+import org.jspecify.annotations.Nullable;
 
 import java.math.RoundingMode;
 import java.util.Map;
@@ -487,6 +489,45 @@ public final class TransferGameTests {
         }
         helper.assertValueEqual(inventory.getItem(0).getCount(), 2, "Inventory item context rollback");
 
+        TrackingWorldlyContainer wrappedContainer = new TrackingWorldlyContainer(2);
+        wrappedContainer.setItem(0, new ItemStack(TestModContent.TEST_LOG_ITEM.get(), 2));
+        wrappedContainer.setItem(1, new ItemStack(TestModContent.TEST_LOG_ITEM.get(), 3));
+        wrappedContainer.resetChanges();
+        ContainerStorage wrapped = ContainerStorage.of(wrappedContainer);
+        long wrappedVersion = wrapped.version();
+        try (TransferTransaction transaction = TransferTransaction.openRoot()) {
+            helper.assertValueEqual(wrapped.extract(0, item, 1, transaction), 1L,
+                "Container storage extraction");
+        }
+        helper.assertValueEqual(wrappedContainer.getItem(0).getCount(), 2,
+            "Container storage rollback");
+        helper.assertValueEqual(wrapped.version(), wrappedVersion,
+            "Container storage rollback changed its version");
+        try (TransferTransaction transaction = TransferTransaction.openRoot()) {
+            helper.assertValueEqual(wrapped.extract(0, item, 1, transaction), 1L,
+                "Container storage committed extraction");
+            transaction.commit();
+        }
+        helper.assertValueEqual(wrappedContainer.getItem(0).getCount(), 1,
+            "Container storage commit");
+        helper.assertValueEqual(wrapped.version(), wrappedVersion + 1,
+            "Container storage committed version");
+        helper.assertTrue(wrappedContainer.changes() > 0,
+            "Container storage commit did not mark the container changed");
+
+        ContainerStorage sidedWrapped = ContainerStorage.of(wrappedContainer, Direction.UP);
+        helper.assertValueEqual(sidedWrapped.size(), 1, "Sided container storage size");
+        helper.assertValueEqual(sidedWrapped.containerSlot(0), 1, "Sided container storage slot mapping");
+        try (TransferTransaction transaction = TransferTransaction.openRoot()) {
+            helper.assertValueEqual(sidedWrapped.extract(0, item, 1, transaction), 0L,
+                "Sided container storage extraction rule");
+            helper.assertValueEqual(sidedWrapped.insert(0, item, 1, transaction), 1L,
+                "Sided container storage insertion rule");
+            transaction.commit();
+        }
+        helper.assertValueEqual(wrappedContainer.getItem(1).getCount(), 4,
+            "Sided container storage committed insertion");
+
         try (BlockStorageCache<ResourceVariant<Item>> cache = TestModContent.TRANSFERS.createBlockCache(
             StorageKeys.ITEM, helper.getLevel(), absolute, Direction.UP
         )) {
@@ -629,6 +670,42 @@ public final class TransferGameTests {
                     storage.extract(index, storage.resource(index), storage.amount(index), transaction);
             }
             transaction.commit();
+        }
+    }
+
+    private static final class TrackingWorldlyContainer extends SimpleContainer implements WorldlyContainer {
+        private int changes;
+
+        private TrackingWorldlyContainer(int size) {
+            super(size);
+        }
+
+        @Override
+        public int[] getSlotsForFace(Direction direction) {
+            return direction == Direction.UP ? new int[]{1} : new int[]{0};
+        }
+
+        @Override
+        public boolean canPlaceItemThroughFace(int slot, ItemStack stack, @Nullable Direction direction) {
+            return direction == Direction.UP && slot == 1;
+        }
+
+        @Override
+        public boolean canTakeItemThroughFace(int slot, ItemStack stack, Direction direction) {
+            return direction != Direction.UP;
+        }
+
+        @Override
+        public void setChanged() {
+            this.changes++;
+        }
+
+        private int changes() {
+            return this.changes;
+        }
+
+        private void resetChanges() {
+            this.changes = 0;
         }
     }
 

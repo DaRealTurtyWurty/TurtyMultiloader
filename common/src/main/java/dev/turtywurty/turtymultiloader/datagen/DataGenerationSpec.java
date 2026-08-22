@@ -1,6 +1,7 @@
 package dev.turtywurty.turtymultiloader.datagen;
 
 import dev.turtywurty.turtymultiloader.datagen.provider.*;
+import dev.turtywurty.turtymultiloader.registration.WoodSet;
 import dev.turtywurty.turtymultiloader.worldgen.WorldGeneration;
 import net.minecraft.core.Registry;
 import net.minecraft.core.RegistrySetBuilder;
@@ -254,6 +255,14 @@ public final class DataGenerationSpec {
          */
         public Builder vanillaModels(FunctionalVanillaModelProvider.ModelGenerator generator) {
             vanillaModelGenerators.add(Objects.requireNonNull(generator, "generator"));
+            return this;
+        }
+
+        /**
+         * Adds recipes, loot, tags, English names, and models for a registered wood set.
+         */
+        public Builder woodSet(WoodSet woodSet) {
+            WoodSetDataGeneration.contribute(this, Objects.requireNonNull(woodSet, "woodSet"));
             return this;
         }
 

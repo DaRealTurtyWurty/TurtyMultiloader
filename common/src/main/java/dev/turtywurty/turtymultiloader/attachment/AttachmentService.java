@@ -6,6 +6,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 
 /**
@@ -21,6 +22,28 @@ public interface AttachmentService {
     <T> Optional<T> get(AttachmentTarget target, AttachmentType<T> type);
 
     <T> T getOrCreate(AttachmentTarget target, AttachmentType<T> type);
+
+    default <T> T getOrCreate(AttachmentTarget target, AttachmentType<T> type, T defaultValue) {
+        Objects.requireNonNull(defaultValue, "defaultValue");
+        Optional<T> value = get(target, type);
+        if (value.isPresent())
+            return value.get();
+
+        set(target, type, defaultValue);
+        return defaultValue;
+    }
+
+    default <T> T getOrSupply(AttachmentTarget target, AttachmentType<T> type, Supplier<? extends T> defaultFactory) {
+        Objects.requireNonNull(defaultFactory, "defaultFactory");
+        Optional<T> value = get(target, type);
+        if (value.isPresent())
+            return value.get();
+
+        T defaultValue = defaultFactory.get();
+        Objects.requireNonNull(defaultValue, "defaultFactory result");
+        set(target, type, defaultValue);
+        return defaultValue;
+    }
 
     <T> Optional<T> set(AttachmentTarget target, AttachmentType<T> type, T value);
 

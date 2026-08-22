@@ -18,10 +18,12 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluid;
 
 import java.util.List;
 import java.util.ServiceLoader;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 /**
@@ -64,7 +66,15 @@ public interface ClientRegistrationService {
         MapCodec<? extends SpecialModelRenderer.Unbaked<?>> codec
     );
 
-    AdditionalModel<BlockStateModel> registerAdditionalBlockStateModel(Identifier modelId);
+    AdditionalModel<BlockStateModel> registerAdditionalBlockStateModel(
+        Identifier id,
+        AdditionalBlockStateModelDefinition definition
+    );
+
+    void registerBlockStateModelAugmenter(
+        Predicate<BlockState> selector,
+        BlockStateModelAugmenter augmenter
+    );
 
     final class ServiceHolder {
         private static final ClientRegistrationService INSTANCE = ServiceLoader.load(

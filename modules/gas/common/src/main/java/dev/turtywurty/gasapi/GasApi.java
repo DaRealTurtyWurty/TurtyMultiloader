@@ -42,6 +42,7 @@ public final class GasApi {
         RegistryFixedCodec.create(GASES.key()),
         ByteBufCodecs.holderRegistry(GASES.key())
     );
+    private static boolean initialized;
 
     private GasApi() {
     }
@@ -49,7 +50,12 @@ public final class GasApi {
     /**
      * Forces the module declarations to load before the owning mod applies registration.
      */
-    public static void initialize() {
+    public static synchronized void initialize() {
+        if (initialized) {
+            return;
+        }
+
+        initialized = true;
         TransferService.get().registerStorageKey(RESOURCE_FAMILY.storageKey());
     }
 

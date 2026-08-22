@@ -20,10 +20,7 @@ import dev.turtywurty.turtymultiloader.menu.sync.MenuSyncChannel;
 import dev.turtywurty.turtymultiloader.network.NetworkService;
 import dev.turtywurty.turtymultiloader.network.PayloadRegistrationOptions;
 import dev.turtywurty.turtymultiloader.network.ServerConfigurationTask;
-import dev.turtywurty.turtymultiloader.registration.CustomRegistry;
-import dev.turtywurty.turtymultiloader.registration.QueuedValue;
-import dev.turtywurty.turtymultiloader.registration.RegistrationHandle;
-import dev.turtywurty.turtymultiloader.registration.RegistryService;
+import dev.turtywurty.turtymultiloader.registration.*;
 import dev.turtywurty.turtymultiloader.transfer.TransferService;
 import dev.turtywurty.turtymultiloader.transfer.fluid.FluidVariantAttributeHandler;
 import dev.turtywurty.turtymultiloader.transfer.fluid.FluidVariantAttributes;
@@ -33,18 +30,23 @@ import dev.turtywurty.turtymultiloader.transfer.resource.ResourceVariant;
 import dev.turtywurty.turtymultiloader.transfer.resource.UnitResource;
 import dev.turtywurty.turtymultiloader.transfer.storage.SimpleSingleSlotStorage;
 import dev.turtywurty.turtymultiloader.transfer.storage.SimpleStorage;
+import dev.turtywurty.turtymultiloader.worldgen.BiomeSelectors;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.component.DataComponentType;
 import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.chat.Component;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.Identifier;
-import net.minecraft.world.item.BlockItem;
-import net.minecraft.world.item.CreativeModeTabs;
-import net.minecraft.world.item.Item;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.MobCategory;
+import net.minecraft.world.entity.animal.pig.Pig;
+import net.minecraft.world.item.*;
 import net.minecraft.world.item.crafting.RecipeBookCategory;
+import net.minecraft.world.level.biome.Biomes;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.grower.TreeGrower;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.properties.BlockSetType;
 import net.minecraft.world.level.block.state.properties.WoodType;
@@ -113,10 +115,35 @@ public final class TestModContent {
         id("stripped_test_log"),
         TestModContent::createStrippedTestLog
     );
+    public static final RegistrationHandle<EntityType<?>, EntityType<Pig>> TEST_ENTITY =
+        REGISTRIES.registerEntityType(
+            id("test_entity"),
+            Pig::new,
+            MobCategory.CREATURE,
+            builder -> builder
+                .sized(0.9F, 0.9F)
+                .clientTrackingRange(8)
+                .attributes(() -> Pig.createAttributes().build())
+                .spawn(
+                    id("disabled_test_entity_spawn"),
+                    BiomeSelectors.includeByKey(Biomes.PLAINS).and(context -> false),
+                    10,
+                    1,
+                    2
+                )
+        );
     public static final RegistrationHandle<Item, BlockItem> TEST_LOG_ITEM = REGISTRIES.registerItem(
         id("test_log"),
         TestModContent::createTestLogItem
     );
+    public static final RegistrationHandle<CreativeModeTab, CreativeModeTab> TEST_CREATIVE_TAB =
+        REGISTRIES.registerCreativeTab(
+            id("test_creative_tab"),
+            builder -> builder
+                .title(Component.literal("TurtyMultiloader Test"))
+                .icon(() -> new ItemStack(TEST_LOG_ITEM.get()))
+                .displayItems(output -> output.accept(TEST_LOG_ITEM.get()))
+        );
     public static final RegistrationHandle<DataComponentType<?>, DataComponentType<Integer>> TEST_NUMBER =
         REGISTRIES.registerDataComponentType(
             id("test_number"),
@@ -149,6 +176,10 @@ public final class TestModContent {
 
     public static final QueuedValue<WoodType> TEST_WOOD_TYPE = REGISTRIES.registerWoodType(
         () -> new WoodType(MOD_ID + ":test", BlockSetType.OAK)
+    );
+    public static final WoodSet TEST_WOOD_SET = REGISTRIES.registerWoodSet(
+        id("test_wood"), TreeGrower.OAK, builder -> {
+        }
     );
 
     public static final CustomPacketPayload.Type<TestPayload> TEST_PAYLOAD_TYPE =

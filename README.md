@@ -143,12 +143,38 @@ datapack reloads. Callback arguments are vanilla types, and observational callba
 objects:
 
 ```java
-Events.onLevelLoad(level -> WorldPipeNetworks.getOrCreate(level));
-Events.onStartLevelTick(level -> pipeNetworks(level).forEach(network -> network.tick(level)));
-Events.onPlayerDimensionChange((player, origin, destination) -> resendLevelState(player, destination));
-Events.onBlockBroken((level, player, pos, state, blockEntity) -> removeFluidPocket(level, pos));
-Events.onLivingDamaged((entity, source, damageTaken) -> afterDamage(entity, source));
-Events.onCommandRegistration(dispatcher -> dispatcher.register(createIndustriaCommand()));
+Events.onLevelLoad(level ->WorldPipeNetworks.
+
+getOrCreate(level));
+        Events.
+
+onStartLevelTick(level ->
+
+pipeNetworks(level).
+
+forEach(network ->network.
+
+tick(level)));
+        Events.
+
+onPlayerDimensionChange((player, origin, destination) ->
+
+resendLevelState(player, destination));
+        Events.
+
+onBlockBroken((level, player, pos, state, blockEntity) ->
+
+removeFluidPocket(level, pos));
+        Events.
+
+onLivingDamaged((entity, source, damageTaken) ->
+
+afterDamage(entity, source));
+        Events.
+
+onCommandRegistration(dispatcher ->dispatcher.
+
+register(createIndustriaCommand()));
 ```
 
 Client callbacks live under `event.client` so dedicated-server initialization never resolves client classes. They cover
@@ -156,18 +182,30 @@ client and client-level ticks, client-level enter/leave, block-entity unload, pl
 construction, key mappings, resource reload listeners, and the two render stages used by Industria:
 
 ```java
-ClientEvents.onTooltip((stack, context, flag, lines) -> addMobJarTooltip(stack, lines));
-ClientEvents.onBlockEntityUnload((blockEntity, level) -> rendererCache.remove(blockEntity.getBlockPos()));
+ClientEvents.onTooltip((stack, context, flag, lines) ->
+
+addMobJarTooltip(stack, lines));
+        ClientEvents.
+
+onBlockEntityUnload((blockEntity, level) ->rendererCache.
+
+remove(blockEntity.getBlockPos()));
 
 KeyMapping debugKey = ClientEvents.registerKeyMapping(new KeyMapping(
-    "key.industria.toggle_debug_rendering",
-    GLFW.GLFW_KEY_F6,
-    INDUSTRIA_KEY_CATEGORY
+        "key.industria.toggle_debug_rendering",
+        GLFW.GLFW_KEY_F6,
+        INDUSTRIA_KEY_CATEGORY
 ));
 
-ClientEvents.registerResourceReloadListener(id("conveyor_renderers"), reloadListener);
-ClientEvents.onRenderStage(RenderStage.COLLECT_SUBMITS, conveyorRenderer::render);
-ClientEvents.onRenderStage(RenderStage.AFTER_SOLID_FEATURES, debugRenderer::render);
+ClientEvents.
+
+registerResourceReloadListener(id("conveyor_renderers"),reloadListener);
+        ClientEvents.
+
+onRenderStage(RenderStage.COLLECT_SUBMITS, conveyorRenderer::render);
+ClientEvents.
+
+onRenderStage(RenderStage.AFTER_SOLID_FEATURES, debugRenderer::render);
 ```
 
 `LevelRenderContext` contains only vanilla renderer objects: the client and level, game/level renderers, render state,
@@ -219,31 +257,38 @@ public static IndustriaConfig server() {
 }
 ```
 
-The handle is the live access point. Register it once during common mod initialization, then read the typed value from
+The handle is the live access point. Register it once during common mod initialisation, then read the typed value from
 ordinary common code—there is no loader-specific lookup:
 
 ```java
 int capacity = IndustriaConfigs.SERVER_CONFIG.value().pipeCapacity();
-if (IndustriaConfigs.server().rubberTrees()) {
-    generateRubberTree(level, pos);
+if(IndustriaConfigs.
+
+server().
+
+rubberTrees()){
+
+generateRubberTree(level, pos);
 }
 ```
 
 `value()` always returns the current in-memory object. For a `SERVER` config, it becomes the world file's value during
-`Events.onServerStarting`; on a remote client, the same handle becomes the server-synchronized value when the login
+`Events.onServerStarting`; on a remote client, the same handle becomes the server-synchronised value when the login
 packet arrives. Code that must run specifically when a value becomes active should use the spec's `onChange` callback
-and inspect `ConfigLifecycle`. `isLoaded()` distinguishes an installed file/network value from the pre-load default.
+and inspect `ConfigLifecycle`. `isLoaded()` distinguishes an installed file/network value from the preload default.
 When the server stops or a remote client disconnects, every `SERVER` handle returns to its default, becomes unloaded,
 and notifies its listener with `ConfigLifecycle.UNLOAD`, so values cannot leak into the next connection.
 
-For immutable record configs, replace the record to change a setting. `setAndSave` validates, writes, and synchronizes
+For immutable record configs, replace the record to change a setting. `setAndSave` validates, writes, and synchronises
 in one operation:
 
 ```java
 IndustriaConfig old = IndustriaConfigs.SERVER_CONFIG.value();
-IndustriaConfigs.SERVER_CONFIG.setAndSave(
+IndustriaConfigs.SERVER_CONFIG.
+
+setAndSave(
     new IndustriaConfig(old.rubberTrees(), 162_000),
-    server
+server
 );
 ```
 
@@ -273,25 +318,41 @@ applies them through its initialization registries. Register them from the consu
 
 ```java
 ClientRegistrations.registerEntityRenderer(RUBBER_BOAT, context ->
-    new BoatRenderer(context, RUBBER_BOAT_LAYER));
-ClientRegistrations.registerBlockEntityRenderer(CRUSHER_BLOCK_ENTITY, CrusherRenderer::new);
-ClientRegistrations.registerModelLayer(CRUSHER_LAYER, CrusherModel::createLayer);
+        new
 
-ClientRegistrations.registerBlockTintSources(List.of(RUBBER_LEAVES_TINT), RUBBER_LEAVES);
-ClientRegistrations.registerFluidModel(
+BoatRenderer(context, RUBBER_BOAT_LAYER));
+        ClientRegistrations.
+
+registerBlockEntityRenderer(CRUSHER_BLOCK_ENTITY, CrusherRenderer::new);
+ClientRegistrations.
+
+registerModelLayer(CRUSHER_LAYER, CrusherModel::createLayer);
+
+ClientRegistrations.
+
+registerBlockTintSources(List.of(RUBBER_LEAVES_TINT),RUBBER_LEAVES);
+        ClientRegistrations.
+
+registerFluidModel(
     new FluidModel.Unbaked(stillMaterial, flowingMaterial, overlayMaterial, tintSource),
-    CRUDE_OIL_STILL,
-    CRUDE_OIL_FLOWING
+
+CRUDE_OIL_STILL,
+CRUDE_OIL_FLOWING
 );
 ```
 
 The same facade registers data-driven client extension codecs:
 
 ```java
-ClientRegistrations.registerItemTintSource(id("heated"), HeatedTintSource.CODEC);
-ClientRegistrations.registerItemModel(id("drill_head"), DrillHeadItemModel.Unbaked.CODEC);
-ClientRegistrations.registerSpecialModelRenderer(id("block_entity_item"),
-    IndustriaBlockEntityItemRenderer.Unbaked.CODEC);
+ClientRegistrations.registerItemTintSource(id("heated"),HeatedTintSource.CODEC);
+        ClientRegistrations.
+
+registerItemModel(id("drill_head"),DrillHeadItemModel.Unbaked.CODEC);
+        ClientRegistrations.
+
+registerSpecialModelRenderer(id("block_entity_item"),
+
+IndustriaBlockEntityItemRenderer.Unbaked.CODEC);
 ```
 
 Additional block-state models use a loader-neutral handle. Fabric backs it with an `ExtraModelKey`; NeoForge backs it
@@ -299,10 +360,123 @@ with a `StandaloneModelKey`:
 
 ```java
 AdditionalModel<BlockStateModel> scannerModel =
-    ClientRegistrations.registerAdditionalBlockStateModel(id("item/seismic_scanner_model"));
+        ClientRegistrations.registerAdditionalBlockStateModel(id("item/seismic_scanner_model"));
 
 BlockStateModel baked = scannerModel.getOrThrow(); // only after model reload has completed
 ```
+
+When the source model needs a non-identity bake transform, use the loader-neutral unbaked definition. It is the common
+equivalent of Fabric's `SimpleUnbakedExtraModel.blockStateModel(modelId, modelState)`:
+
+```java
+public AdditionalBlockStateModelDefinition createUnbakedModel() {
+    return AdditionalBlockStateModelDefinition.blockStateModel(modelId, modelState);
+}
+
+AdditionalModel<BlockStateModel> transformedModel =
+    ClientRegistrations.registerAdditionalBlockStateModel(modelKeyId, createUnbakedModel());
+```
+
+Context-dependent wrappers use `BlockStateModelAugmenter`, avoiding Fabric's `WrapperBlockStateModel`, `QuadEmitter`,
+and `FabricModelManager` in common sources. Register an augmenter for a block or a `BlockState` predicate during client
+initialization. Fabric installs it in the final baked-model wrapping phase; NeoForge wraps the corresponding entries
+in its baking result:
+
+```java
+ClientRegistrations.registerBlockStateModelAugmenter(
+    state -> state.getBlock() instanceof PipeBlock<?, ?>,
+    new BlockStateModelAugmenter() {
+        @Override
+        public void collectAdditionalModels(Context context, ModelCollector models) {
+            for (Direction direction : Direction.values()) {
+                if (context.state().getValue(PipeBlock.propertyFor(direction)) != PipeBlock.ConnectorType.BLOCK)
+                    continue;
+
+                BlockPos targetPos = context.pos().relative(direction);
+                BlockState targetState = context.level().getBlockState(targetPos);
+                ConnectionModelSet modelSet = PipeConnectionModelRegistry.findModel(
+                    context.level(), targetPos, context.state(), targetState, direction.getOpposite());
+                if (modelSet == null)
+                    continue;
+
+                ConnectionModelReference reference = modelSet.get(direction);
+                BlockStateModel connectionModel = reference == null ? null : reference.model().get();
+                if (connectionModel != null) {
+                    long seed = context.baseSeed() ^ ((long) direction.ordinal() * 0x9E3779B97F4A7C15L);
+                    models.accept(connectionModel, seed);
+                }
+            }
+        }
+
+        @Override
+        public Object createGeometryKey(Context context, Object wrappedKey) {
+            if (wrappedKey == null)
+                return null;
+            return new PipeGeometryKey(
+                wrappedKey,
+                findModelId(context, Direction.NORTH),
+                findModelId(context, Direction.SOUTH),
+                findModelId(context, Direction.WEST),
+                findModelId(context, Direction.EAST),
+                findModelId(context, Direction.UP),
+                findModelId(context, Direction.DOWN)
+            );
+        }
+    }
+);
+```
+
+In this example, `ConnectionModelReference.model()` is an `AdditionalModel<BlockStateModel>` returned by
+`registerAdditionalBlockStateModel(...)`; its `get()` method replaces the Fabric-only
+`FabricModelManager.getModel(ExtraModelKey)` lookup. The wrapper renders the original model first and automatically
+reseeds it with `state.getSeed(pos)`. Each added model uses the seed supplied to `ModelCollector`. Geometry-key code
+must include every piece of level state that changes the selected geometry; returning `null` disables caching.
+
+#### Low-level render types and GUI extraction
+
+TurtyMultiloader exposes the private vanilla `RenderPipelines.register(...)` and `RenderType.create(...)` operations
+to common client code through `ClientRegistrations.registerRenderPipeline(...)` and
+`ClientRegistrations.createRenderType(...)`. Register the pipeline before using it to build and retain a render type:
+
+```java
+private static final RenderPipeline CONVEYOR_PIPELINE =
+        ClientRegistrations.registerRenderPipeline(
+                RenderPipeline.builder()
+                        .withLocation("industria:pipeline/conveyor")
+                        .withVertexShader("core/position_color")
+                        .withFragmentShader("core/position_color")
+                        .withVertexFormat(DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.QUADS)
+                        .build()
+        );
+
+private static final RenderType CONVEYOR_RENDER_TYPE = ClientRegistrations.createRenderType(
+        "industria:conveyor",
+        RenderSetup.builder(CONVEYOR_PIPELINE)
+                .affectsCrumbling()
+                .createRenderSetup()
+);
+```
+
+`GuiGraphicsExtractorAdapter` wraps an extractor supplied by vanilla and exposes its otherwise-private, non-synthetic
+helpers consistently on Fabric and NeoForge:
+
+```java
+GuiGraphicsExtractorAdapter graphics = new GuiGraphicsExtractorAdapter(extractor);
+
+graphics.submitGuiElementRenderState(customElementState);
+graphics.submitPictureInPictureRenderState(customPictureState);
+
+ScreenRectangle activeScissor = graphics.peekScissorStack(); // null when scissoring is disabled
+GuiRenderState renderState = graphics.renderState();
+graphics.innerBlit(pipeline, texture, x0, x1, y0, y1, u0, u1, v0, v1, color);
+
+// Vanilla's already-public extractor operations remain on the wrapped object.
+graphics.extractor().fill(x0, y0, x1, y1, color);
+```
+
+The adapter also covers the private fill, sprite, nine-slice, tiled-blit, item-decoration, tooltip, hover-effect, and
+text-parameter helpers, plus construction with an existing `Matrix3x2fStack`. These are low-level client APIs and must
+only be referenced from client-loaded code. The compiler-generated lambda methods remain private.
 
 Screens remain under `ClientMenus`. Key mappings, tooltip callbacks, resource reload listeners, and world-render stages
 remain under `ClientEvents`, since those are callback lifecycles rather than static renderer declarations.
@@ -330,19 +504,158 @@ Identifiers and vanilla registry concepts remain explicit:
 ```java
 private static final RegistryService REGISTRIES = RegistryService.get();
 private static final Identifier EXAMPLE_ID =
-    Identifier.fromNamespaceAndPath(TurtyMultiloader.MOD_ID, "example");
+        Identifier.fromNamespaceAndPath(TurtyMultiloader.MOD_ID, "example");
 
 public static final RegistrationHandle<Block, ExampleBlock> EXAMPLE_BLOCK =
-    REGISTRIES.registerBlock(EXAMPLE_ID, ExampleBlock::new);
+        REGISTRIES.registerBlock(EXAMPLE_ID, ExampleBlock::new);
+
+public static final RegistrationHandle<BlockEntityType<?>, BlockEntityType<ExampleBlockEntity>>
+        EXAMPLE_BLOCK_ENTITY = REGISTRIES.registerBlockEntityType(
+        EXAMPLE_ID,
+        ExampleBlockEntity::new,
+        builder -> builder.validBlock(EXAMPLE_BLOCK)
+);
+
+public static final RegistrationHandle<CreativeModeTab, CreativeModeTab> EXAMPLE_TAB =
+        REGISTRIES.registerCreativeTab(
+                Identifier.fromNamespaceAndPath(TurtyMultiloader.MOD_ID, "example_tab"),
+                builder -> builder
+                        .title(Component.translatable("itemGroup." + TurtyMultiloader.MOD_ID + ".example_tab"))
+                        .icon(() -> new ItemStack(EXAMPLE_BLOCK.get()))
+                        .displayItems(output -> output.accept(EXAMPLE_BLOCK.get()))
+        );
 ```
+
+The block entity builder accepts blocks directly or as suppliers. Passing registration handles keeps block resolution
+deferred until the loader applies the registry entries, so block entity types can safely reference blocks declared in
+the same registration batch.
+
+Custom creative tabs also use deferred icon and content suppliers. The loader-specific registry backend selects
+Fabric's custom-tab builder or NeoForge's custom-tab builder as required; when no title is configured, the default
+translation key is `itemGroup.<namespace>.<path>`.
+
+The living-entity builder registers the entity type, its attributes, and any code-based natural spawns as one common
+declaration:
+
+```java
+public static final RegistrationHandle<EntityType<?>, EntityType<ExampleEntity>> EXAMPLE_ENTITY =
+        REGISTRIES.registerEntityType(
+                Identifier.fromNamespaceAndPath(TurtyMultiloader.MOD_ID, "example_entity"),
+                ExampleEntity::new,
+                MobCategory.CREATURE,
+                builder -> builder
+                        .sized(0.6F, 1.8F)
+                        .clientTrackingRange(8)
+                        .attributes(() -> Mob.createMobAttributes()
+                                .add(Attributes.MAX_HEALTH, 20.0D)
+                                .add(Attributes.MOVEMENT_SPEED, 0.25D)
+                                .build())
+                        .spawn(
+                                Identifier.fromNamespaceAndPath(TurtyMultiloader.MOD_ID, "spawn_example_entity"),
+                                BiomeSelectors.foundInOverworld(),
+                                10,
+                                2,
+                                4
+                        )
+        );
+```
+
+Each spawn declaration has its own unique biome-modification ID and can use any composable `BiomeSelector`. Options
+not directly exposed by the wrapper remain available through `builder.vanilla(...)`. Non-living entities continue to
+use `registerEntityType(id, factory)` with a vanilla `EntityType.Builder` because they have no attributes or natural
+mob spawns.
+
+Register the renderer from the consuming mod's client initializer, where the registration handle can be passed
+directly as the deferred entity-type supplier:
+
+```java
+ClientRegistrations.registerEntityRenderer(EXAMPLE_ENTITY, ExampleEntityRenderer::new);
+```
+
+Loading the content class queues the type and its attributes; the loader entrypoint must then call
+`RegistryService.get().apply()`.
+
+#### Wood sets
+
+The Industria-style wood-set registration is available as one common declaration. It creates planks, logs and wood,
+their stripped variants, leaves, a sapling, stairs, slab, fence and gate, door, trapdoor, pressure plate, button,
+ordinary and hanging signs, both sign items, boat and chest-boat entity types, and both boat items:
+
+```java
+public static final WoodSet RUBBER = REGISTRIES.registerWoodSet(
+        Industria.id("rubber"),
+        ModTreeGrowers.RUBBER,
+        builder -> builder
+                .leaves((context, properties) -> new RubberLeavesBlock(properties))
+                .properties(WoodSetBuilder.BlockType.PLANKS, properties -> properties.strength(3.0F))
+);
+```
+
+The returned `WoodSet` exposes registration handles for every generated object and its `<name>_logs` block/item tags.
+The builder also has named factory methods for every block, sign/boat item factories, boat entity-builder transforms,
+custom `BlockSetType`/`WoodType` factories, and a generic `block(...)`/`properties(...)` escape hatch. Defaults copy
+the corresponding oak behavior and retain Industria's names such as `rubber_stripped_log`.
+
+Registration automatically wires vanilla `BlockSetType`/`WoodType` lookup (which also makes sign materials available),
+stripping, flammability, sign block-entity valid blocks, and boat dispenser behavior on both loaders. Call this from
+the consuming mod's client initializer for boat model layers and renderers:
+
+```java
+WoodSetClient.register(ModWoodSets.RUBBER);
+```
+
+Add the complete recipes, block loot, vanilla tags, English translations, blockstates, and item/block models to the
+common data-generation spec with one line:
+
+```java
+DataGeneration.spec(Industria.MOD_ID)
+    .
+
+woodSet(ModWoodSets.RUBBER)
+    .
+
+build();
+```
+
+Provide the normal wood textures plus `textures/entity/signs/rubber.png`,
+`textures/entity/signs/hanging/rubber.png`, `textures/entity/boat/rubber.png`, and
+`textures/entity/chest_boat/rubber.png`. Creative-tab population remains explicit so each mod controls where the set
+appears.
 
 `RegistrationHandle` exposes `id()`, the vanilla entry `key()`, and the bound vanilla `holder()`. It also implements
 `Supplier<T>` for constructors that depend on earlier declarations. Calling `get()` or `holder()` before registration
 has been applied fails explicitly.
 
+Custom trunk placers can be registered directly from their codec; consumers do not need to construct the
+private-constructor vanilla `TrunkPlacerType` themselves:
+
+```java
+public static final RegistrationHandle<TrunkPlacerType<?>, TrunkPlacerType<ExampleTrunkPlacer>>
+        EXAMPLE_TRUNK_PLACER = REGISTRIES.registerTrunkPlacerType(
+        Identifier.fromNamespaceAndPath(TurtyMultiloader.MOD_ID, "example_trunk_placer"),
+        ExampleTrunkPlacer.CODEC
+);
+```
+
+Vanilla's private reusable block predicates are exposed to shared consumer source through
+`VanillaBlockPredicates`. Use this class instead of referring to the private methods on `Blocks` directly:
+
+```java
+BlockBehaviour.Properties.of()
+    .
+
+isRedstoneConductor(VanillaBlockPredicates::never)
+    .
+
+isSuffocating(VanillaBlockPredicates::never)
+    .
+
+isValidSpawn(VanillaBlockPredicates::ocelotOrParrot);
+```
+
 The service has typed helpers for blocks, items, fluids, block entities, entities and attributes, menus, recipes,
-data components, consume effects, position sources, world-generation features, creative tabs, wood types, stripping,
-and flammability. `register(...)` accepts any vanilla `ResourceKey<? extends Registry<R>>`, and
+data components, consume effects, position sources, world-generation features, creative tabs, wood sets/types,
+stripping, and flammability. `register(...)` accepts any vanilla `ResourceKey<? extends Registry<R>>`, and
 `customRegistry(...)` creates custom registries whose entries use the same handles.
 
 ### World generation
@@ -356,10 +669,14 @@ loader's data generator:
 
 ```java
 WorldGeneration.registerBootstrap(Registries.CONFIGURED_FEATURE, ConfiguredFeatureInit::bootstrap);
-WorldGeneration.registerBootstrap(Registries.PLACED_FEATURE, PlacedFeatureInit::bootstrap);
+WorldGeneration.
+
+registerBootstrap(Registries.PLACED_FEATURE, PlacedFeatureInit::bootstrap);
 
 // In the loader data-generator callback:
-WorldGeneration.addBootstraps(registryBuilder);
+WorldGeneration.
+
+addBootstraps(registryBuilder);
 ```
 
 Multiple declarations for the same registry are composed in registration order. The registration only describes data
@@ -372,22 +689,30 @@ on both loaders:
 ```java
 BiomeSelector overworld = BiomeSelectors.tag(BiomeTags.IS_OVERWORLD);
 
-WorldGeneration.addFeature(
-    id("bauxite_ore"),
-    overworld,
-    GenerationStep.Decoration.UNDERGROUND_ORES,
-    PlacedFeatureInit.BAUXITE_ORE
+WorldGeneration.
+
+addFeature(
+        id("bauxite_ore"),
+
+overworld,
+GenerationStep.Decoration.UNDERGROUND_ORES,
+PlacedFeatureInit.BAUXITE_ORE
 );
 
-WorldGeneration.addSpawn(
-    id("example_spawn"),
-    BiomeSelectors.includeByKey(Biomes.PLAINS),
-    MobCategory.CREATURE,
-    () -> EntityType.COW,
-    10,
-    2,
-    4
-);
+        WorldGeneration.
+
+addSpawn(
+        id("example_spawn"),
+    BiomeSelectors.
+
+includeByKey(Biomes.PLAINS),
+
+MobCategory.CREATURE,
+        ()->EntityType.COW,
+        10,
+        2,
+        4
+        );
 ```
 
 Selectors can match keys, tags, namespaces, existing placed/configured features, or compose custom predicates with
@@ -401,7 +726,9 @@ common initialization, before the loaders' registry events:
 
 ```java
 WorldGeneration.registerDatapackRegistry(RESEARCH_KEY, Research.CODEC);
-WorldGeneration.registerSyncedDatapackRegistry(MATERIAL_KEY, Material.CODEC, Material.NETWORK_CODEC);
+WorldGeneration.
+
+registerSyncedDatapackRegistry(MATERIAL_KEY, Material.CODEC, Material.NETWORK_CODEC);
 ```
 
 Optional or forced built-in datapacks live at `resourcepacks/<id path>` in the owning mod JAR. The identifier namespace
@@ -409,9 +736,12 @@ must be the owning mod ID:
 
 ```java
 WorldGeneration.registerBuiltInDatapack(
-    id("classic_ores"),
-    Component.translatable("pack.industria.classic_ores"),
-    BuiltInDatapackActivation.DEFAULT_ENABLED
+        id("classic_ores"),
+    Component.
+
+translatable("pack.industria.classic_ores"),
+
+BuiltInDatapackActivation.DEFAULT_ENABLED
 );
 ```
 
@@ -429,19 +759,19 @@ are typed conveniences over the dynamic-registry path.
 private static final ConventionTag<Item> TIN_INGOTS = ConventionTags.item("ingots/tin");
 
 public static final DataGenerationSpec DATA = DataGeneration.spec(Industria.MOD_ID)
-    .recipes(IndustriaRecipes::generate)
-    .lootTables(Set.of(), IndustriaLootTables.SUB_PROVIDERS)
-    .blockTags(IndustriaTags::generateBlocks)
-    .itemTags((registries, tags) -> tags.tag(TIN_INGOTS).add(ModItems.TIN_INGOT.key()))
-    .fluidTags(IndustriaTags::generateFluids)
-    .entityTypeTags(IndustriaTags::generateEntityTypes)
-    .language("en_us", IndustriaLanguage::generate)
-    .models(IndustriaModels::generate)
-    .vanillaModels(IndustriaModels::generateTyped)
-    .damageTypes(IndustriaDamageTypes::bootstrap)
-    .worldGeneration(Registries.CONFIGURED_FEATURE, ConfiguredFeatureInit::bootstrap)
-    .worldGeneration(Registries.PLACED_FEATURE, PlacedFeatureInit::bootstrap)
-    .build();
+        .recipes(IndustriaRecipes::generate)
+        .lootTables(Set.of(), IndustriaLootTables.SUB_PROVIDERS)
+        .blockTags(IndustriaTags::generateBlocks)
+        .itemTags((registries, tags) -> tags.tag(TIN_INGOTS).add(ModItems.TIN_INGOT.key()))
+        .fluidTags(IndustriaTags::generateFluids)
+        .entityTypeTags(IndustriaTags::generateEntityTypes)
+        .language("en_us", IndustriaLanguage::generate)
+        .models(IndustriaModels::generate)
+        .vanillaModels(IndustriaModels::generateTyped)
+        .damageTypes(IndustriaDamageTypes::bootstrap)
+        .worldGeneration(Registries.CONFIGURED_FEATURE, ConfiguredFeatureInit::bootstrap)
+        .worldGeneration(Registries.PLACED_FEATURE, PlacedFeatureInit::bootstrap)
+        .build();
 ```
 
 Tag callbacks receive a public vanilla `TagAppender<ResourceKey<T>, T>`. A tag for any other registry can be added with
@@ -477,10 +807,16 @@ Register that class under the `fabric-datagen` entrypoint. On NeoForge 26.1, cli
 events; bind both on the consuming mod's event bus:
 
 ```java
-modBus.addListener(GatherDataEvent.Client.class,
-    event -> NeoForgeDataGeneration.run(event, IndustriaDataGeneration.DATA));
-modBus.addListener(GatherDataEvent.Server.class,
-    event -> NeoForgeDataGeneration.run(event, IndustriaDataGeneration.DATA));
+modBus.addListener(GatherDataEvent.Client .class,
+                   event ->NeoForgeDataGeneration.
+
+run(event, IndustriaDataGeneration.DATA));
+        modBus.
+
+addListener(GatherDataEvent.Server .class,
+            event ->NeoForgeDataGeneration.
+
+run(event, IndustriaDataGeneration.DATA));
 ```
 
 NeoForge's client and server runs must use separate output roots so one hash cache cannot remove the other run's
@@ -500,9 +836,9 @@ screen implementations that otherwise use only vanilla classes can stay in commo
 
 ```java
 public static final ExtendedMenuRegistration<CrusherMenu, BlockPos> CRUSHER_MENU = Menus.registerExtended(
-    id("crusher"),
-    CrusherMenu::new,
-    BlockPos.STREAM_CODEC
+        id("crusher"),
+        CrusherMenu::new,
+        BlockPos.STREAM_CODEC
 );
 
 // Client constructor used by the registration above.
@@ -544,10 +880,10 @@ four:
 
 ```java
 ContainerData data = MenuDataSlots.builder()
-    .add(() -> progress, value -> progress = value)
-    .addLong(() -> storedEnergy, value -> storedEnergy = value)
-    .addEnum(Mode.class, () -> mode, value -> mode = value)
-    .build();
+        .add(() -> progress, value -> progress = value)
+        .addLong(() -> storedEnergy, value -> storedEnergy = value)
+        .addEnum(Mode.class, () -> mode, value -> mode = value)
+        .build();
 
 // In the menu constructor, as usual:
 addDataSlots(data);
@@ -558,9 +894,9 @@ faithfully by vanilla slots or integer data slots, declare a typed menu channel 
 
 ```java
 MenuSyncChannel<CrusherMenu, MachineSnapshot> SNAPSHOT = MenuSyncChannel.register(
-    id("crusher_snapshot"),
-    CrusherMenu.class,
-    MachineSnapshot.STREAM_CODEC
+        id("crusher_snapshot"),
+        CrusherMenu.class,
+        MachineSnapshot.STREAM_CODEC
 );
 ```
 
@@ -615,9 +951,9 @@ configuration phases. Attach the receiving side of a clientbound or bidirectiona
 client initializer; this keeps client implementation classes off dedicated servers:
 
 ```java
-NETWORK.registerClientHandler(PayloadPhase.PLAY, SyncMachinePayload.TYPE, (payload, context) -> {
-    // Runs on the render thread; context.player() contains the LocalPlayer.
-});
+NETWORK.registerClientHandler(PayloadPhase.PLAY, SyncMachinePayload.TYPE, (payload, context) ->{
+        // Runs on the render thread; context.player() contains the LocalPlayer.
+        });
 ```
 
 Handlers run on the logical side's main game thread on both loaders. `PayloadContext` exposes the phase, receiving
@@ -633,15 +969,34 @@ each vanilla payload type.
 Lifecycle and initial synchronization are loader-neutral:
 
 ```java
-NETWORK.onConnection(context -> preload(context.profile()));
-NETWORK.onJoin(player -> initializeSession(player));
-NETWORK.onDisconnect(player -> closeSession(player));
-NETWORK.onClientJoin(ClientState::connected);
-NETWORK.onClientDisconnect(ClientState::disconnected);
+NETWORK.onConnection(context ->
 
-NETWORK.addLoginSync(player -> List.of(
-    createMachineSnapshot(player),
-    createNetworkSnapshot(player)
+preload(context.profile()));
+        NETWORK.
+
+onJoin(player ->
+
+initializeSession(player));
+        NETWORK.
+
+onDisconnect(player ->
+
+closeSession(player));
+        NETWORK.
+
+onClientJoin(ClientState::connected);
+NETWORK.
+
+onClientDisconnect(ClientState::disconnected);
+
+NETWORK.
+
+addLoginSync(player ->List.
+
+of(
+        createMachineSnapshot(player),
+
+createNetworkSnapshot(player)
 ));
 ```
 
@@ -656,15 +1011,27 @@ then complete the named task from the acknowledgement handler:
 ```java
 private static final Identifier RULES_TASK = id("rules_task");
 
-NETWORK.registerConfigurationClientbound(RulesPayload.TYPE, RulesPayload.CODEC,
-    PayloadRegistrationOptions.required("1"));
-NETWORK.registerConfigurationServerbound(RulesAcceptedPayload.TYPE, RulesAcceptedPayload.CODEC,
-    PayloadRegistrationOptions.required("1"),
-    (payload, context) -> context.completeConfigurationTask(RULES_TASK));
+NETWORK.
 
-NETWORK.registerConfigurationTask(new ServerConfigurationTask(RULES_TASK, context ->
-    context.send(createRulesPayload(context.connection().profile()))
-));
+registerConfigurationClientbound(RulesPayload.TYPE, RulesPayload.CODEC,
+                                 PayloadRegistrationOptions.required("1"));
+        NETWORK.
+
+registerConfigurationServerbound(RulesAcceptedPayload.TYPE, RulesAcceptedPayload.CODEC,
+                                 PayloadRegistrationOptions.required("1"),
+    (payload,context)->context.
+
+completeConfigurationTask(RULES_TASK));
+
+        NETWORK.
+
+registerConfigurationTask(new ServerConfigurationTask(RULES_TASK, context ->
+        context.
+
+send(createRulesPayload(context.connection().
+
+profile()))
+        ));
 ```
 
 The client handler applies the request and calls `context.reply(new RulesAcceptedPayload())`. Configuration packets
@@ -682,28 +1049,32 @@ server:
 
 ```java
 public static final AttachmentType<Integer> STOMACH_DESTRUCTION = Attachments.register(
-    id("stomach_destruction"),
-    builder -> builder.defaultFactory(() -> 0)
-        .persistent(Codec.INT)
-        .syncToOwner(ByteBufCodecs.INT)
-        .copyOnDeath()
+        id("stomach_destruction"),
+        builder -> builder.defaultFactory(() -> 0)
+                .persistent(Codec.INT)
+                .syncToOwner(ByteBufCodecs.INT)
+                .copyOnDeath()
 );
 
 public static final AttachmentType<Map<BlockPos, MultiblockData>> MULTIBLOCKS = Attachments.register(
-    id("multiblock"),
-    builder -> builder.defaultFactory(HashMap::new)
-        .persistent(Codec.unboundedMap(BLOCK_POS_STRING_CODEC, MultiblockData.CODEC))
-        .syncToTrackers(ByteBufCodecs.map(
-            HashMap::new,
-            BlockPos.STREAM_CODEC,
-            MultiblockData.STREAM_CODEC
-        ))
+        id("multiblock"),
+        builder -> builder.defaultFactory(HashMap::new)
+                .persistent(Codec.unboundedMap(BLOCK_POS_STRING_CODEC, MultiblockData.CODEC))
+                .syncToTrackers(ByteBufCodecs.map(
+                        HashMap::new,
+                        BlockPos.STREAM_CODEC,
+                        MultiblockData.STREAM_CODEC
+                ))
 );
 
 AttachmentTarget target = AttachmentTarget.entity(entity);
 int value = target.getOrCreate(STOMACH_DESTRUCTION);
-target.set(STOMACH_DESTRUCTION, value + 1);
-target.remove(STOMACH_DESTRUCTION);
+target.
+
+set(STOMACH_DESTRUCTION, value +1);
+target.
+
+remove(STOMACH_DESTRUCTION);
 ```
 
 Omit `persistent(...)` (or call `transientValue()`) for memory-only data. `syncWith(codec, predicate)` accepts a
@@ -712,7 +1083,11 @@ custom `(target, player)` predicate; `syncToOwner(...)` and `syncToTrackers(...)
 call `markDirty`, or use `mutate`, which marks block entities/chunks for saving and sends the updated value:
 
 ```java
-AttachmentTarget.chunk(chunk).mutate(MULTIBLOCKS, map -> map.put(pos, data));
+AttachmentTarget.chunk(chunk).
+
+mutate(MULTIBLOCKS, map ->map.
+
+put(pos, data));
 ```
 
 World and server-global state can also be represented explicitly with vanilla saved-data wrappers. World state uses
@@ -720,14 +1095,24 @@ the selected dimension's data storage; server state uses the overworld data stor
 
 ```java
 SavedStateType<MachineIndex> WORLD_INDEX = SavedStateType.world(
-    id("machine_index"), MachineIndex.CODEC, MachineIndex::new
+        id("machine_index"), MachineIndex.CODEC, MachineIndex::new
 );
 SavedStateType<ResearchState> GLOBAL_RESEARCH = SavedStateType.server(
-    id("research"), ResearchState.CODEC, ResearchState::new
+        id("research"), ResearchState.CODEC, ResearchState::new
 );
 
-WORLD_INDEX.access(serverLevel).mutate(index -> index.add(machine));
-GLOBAL_RESEARCH.access(server).update(ResearchState::advance);
+WORLD_INDEX.
+
+access(serverLevel).
+
+mutate(index ->index.
+
+add(machine));
+        GLOBAL_RESEARCH.
+
+access(server).
+
+update(ResearchState::advance);
 ```
 
 The returned saved-state view supports `get`, `set`, `update`, `mutate`, and `markDirty`. Attachment registration is
@@ -744,24 +1129,35 @@ keeps the resource family and amount unit explicit. Standard keys are available 
 ```java
 private static final TransferService TRANSFERS = TransferService.get();
 private static final SimpleSingleSlotStorage<ResourceVariant<Item>> BUFFER =
-    new SimpleSingleSlotStorage<>(ResourceTypes.ITEM, 64);
+        new SimpleSingleSlotStorage<>(ResourceTypes.ITEM, 64);
 
 static {
     TRANSFERS.registerBlockEntityProvider(
-        StorageKeys.ITEM,
-        EXAMPLE_BLOCK_ENTITY_TYPE,
-        (blockEntity, side) -> blockEntity.itemStorage(side)
+            StorageKeys.ITEM,
+            EXAMPLE_BLOCK_ENTITY_TYPE,
+            (blockEntity, side) -> blockEntity.itemStorage(side)
     );
 }
 
 ResourceStorage<ResourceVariant<Item>> target = TRANSFERS.findBlock(
-    StorageKeys.ITEM, level, targetPos, targetSide
+        StorageKeys.ITEM, level, targetPos, targetSide
 );
-try (TransferTransaction transaction = TransferTransaction.openRoot()) {
-    long inserted = target.insert(itemVariant, 16, transaction);
-    if (inserted == 16)
-        transaction.commit();
+try(
+TransferTransaction transaction = TransferTransaction.openRoot()){
+long inserted = target.insert(itemVariant, 16, transaction);
+    if(inserted ==16)
+        transaction.
+
+commit();
 }
+```
+
+A vanilla `Container` can be exposed as a live neutral item storage. The optional direction filters a
+`WorldlyContainer` to the slots available from that face and enforces its sided insertion/extraction rules:
+
+```java
+ResourceStorage<ResourceVariant<Item>> inventory = ContainerStorage.of(container);
+ResourceStorage<ResourceVariant<Item>> sidedInventory = ContainerStorage.of(container, direction);
 ```
 
 `ResourceStorage` is indexed and exposes per-index resource, amount, capacity, validity, and insertion/extraction
@@ -799,9 +1195,11 @@ native name, sounds, luminance, temperature, viscosity, density, and lighter-tha
 component-bearing `FluidStack` overloads of `FluidType` where available.
 
 ```java
-FluidVariantAttributes.register(CRUDE_OIL.get(), new FluidVariantAttributeHandler() {
+FluidVariantAttributes.register(CRUDE_OIL.get(), new
+
+FluidVariantAttributeHandler() {
     @Override
-    public int getViscosity(ResourceVariant<Fluid> variant, @Nullable Level level) {
+    public int getViscosity (ResourceVariant < Fluid > variant, @Nullable Level level){
         return variant.hasComponents() ? 8_000 : 7_500;
     }
 });
@@ -815,10 +1213,10 @@ Unit registration uses the same neutral registry:
 
 ```java
 TransferUnit doubleEnergy = Units.REGISTRY.register(
-    Identifier.fromNamespaceAndPath(MOD_ID, "double_energy"),
-    UnitDimension.ENERGY,
-    "2E",
-    2
+        Identifier.fromNamespaceAndPath(MOD_ID, "double_energy"),
+        UnitDimension.ENERGY,
+        "2E",
+        2
 );
 ```
 
@@ -850,9 +1248,14 @@ Each module owns its custom registry, resource family, storage key, codecs, unit
 RegistrationHandle<Gas, Gas> STEAM = GasApi.register(id("steam"));
 SingleGasStorage TANK = new SingleGasStorage(81_000);
 
-GasStorage.registerBlockProvider(
-    (level, pos, state, blockEntity, side) -> blockEntity.gasStorage(side),
-    GAS_TANK_BLOCK
+GasStorage.
+
+registerBlockProvider(
+    (level, pos, state, blockEntity, side) ->blockEntity.
+
+gasStorage(side),
+
+GAS_TANK_BLOCK
 );
 
 ResourceVariant<Gas> steam = GasVariant.of(STEAM.holder());

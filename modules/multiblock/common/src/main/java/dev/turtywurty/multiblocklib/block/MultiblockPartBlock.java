@@ -2,8 +2,10 @@ package dev.turtywurty.multiblocklib.block;
 
 import dev.turtywurty.multiblocklib.block.entity.MultiblockControllerBlockEntity;
 import dev.turtywurty.multiblocklib.world.MultiblockWorldData;
+import dev.turtywurty.turtymultiloader.menu.SelfOpeningMenuProvider;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.entity.player.Player;
@@ -39,7 +41,12 @@ public class MultiblockPartBlock extends Block {
             return InteractionResult.PASS;
         }
 
-        player.openMenu(menuProvider);
+        if (player instanceof ServerPlayer serverPlayer && menuProvider instanceof SelfOpeningMenuProvider selfOpeningMenuProvider) {
+            selfOpeningMenuProvider.openMenu(serverPlayer);
+        } else {
+            player.openMenu(menuProvider);
+        }
+
         return InteractionResult.SUCCESS;
     }
 

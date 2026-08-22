@@ -1,7 +1,9 @@
 package dev.turtywurty.turtymultiloader.neoforge;
 
 import dev.turtywurty.turtymultiloader.registration.*;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.Registry;
+import net.minecraft.core.dispenser.DispenseItemBehavior;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
@@ -9,7 +11,13 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.item.CreativeModeTab;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.DispenserBlock;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.BlockEntityType;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.BlockSetType;
 import net.minecraft.world.level.block.state.properties.WoodType;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
@@ -20,6 +28,7 @@ import net.neoforged.neoforge.registries.DeferredRegister;
 import net.neoforged.neoforge.registries.RegisterEvent;
 
 import java.util.*;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -32,14 +41,20 @@ public final class NeoForgeRegistryService implements RegistryService {
     private final List<EntityAttributesDeclaration<?>> entityAttributes = new ArrayList<>();
     private final List<CreativeTabPopulation> creativeTabPopulations = new ArrayList<>();
     private final List<WoodTypeDeclaration> woodTypes = new ArrayList<>();
+    private final List<BlockSetTypeDeclaration> blockSetTypes = new ArrayList<>();
     private final List<StrippableDeclaration> strippables = new ArrayList<>();
     private final List<FlammabilityDeclaration> flammability = new ArrayList<>();
+    private final List<BlockEntityValidBlocksDeclaration> blockEntityValidBlocks = new ArrayList<>();
+    private final List<DispenserBehaviorDeclaration> dispenserBehaviors = new ArrayList<>();
     private boolean applied;
     private int appliedCustomRegistries;
     private int appliedEntries;
+    private int appliedBlockSetTypes;
+    private int appliedWoodTypes;
     private boolean attributesListenerRegistered;
     private boolean creativeTabsListenerRegistered;
     private boolean blockHooksListenerRegistered;
+    private boolean itemHooksListenerRegistered;
 
     public static void bind(IEventBus bus) {
         if (modBus != null && modBus != bus)
@@ -63,6 +78,36 @@ public final class NeoForgeRegistryService implements RegistryService {
         RegistrationHandle<R, T> result = new RegistrationHandle<>(id, entryKey);
         entries.add(new EntryDeclaration<>(registryKey, id, Objects.requireNonNull(factory, "factory"), result));
         return result;
+    }
+
+    @Override
+    public synchronized <T extends BlockEntity> RegistrationHandle<BlockEntityType<?>, BlockEntityType<T>>
+    registerBlockEntityType(
+        Identifier id,
+        BiFunction<BlockPos, BlockState, T> factory,
+        Consumer<BlockEntityTypeBuilder<T>> configuration
+    ) {
+        BlockEntityTypeBuilder<T> builder = new BlockEntityTypeBuilder<>(factory);
+        Objects.requireNonNull(configuration, "configuration").accept(builder);
+        return register(
+            Registries.BLOCK_ENTITY_TYPE,
+            id,
+            () -> new BlockEntityType<>(builder.factory()::apply, Set.of(builder.resolveValidBlocks()))
+        );
+    }
+
+    @Override
+    public synchronized RegistrationHandle<CreativeModeTab, CreativeModeTab> registerCreativeTab(
+        Identifier id,
+        Consumer<CreativeTabBuilder> configuration
+    ) {
+        CreativeTabBuilder builder = new CreativeTabBuilder(id);
+        Objects.requireNonNull(configuration, "configuration").accept(builder);
+        return register(
+            Registries.CREATIVE_MODE_TAB,
+            id,
+            () -> buildCreativeTab(builder)
+        );
     }
 
     @Override
@@ -109,6 +154,14 @@ public final class NeoForgeRegistryService implements RegistryService {
     }
 
     @Override
+    public synchronized QueuedValue<BlockSetType> registerBlockSetType(Supplier<? extends BlockSetType> factory) {
+        ensureOpen();
+        QueuedValue<BlockSetType> result = new QueuedValue<>();
+        blockSetTypes.add(new BlockSetTypeDeclaration(Objects.requireNonNull(factory, "factory"), result));
+        return result;
+    }
+
+    @Override
     public synchronized void registerStrippable(
         Supplier<? extends Block> block,
         Supplier<? extends Block> stripped
@@ -133,6 +186,29 @@ public final class NeoForgeRegistryService implements RegistryService {
         ));
     }
 
+
+    @Override
+    public synchronized void addBlockEntityValidBlocks(
+        Supplier<? extends BlockEntityType<?>> blockEntityType,
+        List<? extends Supplier<? extends Block>> blocks
+    ) {
+        ensureOpen();
+        blockEntityValidBlocks.add(new BlockEntityValidBlocksDeclaration(
+            Objects.requireNonNull(blockEntityType, "blockEntityType"), List.copyOf(blocks)
+        ));
+    }
+
+    @Override
+    public synchronized void registerDispenserBehavior(
+        Supplier<? extends Item> item,
+        Supplier<? extends DispenseItemBehavior> behavior
+    ) {
+        ensureOpen();
+        dispenserBehaviors.add(new DispenserBehaviorDeclaration(
+            Objects.requireNonNull(item, "item"), Objects.requireNonNull(behavior, "behavior")
+        ));
+    }
+
     @Override
     public synchronized void apply() {
         ensureOpen();
@@ -142,6 +218,14 @@ public final class NeoForgeRegistryService implements RegistryService {
             throw new IllegalStateException("NeoForge registry service has not been bound to a mod event bus");
 
         applied = true;
+        blockSetTypes.subList(appliedBlockSetTypes, blockSetTypes.size()).forEach(declaration ->
+            declaration.result().bind(VanillaRegistryHooks.registerBlockSetType(declaration.factory().get()))
+        );
+        appliedBlockSetTypes = blockSetTypes.size();
+        woodTypes.subList(appliedWoodTypes, woodTypes.size()).forEach(declaration ->
+            declaration.result().bind(VanillaRegistryHooks.registerWoodType(declaration.factory().get()))
+        );
+        appliedWoodTypes = woodTypes.size();
         Map<RegistrarKey, DeferredRegister<?>> registrars = new LinkedHashMap<>();
         customRegistries.subList(appliedCustomRegistries, customRegistries.size())
             .forEach(declaration -> createCustomRegistry(declaration, registrars));
@@ -158,10 +242,14 @@ public final class NeoForgeRegistryService implements RegistryService {
             bus.addListener(BuildCreativeModeTabContentsEvent.class, this::populateCreativeTab);
             creativeTabsListenerRegistered = true;
         }
-        if ((!woodTypes.isEmpty() || !strippables.isEmpty() || !flammability.isEmpty())
+        if ((!strippables.isEmpty() || !flammability.isEmpty() || !blockEntityValidBlocks.isEmpty())
             && !blockHooksListenerRegistered) {
             bus.addListener(RegisterEvent.class, this::registerBlockHooks);
             blockHooksListenerRegistered = true;
+        }
+        if (!dispenserBehaviors.isEmpty() && !itemHooksListenerRegistered) {
+            bus.addListener(RegisterEvent.class, this::registerItemHooks);
+            itemHooksListenerRegistered = true;
         }
     }
 
@@ -213,6 +301,15 @@ public final class NeoForgeRegistryService implements RegistryService {
         event.put(declaration.entityType().get(), declaration.attributes().get());
     }
 
+    private static CreativeModeTab buildCreativeTab(CreativeTabBuilder configuration) {
+        CreativeModeTab.Builder builder = CreativeModeTab.builder();
+        configuration.configure(builder);
+        builder.displayItems((parameters, output) ->
+            configuration.displayItems().accept(stack -> output.accept(stack))
+        );
+        return builder.build();
+    }
+
     private void populateCreativeTab(BuildCreativeModeTabContentsEvent event) {
         creativeTabPopulations.stream()
             .filter(declaration -> declaration.tab().equals(event.getTabKey()))
@@ -226,7 +323,9 @@ public final class NeoForgeRegistryService implements RegistryService {
             return;
 
         blockHooksRegistered = true;
-        woodTypes.forEach(declaration -> declaration.result().bind(declaration.factory().get()));
+        blockEntityValidBlocks.forEach(declaration -> VanillaRegistryHooks.addBlockEntityValidBlocks(
+            declaration.blockEntityType().get(), declaration.blocks().stream().map(Supplier::get).toList()
+        ));
         strippables.forEach(declaration -> VanillaRegistryHooks.registerStrippable(
             declaration.block().get(),
             declaration.stripped().get()
@@ -235,6 +334,18 @@ public final class NeoForgeRegistryService implements RegistryService {
             declaration.block().get(),
             declaration.igniteOdds(),
             declaration.burnOdds()
+        ));
+    }
+
+    private boolean itemHooksRegistered;
+
+    private void registerItemHooks(RegisterEvent event) {
+        if (itemHooksRegistered || !event.getRegistryKey().equals(Registries.ITEM))
+            return;
+
+        itemHooksRegistered = true;
+        dispenserBehaviors.forEach(declaration -> DispenserBlock.registerBehavior(
+            declaration.item().get(), declaration.behavior().get()
         ));
     }
 
@@ -276,9 +387,27 @@ public final class NeoForgeRegistryService implements RegistryService {
     private record WoodTypeDeclaration(Supplier<? extends WoodType> factory, QueuedValue<WoodType> result) {
     }
 
+    private record BlockSetTypeDeclaration(
+        Supplier<? extends BlockSetType> factory,
+        QueuedValue<BlockSetType> result
+    ) {
+    }
+
     private record StrippableDeclaration(Supplier<? extends Block> block, Supplier<? extends Block> stripped) {
     }
 
     private record FlammabilityDeclaration(Supplier<? extends Block> block, int igniteOdds, int burnOdds) {
+    }
+
+    private record BlockEntityValidBlocksDeclaration(
+        Supplier<? extends BlockEntityType<?>> blockEntityType,
+        List<? extends Supplier<? extends Block>> blocks
+    ) {
+    }
+
+    private record DispenserBehaviorDeclaration(
+        Supplier<? extends Item> item,
+        Supplier<? extends DispenseItemBehavior> behavior
+    ) {
     }
 }

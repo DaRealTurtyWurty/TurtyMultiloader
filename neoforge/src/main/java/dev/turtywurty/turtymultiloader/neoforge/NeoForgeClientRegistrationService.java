@@ -1,14 +1,18 @@
 package dev.turtywurty.turtymultiloader.neoforge;
 
 import com.mojang.serialization.MapCodec;
+import dev.turtywurty.turtymultiloader.client.registration.AdditionalBlockStateModelDefinition;
 import dev.turtywurty.turtymultiloader.client.registration.AdditionalModel;
+import dev.turtywurty.turtymultiloader.client.registration.BlockStateModelAugmenter;
 import dev.turtywurty.turtymultiloader.client.registration.ClientRegistrationService;
 import net.minecraft.client.color.block.BlockTintSource;
 import net.minecraft.client.color.item.ItemTintSource;
 import net.minecraft.client.model.geom.ModelLayerLocation;
 import net.minecraft.client.model.geom.builders.LayerDefinition;
+import net.minecraft.client.renderer.block.BlockAndTintGetter;
 import net.minecraft.client.renderer.block.FluidModel;
 import net.minecraft.client.renderer.block.dispatch.BlockStateModel;
+import net.minecraft.client.renderer.block.dispatch.BlockStateModelPart;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.client.renderer.blockentity.state.BlockEntityRenderState;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
@@ -16,19 +20,24 @@ import net.minecraft.client.renderer.item.ItemModel;
 import net.minecraft.client.renderer.special.SpecialModelRenderer;
 import net.minecraft.client.resources.model.ModelManager;
 import net.minecraft.resources.Identifier;
+import net.minecraft.core.BlockPos;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluid;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.client.event.*;
+import net.neoforged.neoforge.client.model.DelegateBlockStateModel;
 import net.neoforged.neoforge.client.model.standalone.SimpleUnbakedStandaloneModel;
 import net.neoforged.neoforge.client.model.standalone.StandaloneModelKey;
 import org.jspecify.annotations.Nullable;
 
 import java.util.*;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 public final class NeoForgeClientRegistrationService implements ClientRegistrationService {
@@ -43,6 +52,7 @@ public final class NeoForgeClientRegistrationService implements ClientRegistrati
     private final Map<Identifier, MapCodec<? extends SpecialModelRenderer.Unbaked<?>>> specialModelRenderers =
         new LinkedHashMap<>();
     private final List<NeoForgeAdditionalModel> additionalModels = new ArrayList<>();
+    private final List<BlockStateModelAugmenterDeclaration> blockStateModelAugmenters = new ArrayList<>();
 
     private boolean renderersClosed;
     private boolean modelLayersClosed;
@@ -52,6 +62,7 @@ public final class NeoForgeClientRegistrationService implements ClientRegistrati
     private boolean itemModelsClosed;
     private boolean specialModelRenderersClosed;
     private boolean additionalModelsClosed;
+    private boolean blockStateModelAugmentersClosed;
 
     public static synchronized void bind(IEventBus bus) {
         if (modBus != null && modBus != bus)
@@ -69,6 +80,7 @@ public final class NeoForgeClientRegistrationService implements ClientRegistrati
         bus.addListener(RegisterItemModelsEvent.class, service::registerItemModels);
         bus.addListener(RegisterSpecialModelRendererEvent.class, service::registerSpecialModelRenderers);
         bus.addListener(ModelEvent.RegisterStandalone.class, service::registerAdditionalModels);
+        bus.addListener(ModelEvent.ModifyBakingResult.class, service::registerBlockStateModelAugmenters);
     }
 
     @Override
@@ -142,18 +154,35 @@ public final class NeoForgeClientRegistrationService implements ClientRegistrati
     }
 
     @Override
-    public synchronized AdditionalModel<BlockStateModel> registerAdditionalBlockStateModel(Identifier modelId) {
+    public synchronized AdditionalModel<BlockStateModel> registerAdditionalBlockStateModel(
+        Identifier modelId,
+        AdditionalBlockStateModelDefinition definition
+    ) {
         ensureOpen(additionalModelsClosed, "Additional models");
         Identifier id = require(modelId);
+        AdditionalBlockStateModelDefinition unbakedModel = require(definition);
         if (additionalModels.stream().anyMatch(model -> model.id().equals(id)))
             throw new IllegalStateException("An additional model is already registered as " + id);
 
         NeoForgeAdditionalModel model = new NeoForgeAdditionalModel(
             id,
-            new StandaloneModelKey<>(id::toString)
+            new StandaloneModelKey<>(id::toString),
+            unbakedModel
         );
         additionalModels.add(model);
         return model;
+    }
+
+    @Override
+    public synchronized void registerBlockStateModelAugmenter(
+        Predicate<BlockState> selector,
+        BlockStateModelAugmenter augmenter
+    ) {
+        ensureOpen(blockStateModelAugmentersClosed, "Block-state model augmenters");
+        blockStateModelAugmenters.add(new BlockStateModelAugmenterDeclaration(
+            require(selector),
+            require(augmenter)
+        ));
     }
 
     private synchronized void registerRenderers(EntityRenderersEvent.RegisterRenderers event) {
@@ -194,9 +223,24 @@ public final class NeoForgeClientRegistrationService implements ClientRegistrati
     private synchronized void registerAdditionalModels(ModelEvent.RegisterStandalone event) {
         additionalModels.forEach(model -> event.register(
             model.key(),
-            SimpleUnbakedStandaloneModel.blockStateModel(model.id())
+            SimpleUnbakedStandaloneModel.blockStateModel(
+                model.definition().modelId(),
+                model.definition().modelState()
+            )
         ));
         additionalModelsClosed = true;
+    }
+
+    private synchronized void registerBlockStateModelAugmenters(ModelEvent.ModifyBakingResult event) {
+        event.getBakingResult().blockStateModels().replaceAll((state, original) -> {
+            BlockStateModel model = original;
+            for (BlockStateModelAugmenterDeclaration declaration : blockStateModelAugmenters) {
+                if (declaration.selector().test(state))
+                    model = new NeoForgeAugmentedBlockStateModel(model, declaration.augmenter());
+            }
+            return model;
+        });
+        blockStateModelAugmentersClosed = true;
     }
 
     private interface RendererDeclaration {
@@ -243,11 +287,68 @@ public final class NeoForgeClientRegistrationService implements ClientRegistrati
 
     private record NeoForgeAdditionalModel(
         Identifier id,
-        StandaloneModelKey<BlockStateModel> key
+        StandaloneModelKey<BlockStateModel> key,
+        AdditionalBlockStateModelDefinition definition
     ) implements AdditionalModel<BlockStateModel> {
         @Override
         public @Nullable BlockStateModel get(ModelManager modelManager) {
             return Objects.requireNonNull(modelManager, "modelManager").getStandaloneModel(key);
+        }
+    }
+
+    private record BlockStateModelAugmenterDeclaration(
+        Predicate<BlockState> selector,
+        BlockStateModelAugmenter augmenter
+    ) {
+    }
+
+    private static final class NeoForgeAugmentedBlockStateModel extends DelegateBlockStateModel {
+        private final BlockStateModelAugmenter augmenter;
+
+        private NeoForgeAugmentedBlockStateModel(BlockStateModel delegate, BlockStateModelAugmenter augmenter) {
+            super(delegate);
+            this.augmenter = augmenter;
+        }
+
+        @Override
+        public void collectParts(
+            BlockAndTintGetter level,
+            BlockPos pos,
+            BlockState state,
+            RandomSource random,
+            List<BlockStateModelPart> parts
+        ) {
+            long baseSeed = state.getSeed(pos);
+            random.setSeed(baseSeed);
+            delegate.collectParts(level, pos, state, random, parts);
+
+            random.setSeed(baseSeed);
+            var context = new BlockStateModelAugmenter.Context(level, pos, state, random, baseSeed);
+            List<BlockStateModelAugmenter.SeededModel> additionalModels = new ArrayList<>();
+            augmenter.collectAdditionalModels(context, (model, seed) ->
+                additionalModels.add(new BlockStateModelAugmenter.SeededModel(model, seed))
+            );
+            for (BlockStateModelAugmenter.SeededModel model : additionalModels) {
+                random.setSeed(model.randomSeed());
+                model.model().collectParts(level, pos, state, random, parts);
+            }
+        }
+
+        @Override
+        public @Nullable Object createGeometryKey(
+            BlockAndTintGetter level,
+            BlockPos pos,
+            BlockState state,
+            RandomSource random
+        ) {
+            long baseSeed = state.getSeed(pos);
+            random.setSeed(baseSeed);
+            Object wrappedKey = delegate.createGeometryKey(level, pos, state, random);
+            random.setSeed(baseSeed);
+            return augmenter.createGeometryKey(
+                new BlockStateModelAugmenter.Context(level, pos, state, random, baseSeed),
+                wrappedKey
+            );
         }
     }
 

@@ -30,7 +30,8 @@ public final class MultiblockModuleGameTests {
             "Multiblock part registration"
         );
         helper.assertTrue(
-            MultiblockLib.MULTIBLOCK_CONTROLLER_ENTITY.isValid(MultiblockLib.MULTIBLOCK_CONTROLLER.defaultBlockState()),
+            MultiblockLib.MULTIBLOCK_CONTROLLER_ENTITY_HANDLE.get()
+                .isValid(MultiblockLib.MULTIBLOCK_CONTROLLER.defaultBlockState()),
             "Multiblock controller block-entity type does not accept its block"
         );
         helper.assertTrue(

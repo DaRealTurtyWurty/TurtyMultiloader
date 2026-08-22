@@ -1,5 +1,6 @@
 package dev.turtywurty.turtymultiloader.testmod.fabric;
 
+import dev.turtywurty.turtymultiloader.client.registration.WoodSetClient;
 import dev.turtywurty.turtymultiloader.menu.client.ClientMenus;
 import dev.turtywurty.turtymultiloader.network.PayloadPhase;
 import dev.turtywurty.turtymultiloader.testmod.ClientEventSmokeTest;
@@ -13,6 +14,7 @@ public final class TestModFabricClient implements ClientModInitializer {
     public void onInitializeClient() {
         ClientEventSmokeTest.register();
         ClientRegistrationSmokeTest.register();
+        WoodSetClient.register(TestModContent.TEST_WOOD_SET);
         ClientMenus.register(TestModContent.TEST_MENU, TestMenuScreen::new);
         TestModContent.TEST_MENU_SYNC.registerClientReceiver((menu, value) -> {
         });

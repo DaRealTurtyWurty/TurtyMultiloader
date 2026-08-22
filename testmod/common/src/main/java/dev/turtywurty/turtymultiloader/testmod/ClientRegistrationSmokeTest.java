@@ -37,6 +37,12 @@ public final class ClientRegistrationSmokeTest {
             }),
             TestModContent.TEST_LOG
         );
+        ClientRegistrations.registerBlockStateModelAugmenter(
+            TestModContent.TEST_LOG,
+            (context, models) -> {
+                // No-op wrapper used to compile and exercise loader registration in client runs.
+            }
+        );
         STONE_MODEL = ClientRegistrations.registerAdditionalBlockStateModel(
             Identifier.withDefaultNamespace("block/stone")
         );

@@ -56,7 +56,7 @@ public class MultiblockControllerBlockEntity extends BlockEntity {
     private boolean breaking;
 
     public MultiblockControllerBlockEntity(final BlockPos pos, final BlockState state) {
-        this(MultiblockLib.MULTIBLOCK_CONTROLLER_ENTITY, pos, state);
+        this(MultiblockLib.MULTIBLOCK_CONTROLLER_ENTITY_HANDLE.get(), pos, state);
     }
 
     public MultiblockControllerBlockEntity(

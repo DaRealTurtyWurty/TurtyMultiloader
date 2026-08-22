@@ -1,6 +1,7 @@
 package dev.turtywurty.turtymultiloader.worldgen;
 
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.tags.BiomeTags;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.levelgen.feature.ConfiguredFeature;
@@ -21,6 +22,27 @@ public final class BiomeSelectors {
 
     public static BiomeSelector all() {
         return context -> true;
+    }
+
+    /**
+     * Selects biomes which can generate in the Overworld.
+     */
+    public static BiomeSelector foundInOverworld() {
+        return tag(BiomeTags.IS_OVERWORLD);
+    }
+
+    /**
+     * Selects biomes which can generate in the Nether.
+     */
+    public static BiomeSelector foundInTheNether() {
+        return tag(BiomeTags.IS_NETHER);
+    }
+
+    /**
+     * Selects biomes which can generate in the End.
+     */
+    public static BiomeSelector foundInTheEnd() {
+        return tag(BiomeTags.IS_END);
     }
 
     @SafeVarargs

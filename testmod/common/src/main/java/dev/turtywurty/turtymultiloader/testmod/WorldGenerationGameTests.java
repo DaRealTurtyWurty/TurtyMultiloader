@@ -49,7 +49,9 @@ public final class WorldGenerationGameTests {
         );
 
         // False selectors exercise both code-modifier backends without altering test-world generation or spawns.
-        var disabledPlains = BiomeSelectors.includeByKey(Biomes.PLAINS).and(context -> false);
+        var disabledPlains = BiomeSelectors.foundInOverworld()
+            .and(BiomeSelectors.includeByKey(Biomes.PLAINS))
+            .and(context -> false);
         WorldGeneration.addFeature(
             id("disabled_feature_addition"),
             disabledPlains,

@@ -1,5 +1,6 @@
 package dev.turtywurty.turtymultiloader.neoforge;
 
+import com.mojang.blaze3d.vertex.PoseStack;
 import dev.turtywurty.turtymultiloader.event.client.ClientEventService;
 import dev.turtywurty.turtymultiloader.event.client.LevelRenderContext;
 import dev.turtywurty.turtymultiloader.event.client.RenderStage;
@@ -7,6 +8,8 @@ import dev.turtywurty.turtymultiloader.event.client.TooltipCallback;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.client.renderer.SubmitNodeCollector;
+import net.minecraft.client.renderer.state.level.LevelRenderState;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.PreparableReloadListener;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -225,9 +228,9 @@ public final class NeoForgeClientEventService implements ClientEventService {
     }
 
     private static LevelRenderContext wrap(
-        net.minecraft.client.renderer.state.level.LevelRenderState levelState,
-        com.mojang.blaze3d.vertex.PoseStack poseStack,
-        net.minecraft.client.renderer.SubmitNodeCollector submitNodeCollector
+        LevelRenderState levelState,
+        PoseStack poseStack,
+        SubmitNodeCollector submitNodeCollector
     ) {
         Minecraft client = Minecraft.getInstance();
         return new LevelRenderContext(

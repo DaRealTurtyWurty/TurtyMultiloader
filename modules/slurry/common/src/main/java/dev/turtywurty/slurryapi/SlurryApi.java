@@ -41,11 +41,17 @@ public final class SlurryApi {
         RegistryFixedCodec.create(SLURRIES.key()),
         ByteBufCodecs.holderRegistry(SLURRIES.key())
     );
+    private static boolean initialized;
 
     private SlurryApi() {
     }
 
-    public static void initialize() {
+    public static synchronized void initialize() {
+        if (initialized) {
+            return;
+        }
+
+        initialized = true;
         TransferService.get().registerStorageKey(RESOURCE_FAMILY.storageKey());
     }
 

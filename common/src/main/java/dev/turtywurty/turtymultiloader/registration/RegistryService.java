@@ -1,13 +1,17 @@
 package dev.turtywurty.turtymultiloader.registration;
 
+import com.mojang.serialization.MapCodec;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.Registry;
 import net.minecraft.core.component.DataComponentType;
+import net.minecraft.core.dispenser.DispenseItemBehavior;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.inventory.MenuType;
@@ -19,7 +23,10 @@ import net.minecraft.world.item.crafting.RecipeBookCategory;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.BlockSetType;
 import net.minecraft.world.level.block.state.properties.WoodType;
 import net.minecraft.world.level.gameevent.PositionSource;
 import net.minecraft.world.level.gameevent.PositionSourceType;
@@ -28,7 +35,10 @@ import net.minecraft.world.level.levelgen.feature.trunkplacers.TrunkPlacer;
 import net.minecraft.world.level.levelgen.feature.trunkplacers.TrunkPlacerType;
 import net.minecraft.world.level.material.Fluid;
 
+import java.util.List;
+import java.util.Objects;
 import java.util.ServiceLoader;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -58,9 +68,31 @@ public interface RegistryService {
 
     QueuedValue<WoodType> registerWoodType(Supplier<? extends WoodType> factory);
 
+    QueuedValue<BlockSetType> registerBlockSetType(Supplier<? extends BlockSetType> factory);
+
     void registerStrippable(Supplier<? extends Block> block, Supplier<? extends Block> stripped);
 
     void registerFlammable(Supplier<? extends Block> block, int igniteOdds, int burnOdds);
+
+    void addBlockEntityValidBlocks(
+        Supplier<? extends BlockEntityType<?>> blockEntityType,
+        List<? extends Supplier<? extends Block>> blocks
+    );
+
+    void registerDispenserBehavior(
+        Supplier<? extends Item> item,
+        Supplier<? extends DispenseItemBehavior> behavior
+    );
+
+    default WoodSet registerWoodSet(
+        Identifier id,
+        net.minecraft.world.level.block.grower.TreeGrower treeGrower,
+        Consumer<WoodSetBuilder> configuration
+    ) {
+        WoodSetBuilder builder = new WoodSetBuilder(this, id, treeGrower);
+        Objects.requireNonNull(configuration, "configuration").accept(builder);
+        return builder.build();
+    }
 
     void apply();
 
@@ -94,11 +126,42 @@ public interface RegistryService {
         return register(Registries.BLOCK_ENTITY_TYPE, id, factory);
     }
 
+    /**
+     * Registers a block entity type and defers resolving its valid blocks until registry application.
+     */
+    <T extends BlockEntity> RegistrationHandle<BlockEntityType<?>, BlockEntityType<T>> registerBlockEntityType(
+        Identifier id,
+        BiFunction<BlockPos, BlockState, T> factory,
+        Consumer<BlockEntityTypeBuilder<T>> configuration
+    );
+
     default <T extends Entity> RegistrationHandle<EntityType<?>, EntityType<T>> registerEntityType(
         Identifier id,
         Supplier<? extends EntityType<T>> factory
     ) {
         return register(Registries.ENTITY_TYPE, id, factory);
+    }
+
+    /**
+     * Registers a living entity type together with its attributes and optional natural-spawn declarations.
+     */
+    default <T extends LivingEntity> RegistrationHandle<EntityType<?>, EntityType<T>> registerEntityType(
+        Identifier id,
+        EntityType.EntityFactory<T> factory,
+        MobCategory category,
+        Consumer<EntityTypeBuilder<T>> configuration
+    ) {
+        EntityTypeBuilder<T> builder = new EntityTypeBuilder<>(id, factory, category);
+        Objects.requireNonNull(configuration, "configuration").accept(builder);
+
+        ResourceKey<EntityType<?>> key = ResourceKey.create(Registries.ENTITY_TYPE, id);
+        RegistrationHandle<EntityType<?>, EntityType<T>> result = registerEntityType(
+            id,
+            () -> builder.build(key)
+        );
+        registerEntityAttributes(result, builder.attributes());
+        builder.registerSpawns(result);
+        return result;
     }
 
     default <T extends Attribute> RegistrationHandle<Attribute, T> registerAttribute(
@@ -167,12 +230,32 @@ public interface RegistryService {
         return register(Registries.TRUNK_PLACER_TYPE, id, factory);
     }
 
+    /**
+     * Registers a trunk placer type from its codec, hiding the inaccessible vanilla
+     * {@link TrunkPlacerType} constructor from consumers.
+     */
+    default <T extends TrunkPlacer> RegistrationHandle<TrunkPlacerType<?>, TrunkPlacerType<T>> registerTrunkPlacerType(
+        Identifier id,
+        MapCodec<T> codec
+    ) {
+        Objects.requireNonNull(codec, "codec");
+        return registerTrunkPlacerType(id, () -> new TrunkPlacerType<>(codec));
+    }
+
     default <T extends CreativeModeTab> RegistrationHandle<CreativeModeTab, T> registerCreativeTab(
         Identifier id,
         Supplier<? extends T> factory
     ) {
         return register(Registries.CREATIVE_MODE_TAB, id, factory);
     }
+
+    /**
+     * Registers a custom creative tab using the loader's custom-tab builder.
+     */
+    RegistrationHandle<CreativeModeTab, CreativeModeTab> registerCreativeTab(
+        Identifier id,
+        Consumer<CreativeTabBuilder> configuration
+    );
 
     default <T> CustomRegistry<T> customRegistry(Identifier id) {
         return customRegistry(ResourceKey.createRegistryKey(id), CustomRegistryOptions.DEFAULT);
