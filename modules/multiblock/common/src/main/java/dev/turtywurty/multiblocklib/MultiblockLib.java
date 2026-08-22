@@ -3,6 +3,7 @@ package dev.turtywurty.multiblocklib;
 import dev.turtywurty.multiblocklib.block.MultiblockControllerBlock;
 import dev.turtywurty.multiblocklib.block.MultiblockPartBlock;
 import dev.turtywurty.multiblocklib.block.entity.MultiblockControllerBlockEntity;
+import dev.turtywurty.multiblocklib.block.entity.MultiblockPartBlockEntity;
 import dev.turtywurty.multiblocklib.data.MultiblockDefinitionManager;
 import dev.turtywurty.multiblocklib.pattern.MultiblockPatternRegistry;
 import dev.turtywurty.multiblocklib.pattern.factory.*;
@@ -42,6 +43,8 @@ public final class MultiblockLib {
     private static final Set<Block> CONTROLLER_BLOCKS = new HashSet<>();
     public static RegistrationHandle<Block, MultiblockPartBlock> MULTIBLOCK_PART_HANDLE;
     public static RegistrationHandle<Block, MultiblockControllerBlock> MULTIBLOCK_CONTROLLER_HANDLE;
+    public static RegistrationHandle<BlockEntityType<?>, BlockEntityType<MultiblockPartBlockEntity>>
+        MULTIBLOCK_PART_ENTITY_HANDLE;
     public static RegistrationHandle<BlockEntityType<?>, BlockEntityType<MultiblockControllerBlockEntity>>
         MULTIBLOCK_CONTROLLER_ENTITY_HANDLE;
     private static boolean initialized;
@@ -55,6 +58,11 @@ public final class MultiblockLib {
             );
             return MULTIBLOCK_PART;
         });
+        MULTIBLOCK_PART_ENTITY_HANDLE = registries.registerBlockEntityType(
+            id("multiblock_part"),
+            MultiblockPartBlockEntity::new,
+            builder -> builder.validBlock(MULTIBLOCK_PART_HANDLE)
+        );
         MULTIBLOCK_CONTROLLER_HANDLE = registries.registerBlock(id("multiblock_controller"), () -> {
             MULTIBLOCK_CONTROLLER = new MultiblockControllerBlock(
                 BlockBehaviour.Properties.of().mapColor(MapColor.NONE).strength(1.0F).noOcclusion()

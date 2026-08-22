@@ -1,6 +1,7 @@
 package dev.turtywurty.multiblocklib;
 
 import dev.turtywurty.multiblocklib.block.entity.MultiblockControllerBlockEntity;
+import dev.turtywurty.multiblocklib.block.entity.MultiblockPartBlockEntity;
 import dev.turtywurty.multiblocklib.data.MultiblockDefinition;
 import dev.turtywurty.multiblocklib.data.MultiblockPartEntry;
 import dev.turtywurty.multiblocklib.data.PortDefinition;
@@ -237,6 +238,9 @@ public final class MultiblockPlacement {
             } else {
                 level.setBlock(worldPos, MultiblockLib.MULTIBLOCK_PART.defaultBlockState(), 3);
                 data.mapPart(worldPos, controllerWorld, entry.state());
+                if (level.getBlockEntity(worldPos) instanceof MultiblockPartBlockEntity partEntity) {
+                    partEntity.setControllerPos(controllerWorld);
+                }
             }
         }
 
