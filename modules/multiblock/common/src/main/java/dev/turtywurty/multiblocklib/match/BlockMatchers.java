@@ -15,6 +15,8 @@ import net.minecraft.world.level.block.state.properties.Property;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Predicate;
+import java.util.function.Supplier;
 
 public final class BlockMatchers {
     private BlockMatchers() {
@@ -50,17 +52,29 @@ public final class BlockMatchers {
         if (token.startsWith("#")) {
             Identifier tagId = Identifier.parse(token.substring(1));
             TagKey<Block> tag = TagKey.create(Registries.BLOCK, tagId);
-            return state -> state.is(tag);
+            return withExample(
+                state -> state.is(tag),
+                () -> BuiltInRegistries.BLOCK.get(tag)
+                    .flatMap(holders -> holders.stream().findFirst())
+                    .map(holder -> holder.value().defaultBlockState())
+            );
         }
 
         if (token.contains("[")) {
             BlockState state = parseBlockState(token);
-            return candidate -> candidate.equals(state);
+            return withExample(candidate -> candidate.equals(state), () -> Optional.of(state));
         }
 
         Identifier blockId = Identifier.parse(token);
         Block block = BuiltInRegistries.BLOCK.getValue(blockId);
-        return state -> state.is(block);
+        return withExample(state -> state.is(block), () -> Optional.of(block.defaultBlockState()));
+    }
+
+    private static BlockMatcher withExample(
+        final Predicate<BlockState> predicate,
+        final Supplier<Optional<BlockState>> exampleState
+    ) {
+        return new ConstructibleBlockMatcher(predicate, exampleState);
     }
 
     public static BlockState parseBlockState(final String token) {
@@ -110,5 +124,20 @@ public final class BlockMatchers {
         }
 
         return state.setValue(property, parsed.get());
+    }
+
+    private record ConstructibleBlockMatcher(
+        Predicate<BlockState> predicate,
+        Supplier<Optional<BlockState>> exampleStateSupplier
+    ) implements BlockMatcher {
+        @Override
+        public boolean matches(final BlockState state) {
+            return this.predicate.test(state);
+        }
+
+        @Override
+        public Optional<BlockState> exampleState() {
+            return this.exampleStateSupplier.get();
+        }
     }
 }

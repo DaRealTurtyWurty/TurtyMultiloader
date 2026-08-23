@@ -4,6 +4,7 @@ import net.minecraft.world.level.block.state.BlockState;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 public record BlockMatcherList(List<BlockMatcher> matchers, List<String> debugTokens) implements BlockMatcher {
@@ -26,6 +27,14 @@ public record BlockMatcherList(List<BlockMatcher> matchers, List<String> debugTo
         }
 
         return false;
+    }
+
+    @Override
+    public Optional<BlockState> exampleState() {
+        return this.matchers.stream()
+            .map(BlockMatcher::exampleState)
+            .flatMap(Optional::stream)
+            .findFirst();
     }
 
     public String describe() {
