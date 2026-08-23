@@ -93,19 +93,17 @@ The copy-ready [`consumer-template`](consumer-template) covers common/Fabric/Neo
 access wideners, access transformers, metadata expansion, client/server/GameTest runs, split datagen, `include`,
 `jarJar`, and packaging assertions. It uses no convention from this repository's private `buildSrc`.
 
-For source development, plain `includeBuild("../TurtyMultiloader")` is not enough: Gradle sees source coordinates such
-as `dev.turtywurty.turtymultiloader:fabric`, while releases use
-`dev.turtywurty.turtymultiloader:turtymultiloader-fabric`. Use the explicit substitution block in
-[`consumer-template/settings.gradle`](consumer-template/settings.gradle), then enable it with:
+For local development in another checkout, publish every module to Maven Local:
 
 ```shell
-./gradlew check -PturtymultiloaderSource=../TurtyMultiloader
+./gradlew publishConsumerArtifactsToMavenLocal
 ```
+
+Add `mavenLocal()` to the consumer's repositories. This uses the same coordinates as Repsy without composite-build
+substitution.
 
 To publish this checkout, run `./gradlew publishConsumerArtifacts`. The destination defaults to
 `build/local-maven`; override it with `-PlocalMavenUrl=/path/or/url` or the `LOCAL_MAVEN_URL` environment variable.
-For local development in another checkout, run `./gradlew publishConsumerArtifactsToMavenLocal` and add
-`mavenLocal()` to that consumer's repositories.
 Tagged releases are verified and published to `https://repo.repsy.io/mvn/turtywurty/public` by the release workflow.
 Configure the `REPSY_USERNAME` and `REPSY_PASSWORD` GitHub Actions secrets before pushing a `v<version>` tag.
 

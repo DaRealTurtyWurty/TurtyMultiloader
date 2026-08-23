@@ -17,7 +17,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Set up Java 25
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '25'
@@ -28,9 +28,6 @@ jobs:
       - name: Build, GameTest, datagen, and published-consumer verification
         run: ./gradlew check --stacktrace
 
-      - name: Verify local composite substitution
-        run: ./gradlew -p consumer-template check -PturtymultiloaderSource=.. --stacktrace
-
       - name: Upload GameTest reports
         if: always()
         uses: actions/upload-artifact@v4
@@ -40,4 +37,3 @@ jobs:
           path: |
             testmod/fabric/build/gametest-results.xml
             testmod/neoforge/build/test-results/**
-

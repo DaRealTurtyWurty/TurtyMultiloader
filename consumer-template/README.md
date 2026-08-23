@@ -10,15 +10,13 @@ Published-artifact mode uses `turtymultiloaderRepository` and `turtymultiloader_
 ./gradlew check -PturtymultiloaderRepository=https://maven.example.invalid/releases
 ```
 
-For a local source checkout, keep the same dependencies and enable explicit composite substitution:
+For local development, publish TurtyMultiloader to Maven Local:
 
 ```shell
-./gradlew check -PturtymultiloaderSource=../TurtyMultiloader
+./gradlew publishConsumerArtifactsToMavenLocal
 ```
 
-Plain `includeBuild("../TurtyMultiloader")` is insufficient because Gradle's default coordinates use source project
-names such as `fabric`, whereas releases use artifact IDs such as `turtymultiloader-fabric`.
-`settings.gradle` contains substitution rules for all core, gas, slurry, and multiblock modules.
+Then add `mavenLocal()` to the consumer repositories. Local and remote builds use the same Maven coordinates.
 
 The Fabric artifact is both an `implementation` dependency for development and an `include` dependency for the
 consumer JAR. NeoForge uses `implementation` plus `jarJar` with an exact Maven version range. Shared code compiles

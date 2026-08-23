@@ -22,31 +22,3 @@ plugins {
 
 rootProject.name = 'turtymultiloader-consumer-template'
 include('common', 'fabric', 'neoforge')
-
-// Opt into source substitution with -PturtymultiloaderSource=../TurtyMultiloader.
-// Explicit rules are required because the source project names differ from its published artifact IDs.
-def sourceBuild = providers.gradleProperty('turtymultiloaderSource').orNull
-if (sourceBuild != null && !sourceBuild.isBlank()) {
-    def libraryGroup = providers.gradleProperty('turtymultiloader_group').get()
-    includeBuild(sourceBuild) {
-        dependencySubstitution {
-            [
-                common               : 'turtymultiloader-common',
-                fabric               : 'turtymultiloader-fabric',
-                neoforge             : 'turtymultiloader-neoforge',
-                'gas-common'         : 'turtymultiloader-gas-common',
-                'gas-fabric'         : 'turtymultiloader-gas-fabric',
-                'gas-neoforge'       : 'turtymultiloader-gas-neoforge',
-                'slurry-common'      : 'turtymultiloader-slurry-common',
-                'slurry-fabric'      : 'turtymultiloader-slurry-fabric',
-                'slurry-neoforge'    : 'turtymultiloader-slurry-neoforge',
-                'multiblock-common'  : 'turtymultiloader-multiblock-common',
-                'multiblock-fabric'  : 'turtymultiloader-multiblock-fabric',
-                'multiblock-neoforge': 'turtymultiloader-multiblock-neoforge'
-            ].each { projectPath, artifact ->
-                substitute(module("${libraryGroup}:${artifact}"))
-                    .using(project(":${projectPath}"))
-            }
-        }
-    }
-}
