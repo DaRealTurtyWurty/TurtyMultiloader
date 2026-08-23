@@ -18,7 +18,7 @@ sourceSets.main.resources.srcDirs(
 )
 
 def library = { String artifact ->
-    "${turtymultiloader_group}:${artifact}-${minecraft_version}:${turtymultiloader_version}"
+    "${turtymultiloader_group}:${artifact}:${turtymultiloader_version}"
 }
 
 def loaderAttribute = Attribute.of('io.github.mcgradleconventions.loader', String)
@@ -112,7 +112,7 @@ tasks.register('verifyNestedLibraries') {
             .files.collect { it.name } as Set
         ['turtymultiloader-fabric', 'turtymultiloader-gas-fabric', 'turtymultiloader-slurry-fabric',
          'turtymultiloader-multiblock-fabric'].each {
-            if (!nested.any { name -> name.contains("${it}-${minecraft_version}-") })
+            if (!nested.any { name -> name.contains("${it}-${turtymultiloader_version}") })
                 throw new GradleException("Missing nested ${it} in ${artifact.name}: ${nested}")
         }
     }
@@ -122,7 +122,7 @@ tasks.register('verifyTurtyMultiloaderTransitives') {
     group = 'verification'
     doLast {
         Set<String> resolved = configurations.turtymultiloaderTransitiveProbe.files.collect { it.name } as Set
-        if (!resolved.any { it.startsWith("turtymultiloader-fabric-${minecraft_version}-") })
+        if (!resolved.any { it.startsWith("turtymultiloader-fabric-${turtymultiloader_version}") })
             throw new GradleException("Optional Fabric module metadata did not bring in the core Fabric artifact: ${resolved}")
     }
 }

@@ -19,9 +19,8 @@ sourceSets.main.resources.srcDirs(
     'src/generated/server'
 )
 
-def artifact = { String name -> "${name}-${minecraft_version}" }
 def library = { String name ->
-    "${turtymultiloader_group}:${artifact(name)}:${turtymultiloader_version}"
+    "${turtymultiloader_group}:${name}:${turtymultiloader_version}"
 }
 
 def loaderAttribute = Attribute.of('io.github.mcgradleconventions.loader', String)
@@ -39,7 +38,7 @@ dependencies {
     ['turtymultiloader-neoforge', 'turtymultiloader-gas-neoforge',
      'turtymultiloader-slurry-neoforge', 'turtymultiloader-multiblock-neoforge'].each { name ->
         implementation library(name)
-        jarJar "${turtymultiloader_group}:${artifact(name)}:[${turtymultiloader_version}]"
+        jarJar "${turtymultiloader_group}:${name}:[${turtymultiloader_version}]"
     }
 
     // Deliberately omit the core artifact: this configuration verifies published transitivity.
@@ -126,7 +125,7 @@ tasks.register('verifyJarJarLibraries') {
             .files.collect { it.name } as Set
         ['turtymultiloader-neoforge', 'turtymultiloader-gas-neoforge',
          'turtymultiloader-slurry-neoforge', 'turtymultiloader-multiblock-neoforge'].each {
-            if (!nested.any { name -> name.contains("${it}-${minecraft_version}-") })
+            if (!nested.any { name -> name.contains("${it}-${turtymultiloader_version}") })
                 throw new GradleException("Missing jarJar ${it} in ${output.name}: ${nested}")
         }
         if (zipTree(output).matching { include 'META-INF/jarjar/metadata.json' }.isEmpty())
@@ -138,7 +137,7 @@ tasks.register('verifyTurtyMultiloaderTransitives') {
     group = 'verification'
     doLast {
         Set<String> resolved = configurations.turtymultiloaderTransitiveProbe.files.collect { it.name } as Set
-        if (!resolved.any { it.startsWith("turtymultiloader-neoforge-${minecraft_version}-") })
+        if (!resolved.any { it.startsWith("turtymultiloader-neoforge-${turtymultiloader_version}") })
             throw new GradleException("Optional NeoForge module metadata did not bring in the core NeoForge artifact: ${resolved}")
     }
 }

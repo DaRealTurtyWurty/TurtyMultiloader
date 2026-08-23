@@ -78,7 +78,9 @@ processResources {
 publishing {
     publications {
         register('mavenJava', MavenPublication) {
-            artifactId base.archivesName.get()
+            // Keep Maven coordinates stable across Minecraft versions. The
+            // human-facing build JAR can still include the Minecraft version.
+            artifactId "${mod_id}-${project.name}"
             from components.java
         }
     }
@@ -90,6 +92,11 @@ publishing {
             url = configuredUrl.isPresent()
                 ? uri(configuredUrl.get())
                 : rootProject.layout.buildDirectory.dir('local-maven')
+        }
+        maven {
+            name = 'repsy'
+            url = uri('https://repo.repsy.io/mvn/turtywurty/public')
+            credentials(PasswordCredentials)
         }
     }
 }

@@ -28,22 +28,21 @@ include('common', 'fabric', 'neoforge')
 def sourceBuild = providers.gradleProperty('turtymultiloaderSource').orNull
 if (sourceBuild != null && !sourceBuild.isBlank()) {
     def libraryGroup = providers.gradleProperty('turtymultiloader_group').get()
-    def minecraftVersion = providers.gradleProperty('minecraft_version').get()
     includeBuild(sourceBuild) {
         dependencySubstitution {
             [
-                common               : "turtymultiloader-common-${minecraftVersion}",
-                fabric               : "turtymultiloader-fabric-${minecraftVersion}",
-                neoforge             : "turtymultiloader-neoforge-${minecraftVersion}",
-                'gas-common'         : "turtymultiloader-gas-common-${minecraftVersion}",
-                'gas-fabric'         : "turtymultiloader-gas-fabric-${minecraftVersion}",
-                'gas-neoforge'       : "turtymultiloader-gas-neoforge-${minecraftVersion}",
-                'slurry-common'      : "turtymultiloader-slurry-common-${minecraftVersion}",
-                'slurry-fabric'      : "turtymultiloader-slurry-fabric-${minecraftVersion}",
-                'slurry-neoforge'    : "turtymultiloader-slurry-neoforge-${minecraftVersion}",
-                'multiblock-common'  : "turtymultiloader-multiblock-common-${minecraftVersion}",
-                'multiblock-fabric'  : "turtymultiloader-multiblock-fabric-${minecraftVersion}",
-                'multiblock-neoforge': "turtymultiloader-multiblock-neoforge-${minecraftVersion}"
+                common               : 'turtymultiloader-common',
+                fabric               : 'turtymultiloader-fabric',
+                neoforge             : 'turtymultiloader-neoforge',
+                'gas-common'         : 'turtymultiloader-gas-common',
+                'gas-fabric'         : 'turtymultiloader-gas-fabric',
+                'gas-neoforge'       : 'turtymultiloader-gas-neoforge',
+                'slurry-common'      : 'turtymultiloader-slurry-common',
+                'slurry-fabric'      : 'turtymultiloader-slurry-fabric',
+                'slurry-neoforge'    : 'turtymultiloader-slurry-neoforge',
+                'multiblock-common'  : 'turtymultiloader-multiblock-common',
+                'multiblock-fabric'  : 'turtymultiloader-multiblock-fabric',
+                'multiblock-neoforge': 'turtymultiloader-multiblock-neoforge'
             ].each { projectPath, artifact ->
                 substitute(module("${libraryGroup}:${artifact}"))
                     .using(project(":${projectPath}"))

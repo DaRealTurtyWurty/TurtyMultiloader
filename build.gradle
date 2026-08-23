@@ -17,6 +17,18 @@ tasks.register('publishConsumerArtifacts') {
     dependsOn(publishedProjects.collect { "${it}:publishMavenJavaPublicationToLocalRepository" })
 }
 
+tasks.register('publishConsumerArtifactsToMavenLocal') {
+    group = 'publishing'
+    description = 'Publishes every consumer artifact to the local Maven cache.'
+    dependsOn(publishedProjects.collect { "${it}:publishMavenJavaPublicationToMavenLocal" })
+}
+
+tasks.register('publishConsumerArtifactsToRepsy') {
+    group = 'publishing'
+    description = 'Publishes every consumer artifact to the public Repsy repository.'
+    dependsOn(publishedProjects.collect { "${it}:publishMavenJavaPublicationToRepsyRepository" })
+}
+
 def verificationRepository = providers.gradleProperty('localMavenUrl')
     .orElse(providers.environmentVariable('LOCAL_MAVEN_URL'))
     .orElse(layout.buildDirectory.dir('local-maven').map { it.asFile.absolutePath })

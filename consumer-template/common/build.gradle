@@ -15,7 +15,7 @@ neoForge {
 }
 
 def library = { String artifact ->
-    "${turtymultiloader_group}:${artifact}-${minecraft_version}:${turtymultiloader_version}"
+    "${turtymultiloader_group}:${artifact}:${turtymultiloader_version}"
 }
 
 def loaderAttribute = Attribute.of('io.github.mcgradleconventions.loader', String)
@@ -47,7 +47,7 @@ tasks.register('verifyTurtyMultiloaderTransitives') {
     group = 'verification'
     doLast {
         Set<String> resolved = configurations.turtymultiloaderTransitiveProbe.files.collect { it.name } as Set
-        if (!resolved.any { it.startsWith("turtymultiloader-common-${minecraft_version}-") })
+        if (!resolved.any { it.startsWith("turtymultiloader-common-${turtymultiloader_version}") })
             throw new GradleException("Optional common module metadata did not bring in the core common artifact: ${resolved}")
     }
 }

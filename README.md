@@ -37,14 +37,14 @@ client runs.
 
 ## Consumer setup
 
-Releases use group `dev.turtywurty.turtymultiloader`, version `26.1.1.0`, and Minecraft-qualified artifact IDs:
+Releases use group `dev.turtywurty.turtymultiloader`, semantic versions such as `1.0.0`, and stable artifact IDs:
 
 | Use        | Common                                      | Fabric                                      | NeoForge                                      |
 |------------|---------------------------------------------|---------------------------------------------|-----------------------------------------------|
-| Core       | `turtymultiloader-common-26.1.1`            | `turtymultiloader-fabric-26.1.1`            | `turtymultiloader-neoforge-26.1.1`            |
-| Gas        | `turtymultiloader-gas-common-26.1.1`        | `turtymultiloader-gas-fabric-26.1.1`        | `turtymultiloader-gas-neoforge-26.1.1`        |
-| Slurry     | `turtymultiloader-slurry-common-26.1.1`     | `turtymultiloader-slurry-fabric-26.1.1`     | `turtymultiloader-slurry-neoforge-26.1.1`     |
-| Multiblock | `turtymultiloader-multiblock-common-26.1.1` | `turtymultiloader-multiblock-fabric-26.1.1` | `turtymultiloader-multiblock-neoforge-26.1.1` |
+| Core       | `turtymultiloader-common`            | `turtymultiloader-fabric`            | `turtymultiloader-neoforge`            |
+| Gas        | `turtymultiloader-gas-common`        | `turtymultiloader-gas-fabric`        | `turtymultiloader-gas-neoforge`        |
+| Slurry     | `turtymultiloader-slurry-common`     | `turtymultiloader-slurry-fabric`     | `turtymultiloader-slurry-neoforge`     |
+| Multiblock | `turtymultiloader-multiblock-common` | `turtymultiloader-multiblock-fabric` | `turtymultiloader-multiblock-neoforge` |
 
 Add the Maven repository that contains the release to every consumer project. A local checkout publishes to
 `build/local-maven` by default, so a sibling build can use
@@ -53,9 +53,8 @@ Common code uses compile-only dependencies; each distributable loader JAR embeds
 
 ```groovy
 def tmlGroup = 'dev.turtywurty.turtymultiloader'
-def tmlVersion = '26.1.1.0'
-def minecraftVersion = '26.1.1'
-def tml = { name -> "${tmlGroup}:${name}-${minecraftVersion}:${tmlVersion}" }
+def tmlVersion = '1.0.0'
+def tml = { name -> "${tmlGroup}:${name}:${tmlVersion}" }
 
 // common/build.gradle
 dependencies {
@@ -80,13 +79,13 @@ dependencies {
 // neoforge/build.gradle
 dependencies {
     implementation tml('turtymultiloader-neoforge')
-    jarJar "${tmlGroup}:turtymultiloader-neoforge-${minecraftVersion}:[${tmlVersion}]"
+    jarJar "${tmlGroup}:turtymultiloader-neoforge:[${tmlVersion}]"
     implementation tml('turtymultiloader-gas-neoforge')
-    jarJar "${tmlGroup}:turtymultiloader-gas-neoforge-${minecraftVersion}:[${tmlVersion}]"
+    jarJar "${tmlGroup}:turtymultiloader-gas-neoforge:[${tmlVersion}]"
     implementation tml('turtymultiloader-slurry-neoforge')
-    jarJar "${tmlGroup}:turtymultiloader-slurry-neoforge-${minecraftVersion}:[${tmlVersion}]"
+    jarJar "${tmlGroup}:turtymultiloader-slurry-neoforge:[${tmlVersion}]"
     implementation tml('turtymultiloader-multiblock-neoforge')
-    jarJar "${tmlGroup}:turtymultiloader-multiblock-neoforge-${minecraftVersion}:[${tmlVersion}]"
+    jarJar "${tmlGroup}:turtymultiloader-multiblock-neoforge:[${tmlVersion}]"
 }
 ```
 
@@ -96,7 +95,7 @@ access wideners, access transformers, metadata expansion, client/server/GameTest
 
 For source development, plain `includeBuild("../TurtyMultiloader")` is not enough: Gradle sees source coordinates such
 as `dev.turtywurty.turtymultiloader:fabric`, while releases use
-`dev.turtywurty.turtymultiloader:turtymultiloader-fabric-26.1.1`. Use the explicit substitution block in
+`dev.turtywurty.turtymultiloader:turtymultiloader-fabric`. Use the explicit substitution block in
 [`consumer-template/settings.gradle`](consumer-template/settings.gradle), then enable it with:
 
 ```shell
@@ -105,6 +104,10 @@ as `dev.turtywurty.turtymultiloader:fabric`, while releases use
 
 To publish this checkout, run `./gradlew publishConsumerArtifacts`. The destination defaults to
 `build/local-maven`; override it with `-PlocalMavenUrl=/path/or/url` or the `LOCAL_MAVEN_URL` environment variable.
+For local development in another checkout, run `./gradlew publishConsumerArtifactsToMavenLocal` and add
+`mavenLocal()` to that consumer's repositories.
+Tagged releases are verified and published to `https://repo.repsy.io/mvn/turtywurty/public` by the release workflow.
+Configure the `REPSY_USERNAME` and `REPSY_PASSWORD` GitHub Actions secrets before pushing a `v<version>` tag.
 
 ## Development
 
