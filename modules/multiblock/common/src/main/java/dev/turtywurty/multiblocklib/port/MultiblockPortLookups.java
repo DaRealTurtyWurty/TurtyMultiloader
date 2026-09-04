@@ -47,7 +47,7 @@ public final class MultiblockPortLookups {
         final BlockEntity blockEntity, final Direction direction
     ) {
         MultiblockControllerBlockEntity controller = resolveController(level, pos, blockEntity);
-        return controller != null ? controller.getItemStorageForExternal(pos) : null;
+        return controller != null ? controller.getItemStorageForExternal(pos, direction) : null;
     }
 
     public static ResourceStorage<ResourceVariant<Fluid>> findFluidStorage(
@@ -55,7 +55,7 @@ public final class MultiblockPortLookups {
         final BlockEntity blockEntity, final Direction direction
     ) {
         MultiblockControllerBlockEntity controller = resolveController(level, pos, blockEntity);
-        return controller != null ? controller.getFluidStorageForExternal(pos) : null;
+        return controller != null ? controller.getFluidStorageForExternal(pos, direction) : null;
     }
 
     public static ResourceStorage<ResourceVariant<UnitResource>> findEnergyStorage(
@@ -63,7 +63,7 @@ public final class MultiblockPortLookups {
         final BlockEntity blockEntity, final Direction direction
     ) {
         MultiblockControllerBlockEntity controller = resolveController(level, pos, blockEntity);
-        return controller != null ? controller.getEnergyStorageForExternal(pos) : null;
+        return controller != null ? controller.getEnergyStorageForExternal(pos, direction) : null;
     }
 
     private static MultiblockControllerBlockEntity resolveController(

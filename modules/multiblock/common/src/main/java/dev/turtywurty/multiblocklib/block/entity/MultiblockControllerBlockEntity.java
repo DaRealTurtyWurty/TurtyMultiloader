@@ -148,6 +148,13 @@ public class MultiblockControllerBlockEntity extends BlockEntity {
         return port.itemStorage.restrictedTo(externalSupport(port.io));
     }
 
+    public ResourceStorage<ResourceVariant<Item>> getItemStorageForExternal(
+        final BlockPos worldPos,
+        final @Nullable Direction side
+    ) {
+        return getItemStorageForExternal(worldPos);
+    }
+
     public ResourceStorage<ResourceVariant<Fluid>> getFluidStorageForExternal(final BlockPos worldPos) {
         PortRuntime port = getPortRuntime(worldPos);
         if (port == null || port.fluidStorage == null) {
@@ -156,12 +163,26 @@ public class MultiblockControllerBlockEntity extends BlockEntity {
         return port.fluidStorage.restrictedTo(externalSupport(port.io));
     }
 
+    public ResourceStorage<ResourceVariant<Fluid>> getFluidStorageForExternal(
+        final BlockPos worldPos,
+        final @Nullable Direction side
+    ) {
+        return getFluidStorageForExternal(worldPos);
+    }
+
     public ResourceStorage<ResourceVariant<UnitResource>> getEnergyStorageForExternal(final BlockPos worldPos) {
         PortRuntime port = getPortRuntime(worldPos);
         if (port == null || port.energyStorage == null) {
             return null;
         }
         return port.energyStorage.restrictedTo(externalSupport(port.io));
+    }
+
+    public ResourceStorage<ResourceVariant<UnitResource>> getEnergyStorageForExternal(
+        final BlockPos worldPos,
+        final @Nullable Direction side
+    ) {
+        return getEnergyStorageForExternal(worldPos);
     }
 
     public List<ResourceStorage<ResourceVariant<Item>>> getItemPorts(final PortIO io) {
