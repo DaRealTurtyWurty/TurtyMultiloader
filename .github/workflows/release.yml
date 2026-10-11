@@ -2,6 +2,8 @@ name: Publish release
 
 on:
   push:
+    branches:
+      - 'release/1.0.1'
     tags:
       - 'v*'
 
@@ -30,7 +32,11 @@ jobs:
         shell: bash
         run: |
           project_version="$(sed -n 's/^version=//p' gradle.properties)"
-          test "${GITHUB_REF_NAME}" = "v${project_version}"
+          if [[ "${GITHUB_REF_TYPE}" == "tag" ]]; then
+            test "${GITHUB_REF_NAME}" = "v${project_version}"
+          else
+            test "${GITHUB_REF_NAME}" = "release/${project_version}"
+          fi
 
       - name: Verify and publish consumer artifacts
         env:

@@ -40,7 +40,8 @@ tasks.register('verifyPublishedConsumer', GradleBuild) {
     dir = file('consumer-template')
     tasks = ['check']
     startParameter.projectProperties = [
-        turtymultiloaderRepository: verificationRepository.get()
+        turtymultiloaderRepository: verificationRepository.get(),
+        turtymultiloader_version: project.version.toString()
     ]
 }
 
