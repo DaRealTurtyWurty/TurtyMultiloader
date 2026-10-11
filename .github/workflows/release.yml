@@ -40,6 +40,8 @@ jobs:
 
       - name: Verify and publish consumer artifacts
         env:
-          ORG_GRADLE_PROJECT_repsyUsername: ${{ secrets.REPSY_USERNAME }}
-          ORG_GRADLE_PROJECT_repsyPassword: ${{ secrets.REPSY_PASSWORD }}
-        run: ./gradlew check publishConsumerArtifactsToRepsy --stacktrace
+          ORG_GRADLE_PROJECT_cloudsmithUsername: turty-wurty
+          ORG_GRADLE_PROJECT_cloudsmithPassword: ${{ secrets.CLOUDSMITH_API_KEY }}
+        run: |
+          ./gradlew check --stacktrace
+          ./gradlew publishConsumerArtifactsToCloudsmith --stacktrace

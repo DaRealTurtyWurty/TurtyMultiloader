@@ -99,13 +99,13 @@ For local development in another checkout, publish every module to Maven Local:
 ./gradlew publishConsumerArtifactsToMavenLocal
 ```
 
-Add `mavenLocal()` to the consumer's repositories. This uses the same coordinates as Repsy without composite-build
+Add `mavenLocal()` to the consumer's repositories. This uses the same coordinates as Cloudsmith without composite-build
 substitution.
 
 To publish this checkout, run `./gradlew publishConsumerArtifacts`. The destination defaults to
 `build/local-maven`; override it with `-PlocalMavenUrl=/path/or/url` or the `LOCAL_MAVEN_URL` environment variable.
-Tagged releases are verified and published to `https://repo.repsy.io/mvn/turtywurty/public` by the release workflow.
-Configure the `REPSY_USERNAME` and `REPSY_PASSWORD` GitHub Actions secrets before pushing a `v<version>` tag.
+Tagged releases are verified and published to `https://maven.cloudsmith.io/turtywurty/turtymultiloader/` by the release workflow.
+Configure the `CLOUDSMITH_API_KEY` GitHub Actions secret before pushing a `v<version>` tag.
 
 ## Development
 

@@ -94,8 +94,8 @@ publishing {
                 : rootProject.layout.buildDirectory.dir('local-maven')
         }
         maven {
-            name = 'repsy'
-            url = uri('https://repo.repsy.io/mvn/turtywurty/public')
+            name = 'cloudsmith'
+            url = uri('https://maven.cloudsmith.io/turtywurty/turtymultiloader/')
             credentials(PasswordCredentials)
         }
     }

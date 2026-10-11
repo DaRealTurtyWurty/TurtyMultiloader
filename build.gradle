@@ -23,10 +23,10 @@ tasks.register('publishConsumerArtifactsToMavenLocal') {
     dependsOn(publishedProjects.collect { "${it}:publishMavenJavaPublicationToMavenLocal" })
 }
 
-tasks.register('publishConsumerArtifactsToRepsy') {
+tasks.register('publishConsumerArtifactsToCloudsmith') {
     group = 'publishing'
-    description = 'Publishes every consumer artifact to the public Repsy repository.'
-    dependsOn(publishedProjects.collect { "${it}:publishMavenJavaPublicationToRepsyRepository" })
+    description = 'Publishes every consumer artifact to the public Cloudsmith repository.'
+    dependsOn(publishedProjects.collect { "${it}:publishMavenJavaPublicationToCloudsmithRepository" })
 }
 
 def verificationRepository = providers.gradleProperty('localMavenUrl')
