@@ -1,5 +1,9 @@
 pluginManagement {
     repositories {
+        maven {
+            name = 'Railroad'
+            url = uri('https://maven.railroadide.dev/releases')
+        }
         gradlePluginPortal()
         mavenCentral()
         exclusiveContent {
