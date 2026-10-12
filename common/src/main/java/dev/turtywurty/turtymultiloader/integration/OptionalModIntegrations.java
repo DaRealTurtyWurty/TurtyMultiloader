@@ -44,7 +44,7 @@ public final class OptionalModIntegrations {
         String requiredModId,
         Supplier<? extends ModIntegration> factory
     ) {
-        Registration registration = new Registration(requiredModId, factory);
+        var registration = new Registration(requiredModId, factory);
         boolean initializeNow;
         synchronized (LOCK) {
             registrations.add(registration);
@@ -78,15 +78,13 @@ public final class OptionalModIntegrations {
             TurtyMultiloader.LOGGER.info(
                 "Loaded {} integration for {}",
                 phase.displayName,
-                registration.requiredModId()
-            );
+                registration.requiredModId());
         } catch (RuntimeException | LinkageError exception) {
             TurtyMultiloader.LOGGER.error(
                 "Failed to load {} integration for {}",
                 phase.displayName,
                 registration.requiredModId(),
-                exception
-            );
+                exception);
         }
     }
 

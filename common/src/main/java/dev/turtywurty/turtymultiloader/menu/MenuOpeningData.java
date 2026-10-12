@@ -26,8 +26,7 @@ public final class MenuOpeningData {
         if (!blockEntityType.isInstance(blockEntity)) {
             String actual = blockEntity == null ? "none" : blockEntity.getClass().getName();
             throw new IllegalStateException(
-                "Expected " + blockEntityType.getName() + " at " + pos + ", found " + actual
-            );
+                "Expected " + blockEntityType.getName() + " at " + pos + ", found " + actual);
         }
 
         return blockEntityType.cast(blockEntity);

@@ -23,8 +23,7 @@ public final class GasApi {
 
     public static final CustomRegistry<Gas> GASES = RegistryService.get().customRegistry(
         id("gases"),
-        CustomRegistryOptions.DEFAULT.withSync()
-    );
+        CustomRegistryOptions.DEFAULT.withSync());
     public static final RegistrationHandle<Gas, Gas> EMPTY = register("empty");
     public static final RegistrationHandle<Gas, Gas> AIR = register("air");
 
@@ -40,8 +39,7 @@ public final class GasApi {
         EMPTY::holder,
         UNIT,
         RegistryFixedCodec.create(GASES.key()),
-        ByteBufCodecs.holderRegistry(GASES.key())
-    );
+        ByteBufCodecs.holderRegistry(GASES.key()));
     private static boolean initialized;
 
     private GasApi() {
@@ -51,9 +49,8 @@ public final class GasApi {
      * Forces the module declarations to load before the owning mod applies registration.
      */
     public static synchronized void initialize() {
-        if (initialized) {
+        if (initialized)
             return;
-        }
 
         initialized = true;
         TransferService.get().registerStorageKey(RESOURCE_FAMILY.storageKey());

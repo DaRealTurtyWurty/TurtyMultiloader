@@ -36,13 +36,14 @@ public final class VanillaRegistryHooks {
     public static List<BlockTransformer.BlockTransformData> strippingTransforms(
         List<BlockTransformer.BlockTransformData> transforms
     ) {
-        if (STRIPPABLES.isEmpty() || transforms.stream().noneMatch(t -> t.sound().value() == SoundEvents.AXE_STRIP.value()))
+        if (STRIPPABLES.isEmpty()
+            || transforms.stream().noneMatch(t -> t.sound().value() == SoundEvents.AXE_STRIP.value()))
             return transforms;
         var result = new ArrayList<>(transforms);
         STRIPPABLES.forEach((block, stripped) -> result.add(BlockTransformer.BlockTransformData.builder(
             RuleBasedStateProvider.ifTrueThenProvide(
-                BlockPredicate.matchesBlocks(block), new CopyPropertiesProvider(stripped))
-        ).sound(SoundEvents.AXE_STRIP).build()));
+                BlockPredicate.matchesBlocks(block), new CopyPropertiesProvider(stripped)))
+            .sound(SoundEvents.AXE_STRIP).build()));
         return result;
     }
 

@@ -34,9 +34,8 @@ public final class PortRegistrar {
         @Nullable Direction localSide
     ) {
         for (PortBinding<?> untypedBinding : this.bindings) {
-            if (untypedBinding.transfer() != transfer || !untypedBinding.exposes(localOffset, localSide)) {
+            if (untypedBinding.transfer() != transfer || !untypedBinding.exposes(localOffset, localSide))
                 continue;
-            }
 
             @SuppressWarnings("unchecked")
             PortBinding<S> binding = (PortBinding<S>) untypedBinding;

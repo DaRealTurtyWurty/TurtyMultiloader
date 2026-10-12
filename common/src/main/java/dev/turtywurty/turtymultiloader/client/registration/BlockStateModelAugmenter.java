@@ -12,9 +12,11 @@ import java.util.Objects;
 /**
  * Adds context-dependent baked models to a block's normal state model.
  *
- * <p>The loader wrapper renders the original model first, then invokes {@link #collectAdditionalModels}. Each emitted
+ * <p>
+ * The loader wrapper renders the original model first, then invokes {@link #collectAdditionalModels}. Each emitted
  * model receives its own deterministic random seed. Implementations must be thread-safe because chunk meshes may be
- * built concurrently.</p>
+ * built concurrently.
+ * </p>
  */
 @FunctionalInterface
 public interface BlockStateModelAugmenter {
@@ -23,8 +25,10 @@ public interface BlockStateModelAugmenter {
     /**
      * Creates the cache key for the complete augmented geometry.
      *
-     * <p>The default preserves the wrapped model's key. Override this whenever the selected additional models depend
-     * on level state. Return {@code null} to disable geometry caching for the context.</p>
+     * <p>
+     * The default preserves the wrapped model's key. Override this whenever the selected additional models depend
+     * on level state. Return {@code null} to disable geometry caching for the context.
+     * </p>
      */
     default @Nullable Object createGeometryKey(Context context, @Nullable Object wrappedKey) {
         return wrappedKey;

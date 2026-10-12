@@ -30,8 +30,7 @@ public class SingleGasStorage extends SimpleSingleSlotStorage<ResourceVariant<Ga
             capacity,
             Objects.requireNonNull(support, "support"),
             variant -> true,
-            storage -> Objects.requireNonNull(onChange, "onChange").run()
-        );
+            storage -> Objects.requireNonNull(onChange, "onChange").run());
     }
 
     public static SingleGasStorage withFixedCapacity(long capacity, Runnable onChange) {

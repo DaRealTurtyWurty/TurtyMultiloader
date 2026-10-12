@@ -23,8 +23,9 @@ public record StorageSnapshot<V extends ResourceVariant<?>>(List<Entry<V>> entri
         Objects.requireNonNull(storage, "storage");
         requireStableIndices(storage);
         List<Entry<V>> entries = new ArrayList<>(storage.size());
-        for (int index = 0; index < storage.size(); index++)
+        for (int index = 0; index < storage.size(); index++) {
             entries.add(new Entry<>(storage.resource(index), storage.amount(index)));
+        }
         return new StorageSnapshot<>(entries);
     }
 
@@ -37,8 +38,9 @@ public record StorageSnapshot<V extends ResourceVariant<?>>(List<Entry<V>> entri
             .orElseGet(() -> {
                 try (TransferTransaction transaction = TransferTransaction.openRoot()) {
                     boolean applied = apply(storage, transaction);
-                    if (applied)
+                    if (applied) {
                         transaction.commit();
+                    }
                     return applied;
                 }
             });

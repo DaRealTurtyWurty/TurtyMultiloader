@@ -17,9 +17,8 @@ public interface DataGenerationService {
 
     final class ServiceHolder {
         private static final DataGenerationService INSTANCE = ServiceLoader.load(
-                DataGenerationService.class,
-                DataGenerationService.class.getClassLoader()
-            )
+            DataGenerationService.class,
+            DataGenerationService.class.getClassLoader())
             .findFirst()
             .orElseThrow(() -> new IllegalStateException("No data-generation service is available"));
 

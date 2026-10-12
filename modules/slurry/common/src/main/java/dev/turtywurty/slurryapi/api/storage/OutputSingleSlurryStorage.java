@@ -9,11 +9,11 @@ import java.util.function.Predicate;
 
 public final class OutputSingleSlurryStorage extends PredicateSingleSlurryStorage {
     public OutputSingleSlurryStorage(long capacity, Predicate<ResourceVariant<Slurry>> canExtract) {
-        super(capacity, ignored -> false, canExtract);
+        super(capacity, _ -> false, canExtract);
     }
 
     public OutputSingleSlurryStorage(long capacity) {
-        this(capacity, ignored -> true);
+        this(capacity, _ -> true);
     }
 
     @Override

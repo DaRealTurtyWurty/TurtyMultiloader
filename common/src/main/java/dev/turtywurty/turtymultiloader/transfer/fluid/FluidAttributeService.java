@@ -37,9 +37,8 @@ public interface FluidAttributeService {
 
     final class ServiceHolder {
         private static final FluidAttributeService INSTANCE = ServiceLoader.load(
-                FluidAttributeService.class,
-                FluidAttributeService.class.getClassLoader()
-            )
+            FluidAttributeService.class,
+            FluidAttributeService.class.getClassLoader())
             .findFirst()
             .orElseThrow(() -> new IllegalStateException("No fluid attribute service is available"));
 

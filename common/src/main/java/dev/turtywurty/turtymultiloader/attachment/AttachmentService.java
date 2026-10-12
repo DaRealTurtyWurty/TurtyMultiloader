@@ -71,9 +71,8 @@ public interface AttachmentService {
 
     final class ServiceHolder {
         private static final AttachmentService INSTANCE = ServiceLoader.load(
-                AttachmentService.class,
-                AttachmentService.class.getClassLoader()
-            )
+            AttachmentService.class,
+            AttachmentService.class.getClassLoader())
             .findFirst()
             .orElseThrow(() -> new IllegalStateException("No attachment service is available"));
 

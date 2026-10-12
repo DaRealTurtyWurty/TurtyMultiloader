@@ -73,16 +73,14 @@ public final class NeoForgeRegistryService implements RegistryService {
         ensureOpen();
         ResourceKey<R> entryKey = ResourceKey.create(
             Objects.requireNonNull(registryKey, "registryKey"),
-            Objects.requireNonNull(id, "id")
-        );
+            Objects.requireNonNull(id, "id"));
         RegistrationHandle<R, T> result = new RegistrationHandle<>(id, entryKey);
         entries.add(new EntryDeclaration<>(registryKey, id, Objects.requireNonNull(factory, "factory"), result));
         return result;
     }
 
     @Override
-    public synchronized <T extends BlockEntity> RegistrationHandle<BlockEntityType<?>, BlockEntityType<T>>
-    registerBlockEntityType(
+    public synchronized <T extends BlockEntity> RegistrationHandle<BlockEntityType<?>, BlockEntityType<T>> registerBlockEntityType(
         Identifier id,
         BiFunction<BlockPos, BlockState, T> factory,
         Consumer<BlockEntityTypeBuilder<T>> configuration
@@ -92,8 +90,7 @@ public final class NeoForgeRegistryService implements RegistryService {
         return register(
             Registries.BLOCK_ENTITY_TYPE,
             id,
-            () -> new BlockEntityType<>(builder.factory()::apply, Set.of(builder.resolveValidBlocks()))
-        );
+            () -> new BlockEntityType<>(builder.factory()::apply, Set.of(builder.resolveValidBlocks())));
     }
 
     @Override
@@ -101,13 +98,12 @@ public final class NeoForgeRegistryService implements RegistryService {
         Identifier id,
         Consumer<CreativeTabBuilder> configuration
     ) {
-        CreativeTabBuilder builder = new CreativeTabBuilder(id);
+        var builder = new CreativeTabBuilder(id);
         Objects.requireNonNull(configuration, "configuration").accept(builder);
         return register(
             Registries.CREATIVE_MODE_TAB,
             id,
-            () -> buildCreativeTab(builder)
-        );
+            () -> buildCreativeTab(builder));
     }
 
     @Override
@@ -129,8 +125,7 @@ public final class NeoForgeRegistryService implements RegistryService {
         ensureOpen();
         entityAttributes.add(new EntityAttributesDeclaration<>(
             Objects.requireNonNull(entityType, "entityType"),
-            Objects.requireNonNull(attributes, "attributes")
-        ));
+            Objects.requireNonNull(attributes, "attributes")));
     }
 
     @Override
@@ -141,8 +136,7 @@ public final class NeoForgeRegistryService implements RegistryService {
         ensureOpen();
         creativeTabPopulations.add(new CreativeTabPopulation(
             Objects.requireNonNull(tab, "tab"),
-            Objects.requireNonNull(population, "population")
-        ));
+            Objects.requireNonNull(population, "population")));
     }
 
     @Override
@@ -169,8 +163,7 @@ public final class NeoForgeRegistryService implements RegistryService {
         ensureOpen();
         strippables.add(new StrippableDeclaration(
             Objects.requireNonNull(block, "block"),
-            Objects.requireNonNull(stripped, "stripped")
-        ));
+            Objects.requireNonNull(stripped, "stripped")));
     }
 
     @Override
@@ -182,10 +175,8 @@ public final class NeoForgeRegistryService implements RegistryService {
         flammability.add(new FlammabilityDeclaration(
             Objects.requireNonNull(block, "block"),
             igniteOdds,
-            burnOdds
-        ));
+            burnOdds));
     }
-
 
     @Override
     public synchronized void addBlockEntityValidBlocks(
@@ -194,8 +185,7 @@ public final class NeoForgeRegistryService implements RegistryService {
     ) {
         ensureOpen();
         blockEntityValidBlocks.add(new BlockEntityValidBlocksDeclaration(
-            Objects.requireNonNull(blockEntityType, "blockEntityType"), List.copyOf(blocks)
-        ));
+            Objects.requireNonNull(blockEntityType, "blockEntityType"), List.copyOf(blocks)));
     }
 
     @Override
@@ -205,8 +195,7 @@ public final class NeoForgeRegistryService implements RegistryService {
     ) {
         ensureOpen();
         dispenserBehaviors.add(new DispenserBehaviorDeclaration(
-            Objects.requireNonNull(item, "item"), Objects.requireNonNull(behavior, "behavior")
-        ));
+            Objects.requireNonNull(item, "item"), Objects.requireNonNull(behavior, "behavior")));
     }
 
     @Override
@@ -218,13 +207,11 @@ public final class NeoForgeRegistryService implements RegistryService {
             throw new IllegalStateException("NeoForge registry service has not been bound to a mod event bus");
 
         applied = true;
-        blockSetTypes.subList(appliedBlockSetTypes, blockSetTypes.size()).forEach(declaration ->
-            declaration.result().bind(VanillaRegistryHooks.registerBlockSetType(declaration.factory().get()))
-        );
+        blockSetTypes.subList(appliedBlockSetTypes, blockSetTypes.size()).forEach(declaration -> declaration.result()
+            .bind(VanillaRegistryHooks.registerBlockSetType(declaration.factory().get())));
         appliedBlockSetTypes = blockSetTypes.size();
-        woodTypes.subList(appliedWoodTypes, woodTypes.size()).forEach(declaration ->
-            declaration.result().bind(VanillaRegistryHooks.registerWoodType(declaration.factory().get()))
-        );
+        woodTypes.subList(appliedWoodTypes, woodTypes.size()).forEach(declaration -> declaration.result()
+            .bind(VanillaRegistryHooks.registerWoodType(declaration.factory().get())));
         appliedWoodTypes = woodTypes.size();
         Map<RegistrarKey, DeferredRegister<?>> registrars = new LinkedHashMap<>();
         customRegistries.subList(appliedCustomRegistries, customRegistries.size())
@@ -266,10 +253,12 @@ public final class NeoForgeRegistryService implements RegistryService {
         String namespace = key.identifier().getNamespace();
         DeferredRegister<T> registrar = DeferredRegister.create(key, namespace);
         registrar.makeRegistry(builder -> {
-            if (declaration.options().synced())
+            if (declaration.options().synced()) {
                 builder.sync(true);
-            if (declaration.options().intrusiveHolders())
+            }
+            if (declaration.options().intrusiveHolders()) {
                 builder.withIntrusiveHolders();
+            }
         });
         declaration.result().bind(registrar.getRegistry());
         registrars.put(new RegistrarKey(key, namespace), registrar);
@@ -281,11 +270,10 @@ public final class NeoForgeRegistryService implements RegistryService {
         Map<RegistrarKey, DeferredRegister<?>> registrars
     ) {
         String namespace = declaration.id().getNamespace();
-        RegistrarKey registrarKey = new RegistrarKey(declaration.registryKey(), namespace);
+        var registrarKey = new RegistrarKey(declaration.registryKey(), namespace);
         DeferredRegister<R> registrar = (DeferredRegister<R>) registrars.computeIfAbsent(
             registrarKey,
-            ignored -> DeferredRegister.create(declaration.registryKey(), namespace)
-        );
+            _ -> DeferredRegister.create(declaration.registryKey(), namespace));
         DeferredHolder<R, T> holder = registrar.register(declaration.id().getPath(), declaration.factory());
         declaration.result().bind(holder, holder);
     }
@@ -304,9 +292,8 @@ public final class NeoForgeRegistryService implements RegistryService {
     private static CreativeModeTab buildCreativeTab(CreativeTabBuilder configuration) {
         CreativeModeTab.Builder builder = CreativeModeTab.builder();
         configuration.configure(builder);
-        builder.displayItems((parameters, output) ->
-            configuration.displayItems().accept(stack -> output.accept(stack))
-        );
+        builder
+            .displayItems((parameters, output) -> configuration.displayItems().accept(stack -> output.accept(stack)));
         return builder.build();
     }
 
@@ -324,17 +311,14 @@ public final class NeoForgeRegistryService implements RegistryService {
 
         blockHooksRegistered = true;
         blockEntityValidBlocks.forEach(declaration -> VanillaRegistryHooks.addBlockEntityValidBlocks(
-            declaration.blockEntityType().get(), declaration.blocks().stream().map(Supplier::get).toList()
-        ));
+            declaration.blockEntityType().get(), declaration.blocks().stream().map(Supplier::get).toList()));
         strippables.forEach(declaration -> VanillaRegistryHooks.registerStrippable(
             declaration.block().get(),
-            declaration.stripped().get()
-        ));
+            declaration.stripped().get()));
         flammability.forEach(declaration -> VanillaRegistryHooks.registerFlammable(
             declaration.block().get(),
             declaration.igniteOdds(),
-            declaration.burnOdds()
-        ));
+            declaration.burnOdds()));
     }
 
     private boolean itemHooksRegistered;
@@ -345,8 +329,7 @@ public final class NeoForgeRegistryService implements RegistryService {
 
         itemHooksRegistered = true;
         dispenserBehaviors.forEach(declaration -> DispenserBlock.registerBehavior(
-            declaration.item().get(), declaration.behavior().get()
-        ));
+            declaration.item().get(), declaration.behavior().get()));
     }
 
     private void ensureOpen() {

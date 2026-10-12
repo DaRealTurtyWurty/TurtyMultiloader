@@ -47,9 +47,8 @@ public interface ClientEventService {
 
     final class ServiceHolder {
         private static final ClientEventService INSTANCE = ServiceLoader.load(
-                ClientEventService.class,
-                ClientEventService.class.getClassLoader()
-            )
+            ClientEventService.class,
+            ClientEventService.class.getClassLoader())
             .findFirst()
             .orElseThrow(() -> new IllegalStateException("No client event service is available"));
 

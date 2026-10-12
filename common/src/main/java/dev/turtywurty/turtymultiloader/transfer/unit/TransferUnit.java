@@ -16,7 +16,7 @@ public final class TransferUnit {
     private final long numerator;
     private final long denominator;
 
-    TransferUnit(Identifier id, UnitDimension dimension, String symbol, long numerator, long denominator) {
+    protected TransferUnit(Identifier id, UnitDimension dimension, String symbol, long numerator, long denominator) {
         this.id = Objects.requireNonNull(id, "id");
         this.dimension = Objects.requireNonNull(dimension, "dimension");
         this.symbol = Objects.requireNonNull(symbol, "symbol");
@@ -70,8 +70,9 @@ public final class TransferUnit {
             }
             case UNNECESSARY -> throw new ArithmeticException("Rounding is necessary");
         };
-        if (increment)
+        if (increment) {
             result[0] = result[0].add(BigInteger.valueOf(amount >= 0 ? 1 : -1));
+        }
         return result[0].longValueExact();
     }
 

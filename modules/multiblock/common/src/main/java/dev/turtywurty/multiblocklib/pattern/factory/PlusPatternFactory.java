@@ -18,17 +18,14 @@ public class PlusPatternFactory implements MultiblockPatternFactory {
     public MultiblockPattern create(final JsonObject json) {
         int armLength = GsonHelper.getAsInt(json, "arm_length");
         int thickness = GsonHelper.getAsInt(json, "thickness", 1);
-        if (armLength <= 0) {
+        if (armLength <= 0)
             throw new IllegalArgumentException("Plus arm_length must be >= 1");
-        }
-        if (thickness <= 0) {
+        if (thickness <= 0)
             throw new IllegalArgumentException("Plus thickness must be >= 1");
-        }
 
         JsonElement blocks = readMatcherElement(json, "blocks", "block");
-        if (blocks == null || blocks.isJsonNull()) {
+        if (blocks == null || blocks.isJsonNull())
             throw new IllegalArgumentException("Plus pattern requires 'block' or 'blocks' to be defined");
-        }
         BlockMatcherList matcher = BlockMatchers.parseMatcherList(blocks);
 
         int halfNeg = thickness / 2;
@@ -64,7 +61,11 @@ public class PlusPatternFactory implements MultiblockPatternFactory {
         return value >= min && value <= max;
     }
 
-    private static JsonElement readMatcherElement(final JsonObject json, final String pluralKey, final String singularKey) {
+    private static JsonElement readMatcherElement(
+        final JsonObject json,
+        final String pluralKey,
+        final String singularKey
+    ) {
         JsonElement matcher = json.get(pluralKey);
         if (matcher == null) {
             matcher = json.get(singularKey);

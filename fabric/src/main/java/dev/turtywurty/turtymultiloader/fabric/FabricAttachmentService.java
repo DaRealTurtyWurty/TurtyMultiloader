@@ -17,10 +17,10 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
+import net.minecraft.server.level.ServerPlayer;
 
 public final class FabricAttachmentService implements AttachmentService {
-    private final Map<AttachmentType<?>, net.fabricmc.fabric.api.attachment.v1.AttachmentType<?>> types =
-        new IdentityHashMap<>();
+    private final Map<AttachmentType<?>, net.fabricmc.fabric.api.attachment.v1.AttachmentType<?>> types = new IdentityHashMap<>();
 
     @Override
     public synchronized <T> AttachmentType<T> register(
@@ -33,12 +33,12 @@ public final class FabricAttachmentService implements AttachmentService {
         var nativeType = AttachmentRegistry.<T>create(id, nativeBuilder -> {
             type.defaultFactory().ifPresent(factory -> nativeBuilder.initializer(() -> type.createDefault()));
             type.persistenceCodec().ifPresent(nativeBuilder::persistent);
-            if (type.copyOnDeath())
+            if (type.copyOnDeath()) {
                 nativeBuilder.copyOnDeath();
+            }
             type.streamCodec().ifPresent(codec -> nativeBuilder.syncWith(
                 codec,
-                (holder, player) -> type.syncPredicate().orElseThrow().test(wrap(holder, player), player)
-            ));
+                (holder, player) -> type.syncPredicate().orElseThrow().test(wrap(holder, player), player)));
         });
         types.put(type, nativeType);
         return type;
@@ -51,14 +51,15 @@ public final class FabricAttachmentService implements AttachmentService {
 
     @Override
     public <T> T getOrCreate(AttachmentTarget target, AttachmentType<T> type) {
-        type.defaultFactory().orElseThrow(() ->
-            new IllegalStateException("Attachment " + type.id() + " has no default factory"));
+        type.defaultFactory()
+            .orElseThrow(() -> new IllegalStateException("Attachment " + type.id() + " has no default factory"));
         return nativeTarget(target).getAttachedOrCreate(nativeType(type), type::createDefault);
     }
 
     @Override
     public <T> Optional<T> set(AttachmentTarget target, AttachmentType<T> type, T value) {
-        return Optional.ofNullable(nativeTarget(target).setAttached(nativeType(type), Objects.requireNonNull(value, "value")));
+        return Optional
+            .ofNullable(nativeTarget(target).setAttached(nativeType(type), Objects.requireNonNull(value, "value")));
     }
 
     @Override
@@ -74,8 +75,9 @@ public final class FabricAttachmentService implements AttachmentService {
     private <T> void markDirtyTyped(AttachmentTarget target, AttachmentType<T> type) {
         var holder = nativeTarget(target);
         T value = holder.getAttached(nativeType(type));
-        if (value != null)
+        if (value != null) {
             holder.setAttached(nativeType(type), value);
+        }
     }
 
     private net.fabricmc.fabric.api.attachment.v1.AttachmentTarget nativeTarget(AttachmentTarget target) {
@@ -86,7 +88,7 @@ public final class FabricAttachmentService implements AttachmentService {
 
     private static AttachmentTarget wrap(
         net.fabricmc.fabric.api.attachment.v1.AttachmentTarget holder,
-        net.minecraft.server.level.ServerPlayer recipient
+        ServerPlayer recipient
     ) {
         return switch (holder) {
             case Entity entity -> AttachmentTarget.entity(entity);
@@ -106,7 +108,9 @@ public final class FabricAttachmentService implements AttachmentService {
     }
 
     @SuppressWarnings("unchecked")
-    private synchronized <T> net.fabricmc.fabric.api.attachment.v1.AttachmentType<T> nativeType(AttachmentType<T> type) {
+    private synchronized <T> net.fabricmc.fabric.api.attachment.v1.AttachmentType<T> nativeType(
+        AttachmentType<T> type
+    ) {
         var nativeType = types.get(Objects.requireNonNull(type, "type"));
         if (nativeType == null)
             throw new IllegalArgumentException("Attachment type was not registered by this service: " + type.id());

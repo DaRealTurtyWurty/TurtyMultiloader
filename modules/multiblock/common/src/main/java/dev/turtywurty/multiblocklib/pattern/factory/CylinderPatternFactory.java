@@ -19,20 +19,16 @@ public class CylinderPatternFactory implements MultiblockPatternFactory {
         int radius = GsonHelper.getAsInt(json, "radius");
         int height = GsonHelper.getAsInt(json, "height", 1);
         int thickness = GsonHelper.getAsInt(json, "thickness", radius + 1);
-        if (radius <= 0) {
+        if (radius <= 0)
             throw new IllegalArgumentException("Cylinder radius must be >= 1");
-        }
-        if (height <= 0) {
+        if (height <= 0)
             throw new IllegalArgumentException("Cylinder height must be >= 1");
-        }
-        if (thickness <= 0) {
+        if (thickness <= 0)
             throw new IllegalArgumentException("Cylinder thickness must be >= 1");
-        }
 
         JsonElement blocks = readMatcherElement(json, "blocks", "block");
-        if (blocks == null || blocks.isJsonNull()) {
+        if (blocks == null || blocks.isJsonNull())
             throw new IllegalArgumentException("Cylinder pattern requires 'block' or 'blocks' to be defined");
-        }
         BlockMatcherList matcher = BlockMatchers.parseMatcherList(blocks);
 
         Map<BlockPos, BlockMatcherList> matchers = new HashMap<>();
@@ -54,7 +50,11 @@ public class CylinderPatternFactory implements MultiblockPatternFactory {
         return new GridPattern(new BlockPos(diameter, height, diameter), matchers);
     }
 
-    private static JsonElement readMatcherElement(final JsonObject json, final String pluralKey, final String singularKey) {
+    private static JsonElement readMatcherElement(
+        final JsonObject json,
+        final String pluralKey,
+        final String singularKey
+    ) {
         JsonElement matcher = json.get(pluralKey);
         if (matcher == null) {
             matcher = json.get(singularKey);

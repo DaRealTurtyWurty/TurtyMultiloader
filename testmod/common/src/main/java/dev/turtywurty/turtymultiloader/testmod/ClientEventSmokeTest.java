@@ -34,13 +34,11 @@ public final class ClientEventSmokeTest {
         ClientEvents.registerKeyMapping(new KeyMapping(
             "key.turtymultiloader_testmod.event_smoke_test",
             -1,
-            KeyMapping.Category.MISC
-        ));
+            KeyMapping.Category.MISC));
         ClientEvents.registerResourceReloadListener(
             Identifier.fromNamespaceAndPath(TestModContent.MOD_ID, "event_smoke_test"),
             (ResourceManagerReloadListener) resourceManager -> {
-            }
-        );
+            });
         ClientEvents.onRenderStage(RenderStage.COLLECT_SUBMITS, context -> {
         });
         ClientEvents.onRenderStage(RenderStage.AFTER_SOLID_FEATURES, context -> {

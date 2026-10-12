@@ -30,8 +30,7 @@ public final class SlurryVariantAttributes {
     public static synchronized void register(Slurry slurry, SlurryVariantAttributeHandler handler) {
         if (HANDLERS.putIfAbsent(
             Objects.requireNonNull(slurry, "slurry"),
-            Objects.requireNonNull(handler, "handler")
-        ) != null)
+            Objects.requireNonNull(handler, "handler")) != null)
             throw new IllegalArgumentException("Duplicate handler registration for slurry " + slurry);
     }
 

@@ -135,9 +135,8 @@ public interface NetworkService {
 
     final class ServiceHolder {
         private static final NetworkService INSTANCE = ServiceLoader.load(
-                NetworkService.class,
-                NetworkService.class.getClassLoader()
-            )
+            NetworkService.class,
+            NetworkService.class.getClassLoader())
             .findFirst()
             .orElseThrow(() -> new IllegalStateException("No networking service is available"));
 

@@ -18,9 +18,8 @@ public interface FakePlayerService {
 
     final class ServiceHolder {
         private static final FakePlayerService INSTANCE = ServiceLoader.load(
-                FakePlayerService.class,
-                FakePlayerService.class.getClassLoader()
-            )
+            FakePlayerService.class,
+            FakePlayerService.class.getClassLoader())
             .findFirst()
             .orElseThrow(() -> new IllegalStateException("No fake-player service is available"));
 

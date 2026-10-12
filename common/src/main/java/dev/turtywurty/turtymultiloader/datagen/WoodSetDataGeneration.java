@@ -39,13 +39,11 @@ public final class WoodSetDataGeneration {
         builder
             .recipes((registries, output) -> new Recipes(registries, output, set).generate())
             .lootTables(Set.of(), List.of(new LootTableProvider.SubProviderEntry(
-                registries -> new DirectLoot(registries, set), LootContextParamSets.BLOCK
-            )))
+                registries -> new DirectLoot(registries, set), LootContextParamSets.BLOCK)))
             .blockTags((registries, tags) -> {
                 tags.tag(set.logsBlockTag()).add(
                     set.log().block().key(), set.strippedLog().block().key(), set.wood().block().key(),
-                    set.strippedWood().block().key()
-                );
+                    set.strippedWood().block().key());
                 tags.tag(BlockTags.LOGS).addTag(set.logsBlockTag());
                 tags.tag(BlockTags.PLANKS).add(set.planks().block().key());
                 tags.tag(BlockTags.LEAVES).add(set.leaves().block().key());
@@ -66,8 +64,7 @@ public final class WoodSetDataGeneration {
             .itemTags((registries, tags) -> {
                 tags.tag(set.logsItemTag()).add(
                     set.log().item().key(), set.strippedLog().item().key(), set.wood().item().key(),
-                    set.strippedWood().item().key()
-                );
+                    set.strippedWood().item().key());
                 tags.tag(ItemTags.LOGS_THAT_BURN).addTag(set.logsItemTag());
                 tags.tag(ItemTags.PLANKS).add(set.planks().item().key());
                 tags.tag(ItemTags.LEAVES).add(set.leaves().item().key());
@@ -131,10 +128,13 @@ public final class WoodSetDataGeneration {
     }
 
     private static String displayName(String path) {
-        StringBuilder result = new StringBuilder();
+        var result = new StringBuilder();
         for (String part : path.split("_")) {
-            if (part.isEmpty()) continue;
-            if (!result.isEmpty()) result.append(' ');
+            if (part.isEmpty())
+                continue;
+            if (!result.isEmpty()) {
+                result.append(' ');
+            }
             result.append(part.substring(0, 1).toUpperCase(Locale.ROOT)).append(part.substring(1));
         }
         return result.toString();
@@ -178,9 +178,9 @@ public final class WoodSetDataGeneration {
         public void run() {
             for (BlockWithItem block : List.of(
                 set.planks(), set.log(), set.strippedLog(), set.strippedWood(), set.wood(), set.sapling(),
-                set.stairs(), set.fence(), set.fenceGate(), set.trapdoor(), set.pressurePlate(), set.button()
-            ))
+                set.stairs(), set.fence(), set.fenceGate(), set.trapdoor(), set.pressurePlate(), set.button())) {
                 accept(output, block.get(), builders.self(block.get()));
+            }
             accept(output, set.slab().get(), builders.slab(set.slab().get()));
             accept(output, set.door().get(), builders.door(set.door().get()));
             accept(output, set.sign().get(), builders.other(set.signItem().get()));

@@ -40,8 +40,10 @@ public final class NeoForgeDataGeneration {
             throw new IllegalArgumentException("Data-generation spec belongs to another mod");
         spec.addRegistryBootstraps(new RegistrySetBuilder() {
             @Override
-            public <T> RegistrySetBuilder add(ResourceKey<? extends Registry<T>> key,
-                SingleRegistryBootstrap<T> bootstrap) {
+            public <T> RegistrySetBuilder add(
+                ResourceKey<? extends Registry<T>> key,
+                SingleRegistryBootstrap<T> bootstrap
+            ) {
                 event.add(key, bootstrap);
                 return this;
             }
@@ -58,11 +60,10 @@ public final class NeoForgeDataGeneration {
         Objects.requireNonNull(spec, "spec");
         validateOwner(event, spec);
 
-        DataProviderContext context = new DataProviderContext(
+        var context = new DataProviderContext(
             spec.modId(),
             event.getGenerator().getPackOutput(),
-            event.getDefaultPackGenerator().getReloadableLookupProvider()
-        );
+            event.getDefaultPackGenerator().getReloadableLookupProvider());
         spec.providers().stream()
             .filter(declaration -> declaration.side() == side)
             .map(declaration -> declaration.factory().create(context))
@@ -71,10 +72,8 @@ public final class NeoForgeDataGeneration {
 
     private static void validateOwner(GatherDataEvent event, DataGenerationSpec spec) {
         String eventModId = event.getModContainer().getModId();
-        if (!eventModId.equals(spec.modId())) {
+        if (!eventModId.equals(spec.modId()))
             throw new IllegalArgumentException(
-                "Data-generation spec for " + spec.modId() + " cannot run for NeoForge mod " + eventModId
-            );
-        }
+                "Data-generation spec for " + spec.modId() + " cannot run for NeoForge mod " + eventModId);
     }
 }

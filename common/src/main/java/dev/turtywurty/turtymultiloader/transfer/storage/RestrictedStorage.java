@@ -8,8 +8,10 @@ import java.util.Objects;
 /**
  * Live external view that narrows the operations exposed by another storage.
  *
- * <p>The backing storage remains unrestricted for its owner. This is useful for sided machine ports: expose an
- * insert-only or extract-only view while recipes and persistence retain trusted access to the backing storage.</p>
+ * <p>
+ * The backing storage remains unrestricted for its owner. This is useful for sided machine ports: expose an
+ * insert-only or extract-only view while recipes and persistence retain trusted access to the backing storage.
+ * </p>
  */
 public final class RestrictedStorage<V extends ResourceVariant<?>> implements ResourceStorage<V> {
     private final ResourceStorage<V> storage;
@@ -78,7 +80,9 @@ public final class RestrictedStorage<V extends ResourceVariant<?>> implements Re
     public long extract(int index, V resource, long maxAmount, TransferContext transaction) {
         StoragePreconditions.check(resource, maxAmount);
         StoragePreconditions.index(index, size());
-        return this.restriction.supportsExtraction() ? this.storage.extract(index, resource, maxAmount, transaction) : 0;
+        return this.restriction.supportsExtraction()
+            ? this.storage.extract(index, resource, maxAmount, transaction)
+            : 0;
     }
 
     @Override

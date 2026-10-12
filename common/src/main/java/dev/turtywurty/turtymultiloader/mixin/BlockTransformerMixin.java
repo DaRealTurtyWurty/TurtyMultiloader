@@ -11,14 +11,15 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 import java.util.List;
 
 @Mixin(BlockTransformer.class)
-abstract class BlockTransformerMixin {
+public abstract class BlockTransformerMixin {
     @Shadow
     @Final
     private List<BlockTransformer.BlockTransformData> transforms;
 
-    @Redirect(method = "transformBlock*", at = @At(value = "FIELD",
-        target = "Lnet/minecraft/core/component/BlockTransformer;transforms:Ljava/util/List;"))
-    private List<BlockTransformer.BlockTransformData> turtymultiloader$includeStrippables(BlockTransformer transformer) {
+    @Redirect(method = "transformBlock*", at = @At(value = "FIELD", target = "Lnet/minecraft/core/component/BlockTransformer;transforms:Ljava/util/List;"))
+    private List<BlockTransformer.BlockTransformData> turtymultiloader$includeStrippables(
+        BlockTransformer transformer
+    ) {
         return VanillaRegistryHooks.strippingTransforms(transforms);
     }
 }

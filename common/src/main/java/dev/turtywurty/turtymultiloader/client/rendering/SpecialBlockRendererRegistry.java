@@ -16,11 +16,14 @@ import java.util.function.Supplier;
 /**
  * State-aware registry for domain renderers such as Industria conveyor renderers.
  *
- * <p>This class owns lookup and resource-reload behavior only. The caller decides which shared world-render stage
- * invokes a renderer and what its render context contains.</p>
+ * <p>
+ * This class owns lookup and resource-reload behavior only. The caller decides which shared world-render stage
+ * invokes a renderer and what its render context contains.
+ * </p>
  */
 public final class SpecialBlockRendererRegistry<R extends ResourceManagerReloadListener>
-    implements ResourceManagerReloadListener {
+    implements
+        ResourceManagerReloadListener {
     private final Map<BlockState, Function<BlockState, ? extends R>> factories = new LinkedHashMap<>();
     private volatile Map<BlockState, R> renderers = Map.of();
 
@@ -39,7 +42,7 @@ public final class SpecialBlockRendererRegistry<R extends ResourceManagerReloadL
 
     public void register(Block block, Supplier<? extends R> factory) {
         Objects.requireNonNull(factory, "factory");
-        register(block, ignored -> factory.get());
+        register(block, _ -> factory.get());
     }
 
     public @Nullable R find(BlockState state) {
@@ -53,8 +56,9 @@ public final class SpecialBlockRendererRegistry<R extends ResourceManagerReloadL
         Map<R, Boolean> reloaded = new IdentityHashMap<>();
         factories.forEach((state, factory) -> {
             R renderer = Objects.requireNonNull(factory.apply(state), "renderer factory result");
-            if (reloaded.put(renderer, Boolean.TRUE) == null)
+            if (reloaded.put(renderer, Boolean.TRUE) == null) {
                 renderer.onResourceManagerReload(resourceManager);
+            }
             rebuilt.put(state, renderer);
         });
         renderers = Map.copyOf(rebuilt);

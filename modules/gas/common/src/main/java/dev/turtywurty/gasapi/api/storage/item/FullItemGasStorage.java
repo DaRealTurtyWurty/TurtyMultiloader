@@ -36,11 +36,9 @@ public final class FullItemGasStorage implements SingleSlotStorage<ResourceVaria
             full -> ResourceVariant.of(
                 ResourceTypes.ITEM,
                 BuiltInRegistries.ITEM.wrapAsHolder(emptyItem),
-                full.components()
-            ),
+                full.components()),
             containedGas,
-            containedAmount
-        );
+            containedAmount);
     }
 
     public FullItemGasStorage(

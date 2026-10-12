@@ -49,8 +49,7 @@ public final class NeoForgeClientRegistrationService implements ClientRegistrati
     private final Map<Identifier, MapCodec<? extends ItemTintSource>> itemTintSources = new LinkedHashMap<>();
     private final List<FluidModelDeclaration> fluidModels = new ArrayList<>();
     private final Map<Identifier, MapCodec<? extends ItemModel.Unbaked>> itemModels = new LinkedHashMap<>();
-    private final Map<Identifier, MapCodec<? extends SpecialModelRenderer.Unbaked<?>>> specialModelRenderers =
-        new LinkedHashMap<>();
+    private final Map<Identifier, MapCodec<? extends SpecialModelRenderer.Unbaked<?>>> specialModelRenderers = new LinkedHashMap<>();
     private final List<NeoForgeAdditionalModel> additionalModels = new ArrayList<>();
     private final List<BlockStateModelAugmenterDeclaration> blockStateModelAugmenters = new ArrayList<>();
 
@@ -164,11 +163,10 @@ public final class NeoForgeClientRegistrationService implements ClientRegistrati
         if (additionalModels.stream().anyMatch(model -> model.id().equals(id)))
             throw new IllegalStateException("An additional model is already registered as " + id);
 
-        NeoForgeAdditionalModel model = new NeoForgeAdditionalModel(
+        var model = new NeoForgeAdditionalModel(
             id,
             new StandaloneModelKey<>(id::toString),
-            unbakedModel
-        );
+            unbakedModel);
         additionalModels.add(model);
         return model;
     }
@@ -181,8 +179,7 @@ public final class NeoForgeClientRegistrationService implements ClientRegistrati
         ensureOpen(blockStateModelAugmentersClosed, "Block-state model augmenters");
         blockStateModelAugmenters.add(new BlockStateModelAugmenterDeclaration(
             require(selector),
-            require(augmenter)
-        ));
+            require(augmenter)));
     }
 
     private synchronized void registerRenderers(EntityRenderersEvent.RegisterRenderers event) {
@@ -225,9 +222,7 @@ public final class NeoForgeClientRegistrationService implements ClientRegistrati
             model.key(),
             SimpleUnbakedStandaloneModel.blockStateModel(
                 model.definition().modelId(),
-                model.definition().modelState()
-            )
-        ));
+                model.definition().modelState())));
         additionalModelsClosed = true;
     }
 
@@ -235,8 +230,9 @@ public final class NeoForgeClientRegistrationService implements ClientRegistrati
         event.getBakingResult().blockStateModels().replaceAll((state, original) -> {
             BlockStateModel model = original;
             for (BlockStateModelAugmenterDeclaration declaration : blockStateModelAugmenters) {
-                if (declaration.selector().test(state))
+                if (declaration.selector().test(state)) {
                     model = new NeoForgeAugmentedBlockStateModel(model, declaration.augmenter());
+                }
             }
             return model;
         });
@@ -325,9 +321,8 @@ public final class NeoForgeClientRegistrationService implements ClientRegistrati
             random.setSeed(baseSeed);
             var context = new BlockStateModelAugmenter.Context(level, pos, state, random, baseSeed);
             List<BlockStateModelAugmenter.SeededModel> additionalModels = new ArrayList<>();
-            augmenter.collectAdditionalModels(context, (model, seed) ->
-                additionalModels.add(new BlockStateModelAugmenter.SeededModel(model, seed))
-            );
+            augmenter.collectAdditionalModels(context,
+                (model, seed) -> additionalModels.add(new BlockStateModelAugmenter.SeededModel(model, seed)));
             for (BlockStateModelAugmenter.SeededModel model : additionalModels) {
                 random.setSeed(model.randomSeed());
                 model.model().collectParts(level, pos, state, random, parts);
@@ -347,8 +342,7 @@ public final class NeoForgeClientRegistrationService implements ClientRegistrati
             random.setSeed(baseSeed);
             return augmenter.createGeometryKey(
                 new BlockStateModelAugmenter.Context(level, pos, state, random, baseSeed),
-                wrappedKey
-            );
+                wrappedKey);
         }
     }
 

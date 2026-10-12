@@ -109,8 +109,9 @@ public final class CombinedStorage<V extends ResourceVariant<?>> implements Reso
     @Override
     public long version() {
         long result = 1;
-        for (ResourceStorage<V> part : this.parts)
+        for (ResourceStorage<V> part : this.parts) {
             result = 31 * result + part.version();
+        }
         return result;
     }
 

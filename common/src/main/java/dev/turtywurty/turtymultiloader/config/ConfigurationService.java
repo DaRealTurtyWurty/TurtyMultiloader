@@ -18,9 +18,8 @@ public interface ConfigurationService {
 
     final class ServiceHolder {
         private static final ConfigurationService INSTANCE = ServiceLoader.load(
-                ConfigurationService.class,
-                ConfigurationService.class.getClassLoader()
-            )
+            ConfigurationService.class,
+            ConfigurationService.class.getClassLoader())
             .findFirst()
             .orElseThrow(() -> new IllegalStateException("No configuration service is available"));
 

@@ -8,9 +8,11 @@ import java.util.function.Consumer;
 /**
  * One ordered server-side task in the login configuration phase.
  *
- * <p>A task may send any number of registered configuration payloads. It must eventually call
+ * <p>
+ * A task may send any number of registered configuration payloads. It must eventually call
  * {@link ServerConfigurationTaskContext#complete()}, or arrange for a serverbound configuration payload handler to
- * call {@link PayloadContext#completeConfigurationTask(Identifier)} after the client has acknowledged the work.</p>
+ * call {@link PayloadContext#completeConfigurationTask(Identifier)} after the client has acknowledged the work.
+ * </p>
  */
 public record ServerConfigurationTask(
     Identifier id,

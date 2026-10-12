@@ -52,20 +52,17 @@ public final class MultiblockPlacement {
 
         List<MultiblockDefinition> candidateDefinitions = new ArrayList<>();
         for (MultiblockDefinition definition : MultiblockLib.DEFINITION_MANAGER.definitions().values()) {
-            if (definition.triggerItem() != stack.getItem()) {
+            if (definition.triggerItem() != stack.getItem())
                 continue;
-            }
             candidateDefinitions.add(definition);
         }
-        if (candidateDefinitions.isEmpty()) {
+        if (candidateDefinitions.isEmpty())
             return InteractionResult.PASS;
-        }
 
         if (player != null && player.isShiftKeyDown()) {
             InteractionResult diagnosticsResult = tryDiagnose(level, clickedPos, candidateDefinitions, player);
-            if (diagnosticsResult != InteractionResult.PASS) {
+            if (diagnosticsResult != InteractionResult.PASS)
                 return diagnosticsResult;
-            }
         }
 
         for (MultiblockDefinition definition : candidateDefinitions) {
@@ -74,7 +71,8 @@ public final class MultiblockPlacement {
                 formMultiblock(level, definition, match);
                 return InteractionResult.SUCCESS;
             }
-            MultiblockLib.LOGGER.debug("Trigger item matched for {}, but no pattern match at {}.", definition.id(), clickedPos);
+            MultiblockLib.LOGGER.debug("Trigger item matched for {}, but no pattern match at {}.", definition.id(),
+                clickedPos);
         }
 
         return InteractionResult.PASS;
@@ -87,9 +85,8 @@ public final class MultiblockPlacement {
         final ServerPlayer player
     ) {
         Block block = level.getBlockState(clickedPos).getBlock();
-        if (!MultiblockLib.isControllerBlock(block)) {
+        if (!MultiblockLib.isControllerBlock(block))
             return InteractionResult.PASS;
-        }
 
         Identifier controllerBlockId = BuiltInRegistries.BLOCK.getKey(block);
         List<MultiblockDefinition> candidates = new ArrayList<>();
@@ -100,7 +97,8 @@ public final class MultiblockPlacement {
         }
 
         if (candidates.isEmpty()) {
-            player.sendSystemMessage(Component.literal("No multiblock definition for controller block " + controllerBlockId + " and held trigger item."));
+            player.sendSystemMessage(Component.literal(
+                "No multiblock definition for controller block " + controllerBlockId + " and held trigger item."));
             return InteractionResult.SUCCESS;
         }
 
@@ -116,13 +114,13 @@ public final class MultiblockPlacement {
             }
         }
 
-        if (bestResult == null) {
+        if (bestResult == null)
             return InteractionResult.PASS;
-        }
 
         if (bestResult.mismatches().isEmpty()) {
-            player.sendSystemMessage(Component.literal("Multiblock '" + bestResult.definition().id() + "' matches the pattern (rotation="
-                + bestResult.rotation().getSerializedName() + ", mirror=" + bestResult.mirror() + ")."));
+            player.sendSystemMessage(
+                Component.literal("Multiblock '" + bestResult.definition().id() + "' matches the pattern (rotation="
+                    + bestResult.rotation().getSerializedName() + ", mirror=" + bestResult.mirror() + ")."));
             return InteractionResult.SUCCESS;
         }
 
@@ -146,22 +144,25 @@ public final class MultiblockPlacement {
         return InteractionResult.SUCCESS;
     }
 
-    private static MultiblockMatch findMatch(final ServerLevel level, final BlockPos clickedPos, final MultiblockDefinition definition) {
+    private static MultiblockMatch findMatch(
+        final ServerLevel level,
+        final BlockPos clickedPos,
+        final MultiblockDefinition definition
+    ) {
         MultiblockPattern pattern = definition.pattern();
         for (MultiblockRotation rotation : definition.allowedRotations()) {
             for (boolean mirror : mirrorOptions(definition.allowMirroring())) {
                 BlockPos size = pattern.size();
-                BlockState normalizedClickedState = normalizeStateForPatternMatch(level.getBlockState(clickedPos), rotation, mirror);
+                BlockState normalizedClickedState = normalizeStateForPatternMatch(level.getBlockState(clickedPos),
+                    rotation, mirror);
                 for (BlockPos localPos : pattern.positions()) {
                     BlockPos transformed = MultiblockTransform.transform(localPos, size, rotation, mirror);
                     BlockPos anchor = clickedPos.subtract(transformed);
                     BlockMatcherList matcher = pattern.matcherAt(localPos);
-                    if (matcher != null && !matcher.matches(normalizedClickedState)) {
+                    if (matcher != null && !matcher.matches(normalizedClickedState))
                         continue;
-                    }
-                    if (matchesAt(level, definition, anchor, rotation, mirror)) {
+                    if (matchesAt(level, definition, anchor, rotation, mirror))
                         return new MultiblockMatch(anchor, rotation, mirror);
-                    }
                 }
             }
         }
@@ -181,21 +182,17 @@ public final class MultiblockPlacement {
         for (BlockPos localPos : pattern.positions()) {
             BlockPos transformed = MultiblockTransform.transform(localPos, size, rotation, mirror);
             BlockPos worldPos = anchor.offset(transformed);
-            if (!level.isLoaded(worldPos)) {
+            if (!level.isLoaded(worldPos))
                 return false;
-            }
 
             BlockState state = level.getBlockState(worldPos);
-            if (state.getBlock() == MultiblockLib.MULTIBLOCK_PART) {
+            if (state.getBlock() == MultiblockLib.MULTIBLOCK_PART)
                 return false;
-            }
-            if (MultiblockLib.isControllerBlock(state.getBlock()) && !localPos.equals(definition.controllerPos())) {
+            if (MultiblockLib.isControllerBlock(state.getBlock()) && !localPos.equals(definition.controllerPos()))
                 return false;
-            }
             BlockMatcherList matcher = pattern.matcherAt(localPos);
-            if (matcher == null || !matcher.matches(normalizeStateForPatternMatch(state, rotation, mirror))) {
+            if (matcher == null || !matcher.matches(normalizeStateForPatternMatch(state, rotation, mirror)))
                 return false;
-            }
         }
 
         return true;
@@ -209,7 +206,8 @@ public final class MultiblockPlacement {
         MultiblockPattern pattern = definition.pattern();
         BlockPos size = pattern.size();
         BlockPos controllerLocal = definition.controllerPos();
-        BlockPos controllerWorld = match.anchor().offset(MultiblockTransform.transform(controllerLocal, size, match.rotation(), match.mirror()));
+        BlockPos controllerWorld = match.anchor()
+            .offset(MultiblockTransform.transform(controllerLocal, size, match.rotation(), match.mirror()));
         Direction inferredControllerFacing = inferControllerFacing(definition, match);
 
         List<MultiblockPartEntry> parts = new ArrayList<>();
@@ -225,7 +223,8 @@ public final class MultiblockPlacement {
 
         List<PortInstance> ports = new ArrayList<>();
         for (PortDefinition port : definition.ports()) {
-            BlockPos transformed = MultiblockTransform.transform(port.position(), size, match.rotation(), match.mirror());
+            BlockPos transformed = MultiblockTransform.transform(port.position(), size, match.rotation(),
+                match.mirror());
             BlockPos worldPos = match.anchor().offset(transformed);
             ports.add(new PortInstance(worldPos.subtract(controllerWorld), port.types(), port.io()));
         }
@@ -247,15 +246,16 @@ public final class MultiblockPlacement {
         if (level.getBlockEntity(controllerWorld) instanceof MultiblockControllerBlockEntity controllerEntity) {
             controllerEntity.configure(definition.id(), parts, ports);
         } else {
-            MultiblockLib.LOGGER.warn("Controller block at {} is not a MultiblockControllerBlockEntity for definition {}", controllerWorld, definition.id());
+            MultiblockLib.LOGGER.warn(
+                "Controller block at {} is not a MultiblockControllerBlockEntity for definition {}", controllerWorld,
+                definition.id());
         }
     }
 
     private static Direction inferControllerFacing(final MultiblockDefinition definition, final MultiblockMatch match) {
         Direction localForward = inferLocalForward(definition.pattern(), definition.controllerPos());
-        if (localForward == null) {
+        if (localForward == null)
             return null;
-        }
 
         return transformLocalFacing(localForward, match.rotation(), match.mirror());
     }
@@ -279,9 +279,8 @@ public final class MultiblockPlacement {
         int north = controllerPos.getZ() - minZ;
 
         int maxExtent = Math.max(Math.max(east, west), Math.max(south, north));
-        if (maxExtent <= 0) {
+        if (maxExtent <= 0)
             return null;
-        }
 
         int winners = 0;
         Direction winner = null;
@@ -324,9 +323,8 @@ public final class MultiblockPlacement {
     }
 
     private static BlockState applyControllerFacing(final BlockState state, final Direction facing) {
-        if (facing == null || !state.hasProperty(BlockStateProperties.HORIZONTAL_FACING)) {
+        if (facing == null || !state.hasProperty(BlockStateProperties.HORIZONTAL_FACING))
             return state;
-        }
 
         return state.setValue(BlockStateProperties.HORIZONTAL_FACING, facing);
     }
@@ -344,7 +342,8 @@ public final class MultiblockPlacement {
     ) {
         MultiblockPattern pattern = definition.pattern();
         BlockPos size = pattern.size();
-        BlockPos transformedController = MultiblockTransform.transform(definition.controllerPos(), size, rotation, mirror);
+        BlockPos transformedController = MultiblockTransform.transform(definition.controllerPos(), size, rotation,
+            mirror);
         BlockPos anchor = controllerPos.subtract(transformedController);
 
         List<Mismatch> mismatches = new ArrayList<>();
@@ -352,21 +351,23 @@ public final class MultiblockPlacement {
             BlockPos transformed = MultiblockTransform.transform(localPos, size, rotation, mirror);
             BlockPos worldPos = anchor.offset(transformed);
             BlockMatcherList matcher = pattern.matcherAt(localPos);
-            if (matcher == null) {
+            if (matcher == null)
                 continue;
-            }
 
             if (!level.isLoaded(worldPos)) {
-                mismatches.add(new Mismatch(worldPos, worldPos.subtract(controllerPos), matcher.describe(), "<unloaded chunk>"));
+                mismatches.add(
+                    new Mismatch(worldPos, worldPos.subtract(controllerPos), matcher.describe(), "<unloaded chunk>"));
                 continue;
             }
 
             BlockState worldState = level.getBlockState(worldPos);
             if (worldState.getBlock() == MultiblockLib.MULTIBLOCK_PART) {
-                mismatches.add(new Mismatch(worldPos, worldPos.subtract(controllerPos), matcher.describe(), "multiblocklib:multiblock_part"));
+                mismatches.add(new Mismatch(worldPos, worldPos.subtract(controllerPos), matcher.describe(),
+                    "multiblocklib:multiblock_part"));
                 continue;
             }
-            if (MultiblockLib.isControllerBlock(worldState.getBlock()) && !localPos.equals(definition.controllerPos())) {
+            if (MultiblockLib.isControllerBlock(worldState.getBlock())
+                && !localPos.equals(definition.controllerPos())) {
                 mismatches.add(new Mismatch(worldPos, worldPos.subtract(controllerPos), matcher.describe(),
                     BuiltInRegistries.BLOCK.getKey(worldState.getBlock()).toString()));
                 continue;

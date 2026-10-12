@@ -39,8 +39,7 @@ public interface MutableItemContext {
             stack -> container.setItem(slot, stack),
             stack -> container.canPlaceItem(slot, stack),
             container::getMaxStackSize,
-            container::setChanged
-        );
+            container::setChanged);
     }
 
     static MutableItemContext ofInventorySlot(Inventory inventory, int slot) {
@@ -53,10 +52,9 @@ public interface MutableItemContext {
         return new StackReferenceItemContext(
             () -> player.getItemInHand(hand),
             stack -> player.setItemInHand(hand, stack),
-            ignored -> true,
+            _ -> true,
             ItemStack::getMaxStackSize,
-            () -> player.getInventory().setChanged()
-        );
+            () -> player.getInventory().setChanged());
     }
 
     static MutableItemContext ofCursor(AbstractContainerMenu menu) {
@@ -64,11 +62,10 @@ public interface MutableItemContext {
         return new StackReferenceItemContext(
             menu::getCarried,
             menu::setCarried,
-            ignored -> true,
+            _ -> true,
             ItemStack::getMaxStackSize,
             () -> {
-            }
-        );
+            });
     }
 
     static MutableItemContext ofPlayerCursor(Player player) {

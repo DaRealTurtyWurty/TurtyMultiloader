@@ -9,11 +9,11 @@ import java.util.function.Predicate;
 
 public final class OutputSingleGasStorage extends PredicateSingleGasStorage {
     public OutputSingleGasStorage(long capacity, Predicate<ResourceVariant<Gas>> canExtract) {
-        super(capacity, ignored -> false, canExtract);
+        super(capacity, _ -> false, canExtract);
     }
 
     public OutputSingleGasStorage(long capacity) {
-        this(capacity, ignored -> true);
+        this(capacity, _ -> true);
     }
 
     @Override

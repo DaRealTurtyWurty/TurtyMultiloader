@@ -11,8 +11,7 @@ import net.minecraft.world.level.block.entity.ChestBlockEntity;
 public final class AttachmentGameTests {
     public static final Identifier TEST_ID = Identifier.fromNamespaceAndPath(
         TestModContent.MOD_ID,
-        "attachment_service"
-    );
+        "attachment_service");
 
     private AttachmentGameTests() {
     }
@@ -30,13 +29,11 @@ public final class AttachmentGameTests {
         helper.assertValueEqual(
             levelTarget.set(TestModContent.TEST_COUNTER, 4).orElseThrow(),
             0,
-            "Previous attachment value"
-        );
+            "Previous attachment value");
         helper.assertValueEqual(
             levelTarget.update(TestModContent.TEST_COUNTER, value -> value + 3),
             7,
-            "Updated attachment value"
-        );
+            "Updated attachment value");
 
         var entityTarget = AttachmentTarget.entity(helper.makeMockPlayer(GameType.SURVIVAL));
         entityTarget.set(TestModContent.TEST_COUNTER, 11);
@@ -47,7 +44,7 @@ public final class AttachmentGameTests {
         chunkTarget.set(TestModContent.TEST_COUNTER, 13);
         helper.assertValueEqual(chunkTarget.get(TestModContent.TEST_COUNTER).orElseThrow(), 13, "Chunk attachment");
 
-        BlockPos blockEntityPosition = new BlockPos(2, 1, 1);
+        var blockEntityPosition = new BlockPos(2, 1, 1);
         helper.setBlock(blockEntityPosition, Blocks.CHEST);
         ChestBlockEntity blockEntity = helper.getBlockEntity(blockEntityPosition, ChestBlockEntity.class);
         var blockEntityTarget = AttachmentTarget.blockEntity(blockEntity);

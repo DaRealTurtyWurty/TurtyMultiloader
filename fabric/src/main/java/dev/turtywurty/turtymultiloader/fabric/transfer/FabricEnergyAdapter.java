@@ -16,8 +16,8 @@ import team.reborn.energy.api.EnergyStorage;
  * Adapts Team Reborn Energy API storages to the neutral energy storage and vice versa.
  */
 public final class FabricEnergyAdapter {
-    private static final ResourceVariant<UnitResource> ENERGY =
-        ResourceTypes.ENERGY.of(Holder.direct(UnitResource.VALUE));
+    private static final ResourceVariant<UnitResource> ENERGY = ResourceTypes.ENERGY
+        .of(Holder.direct(UnitResource.VALUE));
 
     private FabricEnergyAdapter() {
     }
@@ -53,7 +53,8 @@ public final class FabricEnergyAdapter {
                 StoragePreconditions.index(index, 1);
                 boolean insert = storage.supportsInsertion();
                 boolean extract = storage.supportsExtraction();
-                return insert ? extract ? TransferSupport.BOTH : TransferSupport.INSERT_ONLY
+                return insert
+                    ? extract ? TransferSupport.BOTH : TransferSupport.INSERT_ONLY
                     : extract ? TransferSupport.EXTRACT_ONLY : TransferSupport.NONE;
             }
 

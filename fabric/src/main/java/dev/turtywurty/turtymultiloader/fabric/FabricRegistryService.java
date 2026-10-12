@@ -60,16 +60,14 @@ public final class FabricRegistryService implements RegistryService {
         ensureOpen();
         ResourceKey<R> entryKey = ResourceKey.create(
             Objects.requireNonNull(registryKey, "registryKey"),
-            Objects.requireNonNull(id, "id")
-        );
+            Objects.requireNonNull(id, "id"));
         RegistrationHandle<R, T> result = new RegistrationHandle<>(id, entryKey);
         entries.add(new EntryDeclaration<>(registryKey, id, Objects.requireNonNull(factory, "factory"), result));
         return result;
     }
 
     @Override
-    public synchronized <T extends BlockEntity> RegistrationHandle<BlockEntityType<?>, BlockEntityType<T>>
-    registerBlockEntityType(
+    public synchronized <T extends BlockEntity> RegistrationHandle<BlockEntityType<?>, BlockEntityType<T>> registerBlockEntityType(
         Identifier id,
         BiFunction<BlockPos, BlockState, T> factory,
         Consumer<BlockEntityTypeBuilder<T>> configuration
@@ -79,8 +77,7 @@ public final class FabricRegistryService implements RegistryService {
         return register(
             Registries.BLOCK_ENTITY_TYPE,
             id,
-            () -> FabricBlockEntityTypeBuilder.create(builder.factory()::apply, builder.resolveValidBlocks()).build()
-        );
+            () -> FabricBlockEntityTypeBuilder.create(builder.factory()::apply, builder.resolveValidBlocks()).build());
     }
 
     @Override
@@ -88,13 +85,12 @@ public final class FabricRegistryService implements RegistryService {
         Identifier id,
         Consumer<CreativeTabBuilder> configuration
     ) {
-        CreativeTabBuilder builder = new CreativeTabBuilder(id);
+        var builder = new CreativeTabBuilder(id);
         Objects.requireNonNull(configuration, "configuration").accept(builder);
         return register(
             Registries.CREATIVE_MODE_TAB,
             id,
-            () -> buildCreativeTab(builder)
-        );
+            () -> buildCreativeTab(builder));
     }
 
     @Override
@@ -116,8 +112,7 @@ public final class FabricRegistryService implements RegistryService {
         ensureOpen();
         entityAttributes.add(new EntityAttributesDeclaration<>(
             Objects.requireNonNull(entityType, "entityType"),
-            Objects.requireNonNull(attributes, "attributes")
-        ));
+            Objects.requireNonNull(attributes, "attributes")));
     }
 
     @Override
@@ -128,8 +123,7 @@ public final class FabricRegistryService implements RegistryService {
         ensureOpen();
         creativeTabPopulations.add(new CreativeTabPopulation(
             Objects.requireNonNull(tab, "tab"),
-            Objects.requireNonNull(population, "population")
-        ));
+            Objects.requireNonNull(population, "population")));
     }
 
     @Override
@@ -156,8 +150,7 @@ public final class FabricRegistryService implements RegistryService {
         ensureOpen();
         strippables.add(new StrippableDeclaration(
             Objects.requireNonNull(block, "block"),
-            Objects.requireNonNull(stripped, "stripped")
-        ));
+            Objects.requireNonNull(stripped, "stripped")));
     }
 
     @Override
@@ -169,10 +162,8 @@ public final class FabricRegistryService implements RegistryService {
         flammability.add(new FlammabilityDeclaration(
             Objects.requireNonNull(block, "block"),
             igniteOdds,
-            burnOdds
-        ));
+            burnOdds));
     }
-
 
     @Override
     public synchronized void addBlockEntityValidBlocks(
@@ -181,8 +172,7 @@ public final class FabricRegistryService implements RegistryService {
     ) {
         ensureOpen();
         blockEntityValidBlocks.add(new BlockEntityValidBlocksDeclaration(
-            Objects.requireNonNull(blockEntityType, "blockEntityType"), List.copyOf(blocks)
-        ));
+            Objects.requireNonNull(blockEntityType, "blockEntityType"), List.copyOf(blocks)));
     }
 
     @Override
@@ -192,8 +182,7 @@ public final class FabricRegistryService implements RegistryService {
     ) {
         ensureOpen();
         dispenserBehaviors.add(new DispenserBehaviorDeclaration(
-            Objects.requireNonNull(item, "item"), Objects.requireNonNull(behavior, "behavior")
-        ));
+            Objects.requireNonNull(item, "item"), Objects.requireNonNull(behavior, "behavior")));
     }
 
     @Override
@@ -202,12 +191,10 @@ public final class FabricRegistryService implements RegistryService {
         customRegistries.forEach(FabricRegistryService::createCustomRegistry);
         customRegistries.clear();
         blockSetTypes.forEach(declaration -> declaration.result().bind(
-            VanillaRegistryHooks.registerBlockSetType(declaration.factory().get())
-        ));
+            VanillaRegistryHooks.registerBlockSetType(declaration.factory().get())));
         blockSetTypes.clear();
         woodTypes.forEach(declaration -> declaration.result().bind(
-            VanillaRegistryHooks.registerWoodType(declaration.factory().get())
-        ));
+            VanillaRegistryHooks.registerWoodType(declaration.factory().get())));
         woodTypes.clear();
         entries.stream()
             .filter(declaration -> declaration.registryKey() != Registries.ITEM)
@@ -221,23 +208,19 @@ public final class FabricRegistryService implements RegistryService {
         creativeTabPopulations.forEach(FabricRegistryService::registerCreativeTabPopulation);
         creativeTabPopulations.clear();
         blockEntityValidBlocks.forEach(declaration -> VanillaRegistryHooks.addBlockEntityValidBlocks(
-            declaration.blockEntityType().get(), declaration.blocks().stream().map(Supplier::get).toList()
-        ));
+            declaration.blockEntityType().get(), declaration.blocks().stream().map(Supplier::get).toList()));
         blockEntityValidBlocks.clear();
         strippables.forEach(declaration -> VanillaRegistryHooks.registerStrippable(
             declaration.block().get(),
-            declaration.stripped().get()
-        ));
+            declaration.stripped().get()));
         strippables.clear();
         flammability.forEach(declaration -> FlammableBlockRegistry.getDefaultInstance().add(
             declaration.block().get(),
             declaration.igniteOdds(),
-            declaration.burnOdds()
-        ));
+            declaration.burnOdds()));
         flammability.clear();
         dispenserBehaviors.forEach(declaration -> DispenserBlock.registerBehavior(
-            declaration.item().get(), declaration.behavior().get()
-        ));
+            declaration.item().get(), declaration.behavior().get()));
         dispenserBehaviors.clear();
     }
 
@@ -251,12 +234,12 @@ public final class FabricRegistryService implements RegistryService {
         MappedRegistry<T> registry = new MappedRegistry<>(
             key,
             Lifecycle.stable(),
-            declaration.options().intrusiveHolders()
-        );
+            declaration.options().intrusiveHolders());
         FabricRegistryBuilder<T, MappedRegistry<T>> builder = FabricRegistryBuilder.from(registry)
             .attribute(RegistryAttribute.MODDED);
-        if (declaration.options().synced())
+        if (declaration.options().synced()) {
             builder.attribute(RegistryAttribute.SYNCED);
+        }
 
         MappedRegistry<T> registered = builder.buildAndRegister();
         declaration.result().bind(() -> registered);
@@ -265,8 +248,7 @@ public final class FabricRegistryService implements RegistryService {
     @SuppressWarnings("unchecked")
     private static <R, T extends R> void registerEntry(EntryDeclaration<R, T> declaration) {
         Registry<R> registry = (Registry<R>) BuiltInRegistries.REGISTRY.getValue(
-            declaration.registryKey().identifier()
-        );
+            declaration.registryKey().identifier());
         if (registry == null)
             throw new IllegalStateException("Unknown registry " + declaration.registryKey().identifier());
 
@@ -282,16 +264,14 @@ public final class FabricRegistryService implements RegistryService {
     private static CreativeModeTab buildCreativeTab(CreativeTabBuilder configuration) {
         CreativeModeTab.Builder builder = FabricCreativeModeTab.builder();
         configuration.configure(builder);
-        builder.displayItems((parameters, output) ->
-            configuration.displayItems().accept(stack -> output.accept(stack))
-        );
+        builder
+            .displayItems((parameters, output) -> configuration.displayItems().accept(stack -> output.accept(stack)));
         return builder.build();
     }
 
     private static void registerCreativeTabPopulation(CreativeTabPopulation declaration) {
-        CreativeModeTabEvents.modifyOutputEvent(declaration.tab()).register(output ->
-            declaration.population().accept(stack -> output.accept(stack))
-        );
+        CreativeModeTabEvents.modifyOutputEvent(declaration.tab())
+            .register(output -> declaration.population().accept(stack -> output.accept(stack)));
     }
 
     private void ensureOpen() {

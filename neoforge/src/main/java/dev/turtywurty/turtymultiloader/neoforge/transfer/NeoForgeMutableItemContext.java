@@ -66,8 +66,7 @@ public final class NeoForgeMutableItemContext implements MutableItemContext {
         return new ItemStack(
             resource.holder(),
             Math.toIntExact(Math.min(Integer.MAX_VALUE, amount())),
-            resource.components()
-        );
+            resource.components());
     }
 
     @Override

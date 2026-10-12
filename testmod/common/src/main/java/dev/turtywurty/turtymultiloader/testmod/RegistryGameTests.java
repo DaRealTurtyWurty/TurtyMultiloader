@@ -33,54 +33,44 @@ public final class RegistryGameTests {
         helper.assertValueEqual(
             BuiltInRegistries.BLOCK.getValue(TestModContent.TEST_LOG.id()),
             TestModContent.TEST_LOG.get(),
-            "Block registry value"
-        );
+            "Block registry value");
         helper.assertValueEqual(
             BuiltInRegistries.ITEM.getValue(TestModContent.TEST_LOG_ITEM.id()),
             TestModContent.TEST_LOG_ITEM.get(),
-            "Item registry value"
-        );
+            "Item registry value");
         helper.assertValueEqual(
             BuiltInRegistries.ENTITY_TYPE.getValue(TestModContent.TEST_ENTITY.id()),
             TestModContent.TEST_ENTITY.get(),
-            "Entity-type registry value"
-        );
+            "Entity-type registry value");
         helper.assertValueEqual(
             BuiltInRegistries.CREATIVE_MODE_TAB.getValue(TestModContent.TEST_CREATIVE_TAB.id()),
             TestModContent.TEST_CREATIVE_TAB.get(),
-            "Creative tab registry value"
-        );
+            "Creative tab registry value");
         helper.assertTrue(
             TestModContent.TEST_CREATIVE_TAB.get().getIconItem().is(TestModContent.TEST_LOG_ITEM.get()),
-            "Creative tab icon was not resolved"
-        );
+            "Creative tab icon was not resolved");
         helper.assertValueEqual(
             TestModContent.TEST_VALUE_REGISTRY.get().getValue(TestModContent.TEST_VALUE.id()),
             TestModContent.TEST_VALUE.get(),
-            "Custom registry value"
-        );
+            "Custom registry value");
         helper.assertValueEqual(
             TestModContent.TEST_WOOD_TYPE.get().name(),
             TestModContent.MOD_ID + ":test",
-            "Queued wood type"
-        );
+            "Queued wood type");
         helper.assertTrue(
             WoodType.values()
                 .anyMatch(type -> type == TestModContent.TEST_WOOD_SET.woodType().get()),
-            "Wood-set WoodType was not registered in vanilla's lookup"
-        );
+            "Wood-set WoodType was not registered in vanilla's lookup");
         helper.assertTrue(
             BlockEntityTypes.SIGN.isValid(
-                TestModContent.TEST_WOOD_SET.sign().get().defaultBlockState()
-            ),
-            "Wood-set sign was not added to the vanilla sign block-entity type"
-        );
+                TestModContent.TEST_WOOD_SET.sign().get().defaultBlockState()),
+            "Wood-set sign was not added to the vanilla sign block-entity type");
 
-        ItemStack stack = new ItemStack(TestModContent.TEST_LOG_ITEM.get());
+        var stack = new ItemStack(TestModContent.TEST_LOG_ITEM.get());
         stack.set(TestModContent.TEST_NUMBER.get(), 42);
         helper.assertValueEqual(stack.get(TestModContent.TEST_NUMBER.get()), 42, "Data component value");
 
-        BlockPos testPosition = new BlockPos(1, 1, 1);
+        var testPosition = new BlockPos(1, 1, 1);
         helper.setBlock(testPosition, TestModContent.TEST_LOG.get());
         helper.assertBlockPresent(TestModContent.TEST_LOG.get(), testPosition);
 
@@ -96,8 +86,8 @@ public final class RegistryGameTests {
         axe.get(DataComponents.BLOCK_TRANSFORMER).value().transformBlock(
             new UseOnContext(player, InteractionHand.MAIN_HAND, hit));
         helper.assertBlockPresent(TestModContent.TEST_WOOD_SET.strippedLog().get(), testPosition);
-        helper.assertTrue(helper.getBlockState(testPosition).getValue(RotatedPillarBlock.AXIS)
-            == Direction.Axis.X, "Stripping changed the log axis");
+        helper.assertTrue(helper.getBlockState(testPosition).getValue(RotatedPillarBlock.AXIS) == Direction.Axis.X,
+            "Stripping changed the log axis");
         helper.succeed();
     }
 

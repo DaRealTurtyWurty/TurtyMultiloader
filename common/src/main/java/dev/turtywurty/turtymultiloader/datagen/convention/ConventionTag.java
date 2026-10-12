@@ -11,8 +11,10 @@ import java.util.Objects;
 /**
  * A loader-neutral convention-tag identity.
  *
- * <p>Common code should retain this descriptor rather than importing a Fabric or NeoForge tag constant. The active
- * loader resolves it to the appropriate native tag key when {@link #key()} is called.</p>
+ * <p>
+ * Common code should retain this descriptor rather than importing a Fabric or NeoForge tag constant. The active
+ * loader resolves it to the appropriate native tag key when {@link #key()} is called.
+ * </p>
  */
 public record ConventionTag<T>(
     ResourceKey<? extends Registry<T>> registry,

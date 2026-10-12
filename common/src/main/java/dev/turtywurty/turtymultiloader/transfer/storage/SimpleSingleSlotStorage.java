@@ -8,7 +8,8 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 public class SimpleSingleSlotStorage<V extends ResourceVariant<?>> extends SimpleStorage<V>
-    implements SingleSlotStorage<V> {
+    implements
+        SingleSlotStorage<V> {
     public SimpleSingleSlotStorage(ResourceType<?> resourceType) {
         super(resourceType, 1);
     }

@@ -70,7 +70,13 @@ public class MultiblockPartBlock extends Block implements EntityBlock {
     }
 
     @Override
-    protected @NonNull InteractionResult useWithoutItem(final @NonNull BlockState state, final @NonNull Level level, final @NonNull BlockPos pos, final @NonNull Player player, final @NonNull BlockHitResult hitResult) {
+    protected @NonNull InteractionResult useWithoutItem(
+        final @NonNull BlockState state,
+        final @NonNull Level level,
+        final @NonNull BlockPos pos,
+        final @NonNull Player player,
+        final @NonNull BlockHitResult hitResult
+    ) {
         if (!(level instanceof ServerLevel serverLevel))
             return InteractionResult.SUCCESS;
 
@@ -81,7 +87,8 @@ public class MultiblockPartBlock extends Block implements EntityBlock {
         if (!(serverLevel.getBlockEntity(controllerPos) instanceof MenuProvider menuProvider))
             return InteractionResult.PASS;
 
-        if (player instanceof ServerPlayer serverPlayer && menuProvider instanceof SelfOpeningMenuProvider selfOpeningMenuProvider) {
+        if (player instanceof ServerPlayer serverPlayer
+            && menuProvider instanceof SelfOpeningMenuProvider selfOpeningMenuProvider) {
             selfOpeningMenuProvider.openMenu(serverPlayer);
         } else {
             player.openMenu(menuProvider);
@@ -91,7 +98,12 @@ public class MultiblockPartBlock extends Block implements EntityBlock {
     }
 
     @Override
-    public @NonNull BlockState playerWillDestroy(final @NonNull Level level, final @NonNull BlockPos pos, final @NonNull BlockState state, final @NonNull Player player) {
+    public @NonNull BlockState playerWillDestroy(
+        final @NonNull Level level,
+        final @NonNull BlockPos pos,
+        final @NonNull BlockState state,
+        final @NonNull Player player
+    ) {
         if (level instanceof ServerLevel serverLevel) {
             teardown(serverLevel, pos);
         }
@@ -100,7 +112,12 @@ public class MultiblockPartBlock extends Block implements EntityBlock {
     }
 
     @Override
-    protected void affectNeighborsAfterRemoval(final @NonNull BlockState state, final @NonNull ServerLevel level, final @NonNull BlockPos pos, final boolean movedByPiston) {
+    protected void affectNeighborsAfterRemoval(
+        final @NonNull BlockState state,
+        final @NonNull ServerLevel level,
+        final @NonNull BlockPos pos,
+        final boolean movedByPiston
+    ) {
         teardown(level, pos);
         super.affectNeighborsAfterRemoval(state, level, pos, movedByPiston);
     }

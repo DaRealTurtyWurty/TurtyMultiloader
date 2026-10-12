@@ -9,11 +9,11 @@ import java.util.function.Predicate;
 
 public final class InputSingleSlurryStorage extends PredicateSingleSlurryStorage {
     public InputSingleSlurryStorage(long capacity, Predicate<ResourceVariant<Slurry>> canInsert) {
-        super(capacity, canInsert, ignored -> false);
+        super(capacity, canInsert, _ -> false);
     }
 
     public InputSingleSlurryStorage(long capacity) {
-        this(capacity, ignored -> true);
+        this(capacity, _ -> true);
     }
 
     @Override

@@ -21,15 +21,13 @@ public class CheckerboardPatternFactory implements MultiblockPatternFactory {
         int height = GsonHelper.getAsInt(json, "height", size);
         int depth = GsonHelper.getAsInt(json, "depth", size);
         boolean invert = GsonHelper.getAsBoolean(json, "invert", false);
-        if (width <= 0 || height <= 0 || depth <= 0) {
+        if (width <= 0 || height <= 0 || depth <= 0)
             throw new IllegalArgumentException("Checkerboard dimensions must be >= 1");
-        }
 
         JsonElement a = readMatcherElement(json, "blocks_a", "block_a");
         JsonElement b = readMatcherElement(json, "blocks_b", "block_b");
-        if (a == null || a.isJsonNull() || b == null || b.isJsonNull()) {
+        if (a == null || a.isJsonNull() || b == null || b.isJsonNull())
             throw new IllegalArgumentException("Checkerboard pattern requires both 'block_a(s)' and 'block_b(s)'");
-        }
         BlockMatcherList matcherA = BlockMatchers.parseMatcherList(a);
         BlockMatcherList matcherB = BlockMatchers.parseMatcherList(b);
 
@@ -49,7 +47,11 @@ public class CheckerboardPatternFactory implements MultiblockPatternFactory {
         return new GridPattern(new BlockPos(width, height, depth), matchers);
     }
 
-    private static JsonElement readMatcherElement(final JsonObject json, final String pluralKey, final String singularKey) {
+    private static JsonElement readMatcherElement(
+        final JsonObject json,
+        final String pluralKey,
+        final String singularKey
+    ) {
         JsonElement matcher = json.get(pluralKey);
         if (matcher == null) {
             matcher = json.get(singularKey);

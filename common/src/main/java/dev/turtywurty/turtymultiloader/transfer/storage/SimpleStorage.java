@@ -16,7 +16,8 @@ import java.util.function.Consumer;
  * General fixed-size storage with per-index capacity, validity, and access policy.
  */
 public class SimpleStorage<V extends ResourceVariant<?>> extends TransactionParticipant<List<SimpleStorage.Slot<V>>>
-    implements MutableResourceStorage<V> {
+    implements
+        MutableResourceStorage<V> {
     private final ResourceType<?> resourceType;
     private final long[] capacities;
     private final TransferSupport[] support;
@@ -26,12 +27,14 @@ public class SimpleStorage<V extends ResourceVariant<?>> extends TransactionPart
     private long version;
 
     public SimpleStorage(ResourceType<?> resourceType, int size, long capacity) {
-        this(resourceType, filled(size, capacity), filled(size, TransferSupport.BOTH), (index, resource) -> true, storage -> {
-        });
+        this(resourceType, filled(size, capacity), filled(size, TransferSupport.BOTH), (index, resource) -> true,
+            storage -> {
+            });
     }
 
     /**
-     * Constructor for storages whose subclasses provide dynamic capacities through {@link #getCapacity(int, ResourceVariant)}.
+     * Constructor for storages whose subclasses provide dynamic capacities through
+     * {@link #getCapacity(int, ResourceVariant)}.
      */
     public SimpleStorage(ResourceType<?> resourceType, int size) {
         this(resourceType, size, 0);

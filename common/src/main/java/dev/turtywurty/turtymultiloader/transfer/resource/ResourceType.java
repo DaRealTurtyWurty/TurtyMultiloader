@@ -14,8 +14,10 @@ import java.util.function.Supplier;
 /**
  * Describes one family of transferable resources.
  *
- * <p>Two types only compare equal when all of their defining semantics match. In particular, reusing an identifier
- * for a different registry, dimension, or empty-value strategy does not make the types interchangeable.</p>
+ * <p>
+ * Two types only compare equal when all of their defining semantics match. In particular, reusing an identifier
+ * for a different registry, dimension, or empty-value strategy does not make the types interchangeable.
+ * </p>
  */
 public final class ResourceType<T> {
     private final Identifier id;

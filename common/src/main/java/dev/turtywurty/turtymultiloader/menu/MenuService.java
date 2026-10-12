@@ -32,9 +32,8 @@ public interface MenuService {
 
     final class ServiceHolder {
         private static final MenuService INSTANCE = ServiceLoader.load(
-                MenuService.class,
-                MenuService.class.getClassLoader()
-            )
+            MenuService.class,
+            MenuService.class.getClassLoader())
             .findFirst()
             .orElseThrow(() -> new IllegalStateException("No menu service is available"));
 

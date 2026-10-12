@@ -10,7 +10,6 @@ public final class MultiblockLibClient {
     public static void initialize() {
         ClientRegistrations.registerBlockEntityRenderer(
             MultiblockLib.MULTIBLOCK_CONTROLLER_ENTITY_HANDLE,
-            context -> new MultiblockControllerBlockEntityRenderer()
-        );
+            context -> new MultiblockControllerBlockEntityRenderer());
     }
 }

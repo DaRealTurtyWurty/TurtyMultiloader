@@ -29,8 +29,7 @@ public final class WorldGeneration {
         WorldGenerationService.get().registerDatapackRegistry(
             Objects.requireNonNull(registryKey, "registryKey"),
             Objects.requireNonNull(datapackCodec, "datapackCodec"),
-            null
-        );
+            null);
     }
 
     public static <T> void registerSyncedDatapackRegistry(
@@ -48,8 +47,7 @@ public final class WorldGeneration {
         WorldGenerationService.get().registerDatapackRegistry(
             Objects.requireNonNull(registryKey, "registryKey"),
             Objects.requireNonNull(datapackCodec, "datapackCodec"),
-            Objects.requireNonNull(networkCodec, "networkCodec")
-        );
+            Objects.requireNonNull(networkCodec, "networkCodec"));
     }
 
     /**
@@ -62,8 +60,7 @@ public final class WorldGeneration {
     ) {
         WorldGenerationService.get().registerBootstrap(
             Objects.requireNonNull(registryKey, "registryKey"),
-            Objects.requireNonNull(bootstrap, "bootstrap")
-        );
+            Objects.requireNonNull(bootstrap, "bootstrap"));
     }
 
     public static void addBootstraps(RegistrySetBuilder builder) {
@@ -81,8 +78,7 @@ public final class WorldGeneration {
         WorldGenerationService.get().registerBuiltInDatapack(
             Objects.requireNonNull(id, "id"),
             Objects.requireNonNull(displayName, "displayName"),
-            Objects.requireNonNull(activation, "activation")
-        );
+            Objects.requireNonNull(activation, "activation"));
     }
 
     public static void addFeature(
@@ -95,8 +91,7 @@ public final class WorldGeneration {
             Objects.requireNonNull(modificationId, "modificationId"),
             Objects.requireNonNull(selector, "selector"),
             Objects.requireNonNull(step, "step"),
-            Objects.requireNonNull(feature, "feature")
-        );
+            Objects.requireNonNull(feature, "feature"));
     }
 
     public static void removeFeature(
@@ -109,8 +104,7 @@ public final class WorldGeneration {
             Objects.requireNonNull(modificationId, "modificationId"),
             Objects.requireNonNull(selector, "selector"),
             Objects.requireNonNull(step, "step"),
-            Objects.requireNonNull(feature, "feature")
-        );
+            Objects.requireNonNull(feature, "feature"));
     }
 
     public static void addSpawn(
@@ -129,8 +123,7 @@ public final class WorldGeneration {
             Objects.requireNonNull(entityType, "entityType"),
             weight,
             minimumGroupSize,
-            maximumGroupSize
-        );
+            maximumGroupSize);
     }
 
     public static void removeSpawn(
@@ -141,7 +134,6 @@ public final class WorldGeneration {
         WorldGenerationService.get().removeSpawn(
             Objects.requireNonNull(modificationId, "modificationId"),
             Objects.requireNonNull(selector, "selector"),
-            Objects.requireNonNull(entityType, "entityType")
-        );
+            Objects.requireNonNull(entityType, "entityType"));
     }
 }

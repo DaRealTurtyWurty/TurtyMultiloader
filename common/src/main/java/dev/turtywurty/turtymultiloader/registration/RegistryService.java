@@ -90,7 +90,7 @@ public interface RegistryService {
         TreeGrower treeGrower,
         Consumer<WoodSetBuilder> configuration
     ) {
-        WoodSetBuilder builder = new WoodSetBuilder(this, id, treeGrower);
+        var builder = new WoodSetBuilder(this, id, treeGrower);
         Objects.requireNonNull(configuration, "configuration").accept(builder);
         return builder.build();
     }
@@ -158,8 +158,7 @@ public interface RegistryService {
         ResourceKey<EntityType<?>> key = ResourceKey.create(Registries.ENTITY_TYPE, id);
         RegistrationHandle<EntityType<?>, EntityType<T>> result = registerEntityType(
             id,
-            () -> builder.build(key)
-        );
+            () -> builder.build(key));
         registerEntityAttributes(result, builder.attributes());
         builder.registerSpawns(result);
         return result;
@@ -207,13 +206,17 @@ public interface RegistryService {
         return register(Registries.DATA_COMPONENT_TYPE, id, factory);
     }
 
-    default <T extends ConsumeEffect> RegistrationHandle<ConsumeEffect.Type<?>, ConsumeEffect.Type<T>>
-    registerConsumeEffectType(Identifier id, Supplier<? extends ConsumeEffect.Type<T>> factory) {
+    default <T extends ConsumeEffect> RegistrationHandle<ConsumeEffect.Type<?>, ConsumeEffect.Type<T>> registerConsumeEffectType(
+        Identifier id,
+        Supplier<? extends ConsumeEffect.Type<T>> factory
+    ) {
         return register(Registries.CONSUME_EFFECT_TYPE, id, factory);
     }
 
-    default <T extends PositionSource> RegistrationHandle<PositionSourceType<?>, PositionSourceType<T>>
-    registerPositionSourceType(Identifier id, Supplier<? extends PositionSourceType<T>> factory) {
+    default <T extends PositionSource> RegistrationHandle<PositionSourceType<?>, PositionSourceType<T>> registerPositionSourceType(
+        Identifier id,
+        Supplier<? extends PositionSourceType<T>> factory
+    ) {
         return register(Registries.POSITION_SOURCE_TYPE, id, factory);
     }
 
@@ -269,9 +272,8 @@ public interface RegistryService {
 
     final class ServiceHolder {
         private static final RegistryService INSTANCE = ServiceLoader.load(
-                RegistryService.class,
-                RegistryService.class.getClassLoader()
-            )
+            RegistryService.class,
+            RegistryService.class.getClassLoader())
             .findFirst()
             .orElseThrow(() -> new IllegalStateException("No registry service is available"));
 

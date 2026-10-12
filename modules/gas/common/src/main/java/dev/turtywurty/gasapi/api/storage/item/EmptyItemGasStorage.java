@@ -37,11 +37,9 @@ public final class EmptyItemGasStorage implements SingleSlotStorage<ResourceVari
             (empty, insertedGas) -> ResourceVariant.of(
                 ResourceTypes.ITEM,
                 BuiltInRegistries.ITEM.wrapAsHolder(fullItem),
-                empty.components()
-            ),
+                empty.components()),
             insertableGas,
-            insertableAmount
-        );
+            insertableAmount);
     }
 
     public EmptyItemGasStorage(

@@ -17,16 +17,20 @@ import java.util.*;
 /**
  * A live transactional {@link ResourceStorage} view over a vanilla {@link Container}.
  *
- * <p>If the container is a {@link WorldlyContainer} and a side is supplied, only the slots exposed for that side are
+ * <p>
+ * If the container is a {@link WorldlyContainer} and a side is supplied, only the slots exposed for that side are
  * visible and the sided insertion and extraction rules are enforced. The sided slot list is captured when the view
- * is created; call {@link #of(Container, Direction)} again if a container changes its exposed slots dynamically.</p>
+ * is created; call {@link #of(Container, Direction)} again if a container changes its exposed slots dynamically.
+ * </p>
  *
- * <p>All views of the same container share transaction snapshots. A committed root transaction calls
- * {@link Container#setChanged()}, while a transaction closed without committing restores the original stacks.</p>
+ * <p>
+ * All views of the same container share transaction snapshots. A committed root transaction calls
+ * {@link Container#setChanged()}, while a transaction closed without committing restores the original stacks.
+ * </p>
  */
 public final class ContainerStorage implements ResourceStorage<ResourceVariant<Item>> {
-    private static final Map<Container, WeakReference<Backing>> BACKINGS =
-        Collections.synchronizedMap(new WeakHashMap<>());
+    private static final Map<Container, WeakReference<Backing>> BACKINGS = Collections
+        .synchronizedMap(new WeakHashMap<>());
 
     private final Backing backing;
     private final @Nullable Direction direction;
@@ -171,10 +175,12 @@ public final class ContainerStorage implements ResourceStorage<ResourceVariant<I
     }
 
     private static int[] sidedSlots(WorldlyContainer container, Direction direction) {
-        int[] slots = Objects.requireNonNull(container.getSlotsForFace(direction), "getSlotsForFace returned null").clone();
+        int[] slots = Objects.requireNonNull(container.getSlotsForFace(direction), "getSlotsForFace returned null")
+            .clone();
         int containerSize = container.getContainerSize();
-        for (int slot : slots)
+        for (int slot : slots) {
             StoragePreconditions.index(slot, containerSize);
+        }
         return slots;
     }
 
@@ -217,8 +223,9 @@ public final class ContainerStorage implements ResourceStorage<ResourceVariant<I
         protected List<ItemStack> createSnapshot() {
             int size = this.container.getContainerSize();
             List<ItemStack> snapshot = new ArrayList<>(size);
-            for (int slot = 0; slot < size; slot++)
+            for (int slot = 0; slot < size; slot++) {
                 snapshot.add(this.container.getItem(slot).copy());
+            }
             return snapshot;
         }
 
@@ -226,8 +233,9 @@ public final class ContainerStorage implements ResourceStorage<ResourceVariant<I
         protected void restoreSnapshot(List<ItemStack> snapshot) {
             if (this.container.getContainerSize() != snapshot.size())
                 throw new IllegalStateException("Container size changed during a transaction");
-            for (int slot = 0; slot < snapshot.size(); slot++)
+            for (int slot = 0; slot < snapshot.size(); slot++) {
                 this.container.setItem(slot, snapshot.get(slot).copy());
+            }
         }
 
         @Override

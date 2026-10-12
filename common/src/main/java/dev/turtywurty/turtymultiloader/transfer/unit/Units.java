@@ -23,7 +23,6 @@ public final class Units {
             Identifier.fromNamespaceAndPath("turtymultiloader", path),
             dimension,
             symbol,
-            numerator
-        );
+            numerator);
     }
 }

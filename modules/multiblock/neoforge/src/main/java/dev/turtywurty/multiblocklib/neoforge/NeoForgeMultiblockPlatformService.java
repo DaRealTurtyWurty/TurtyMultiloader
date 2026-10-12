@@ -13,8 +13,7 @@ public final class NeoForgeMultiblockPlatformService implements MultiblockPlatfo
     public void registerUseBlock(UseBlockHandler handler) {
         NeoForge.EVENT_BUS.addListener(PlayerInteractEvent.RightClickBlock.class, event -> {
             InteractionResult result = handler.use(
-                event.getEntity(), event.getLevel(), event.getHand(), event.getHitVec()
-            );
+                event.getEntity(), event.getLevel(), event.getHand(), event.getHitVec());
             if (result != InteractionResult.PASS) {
                 event.setCancellationResult(result);
                 event.setCanceled(true);

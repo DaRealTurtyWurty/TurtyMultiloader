@@ -19,7 +19,6 @@ public final class FabricClientMenuService implements ClientMenuService {
     ) {
         MenuScreens.register(
             Objects.requireNonNull(menuType, "menuType").get(),
-            Objects.requireNonNull(screenFactory, "screenFactory")::create
-        );
+            Objects.requireNonNull(screenFactory, "screenFactory")::create);
     }
 }

@@ -5,6 +5,7 @@ import net.minecraft.world.level.storage.LevelResource;
 
 import java.nio.file.Path;
 import java.util.Objects;
+import net.minecraft.server.MinecraftServer;
 
 /**
  * Standard, loader-neutral config file locations.
@@ -22,9 +23,8 @@ public final class ConfigPaths {
             String fileName = id.getNamespace() + '-' + id.getPath().replace('/', '-') + '-'
                 + scope.fileSuffix() + ".json";
             if (scope == ConfigScope.SERVER) {
-                MinecraftServerAccess access = new MinecraftServerAccess(server.orElseThrow(() ->
-                    new IllegalStateException("A server is required to resolve server config " + id)
-                ));
+                var access = new MinecraftServerAccess(server.orElseThrow(
+                    () -> new IllegalStateException("A server is required to resolve server config " + id)));
                 return access.root().resolve("serverconfig").resolve(fileName);
             }
             return Platform.configDirectory().resolve(fileName);
@@ -45,9 +45,12 @@ public final class ConfigPaths {
      */
     public static ConfigPath world(String relativePath) {
         Path relative = safeRelative(relativePath);
-        return (id, scope, server) -> new MinecraftServerAccess(server.orElseThrow(() ->
-            new IllegalStateException("A server is required to resolve world config " + id)
-        )).root().resolve(relative);
+        return (
+            id,
+            scope,
+            server) -> new MinecraftServerAccess(server
+                .orElseThrow(() -> new IllegalStateException("A server is required to resolve world config " + id)))
+                .root().resolve(relative);
     }
 
     /**
@@ -55,9 +58,12 @@ public final class ConfigPaths {
      */
     public static ConfigPath serverConfig(String relativePath) {
         Path relative = safeRelative(relativePath);
-        return (id, scope, server) -> new MinecraftServerAccess(server.orElseThrow(() ->
-            new IllegalStateException("A server is required to resolve server config " + id)
-        )).root().resolve("serverconfig").resolve(relative);
+        return (
+            id,
+            scope,
+            server) -> new MinecraftServerAccess(server
+                .orElseThrow(() -> new IllegalStateException("A server is required to resolve server config " + id)))
+                .root().resolve("serverconfig").resolve(relative);
     }
 
     private static Path safeRelative(String value) {
@@ -70,7 +76,7 @@ public final class ConfigPaths {
         return path;
     }
 
-    private record MinecraftServerAccess(net.minecraft.server.MinecraftServer server) {
+    private record MinecraftServerAccess(MinecraftServer server) {
         private Path root() {
             return server.getWorldPath(LevelResource.ROOT);
         }

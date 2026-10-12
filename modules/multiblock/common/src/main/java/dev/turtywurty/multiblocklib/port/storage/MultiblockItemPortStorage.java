@@ -24,9 +24,8 @@ public class MultiblockItemPortStorage extends SimpleSingleSlotStorage<ResourceV
     }
 
     public ItemStack getStoredStack() {
-        if (getAmount() == 0) {
+        if (getAmount() == 0)
             return ItemStack.EMPTY;
-        }
         return new ItemStack(getResource().holder(), Math.toIntExact(getAmount()), getResource().components());
     }
 }

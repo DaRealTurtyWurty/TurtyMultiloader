@@ -9,13 +9,15 @@ import net.minecraft.core.Holder;
 /**
  * Common single-slot energy storage with independent capacity, input, and output limits.
  *
- * <p>Public transfer operations apply the per-operation limits. Trusted operations inherited from
+ * <p>
+ * Public transfer operations apply the per-operation limits. Trusted operations inherited from
  * {@link MutableResourceStorage} bypass those automation limits, allowing machine recipes and persistence to mutate
- * the owned energy state transactionally.</p>
+ * the owned energy state transactionally.
+ * </p>
  */
 public class SimpleEnergyStorage extends SimpleSingleSlotStorage<ResourceVariant<UnitResource>> {
-    public static final ResourceVariant<UnitResource> ENERGY =
-        ResourceTypes.ENERGY.of(Holder.direct(UnitResource.VALUE));
+    public static final ResourceVariant<UnitResource> ENERGY = ResourceTypes.ENERGY
+        .of(Holder.direct(UnitResource.VALUE));
 
     protected long capacity;
     protected long maxInput;

@@ -14,8 +14,7 @@ public final class MenuGameTests {
     public static void verifyMenuService(GameTestHelper helper) {
         helper.assertTrue(
             BuiltInRegistries.MENU.getValue(TestModContent.TEST_MENU.id()) == TestModContent.TEST_MENU.get(),
-            "Extended menu was not registered through the menu service"
-        );
+            "Extended menu was not registered through the menu service");
 
         long[] longValue = {0x12345678FEDCBA98L};
         double[] doubleValue = {Math.PI};
@@ -42,8 +41,7 @@ public final class MenuGameTests {
         applyOverNetwork(data, 4, encodedDouble);
         helper.assertTrue(
             Double.doubleToRawLongBits(doubleValue[0]) == Double.doubleToRawLongBits(expectedDouble),
-            "Double menu data did not survive slot splitting"
-        );
+            "Double menu data did not survive slot splitting");
 
         int expectedFloat = Float.floatToRawIntBits(floatValue[0]);
         int[] encodedFloat = encodedSlots(data, 8, 2);
@@ -51,8 +49,7 @@ public final class MenuGameTests {
         applyOverNetwork(data, 8, encodedFloat);
         helper.assertTrue(
             Float.floatToRawIntBits(floatValue[0]) == expectedFloat,
-            "Float menu data did not survive slot splitting"
-        );
+            "Float menu data did not survive slot splitting");
 
         data.set(10, 0);
         helper.assertTrue(!booleanValue[0], "Boolean menu data did not decode zero as false");
@@ -64,8 +61,9 @@ public final class MenuGameTests {
 
     private static int[] encodedSlots(MenuDataSlots data, int start, int count) {
         int[] encoded = new int[count];
-        for (int index = 0; index < count; index++)
+        for (int index = 0; index < count; index++) {
             encoded[index] = data.get(start + index);
+        }
         return encoded;
     }
 
@@ -73,7 +71,8 @@ public final class MenuGameTests {
      * Simulates ClientboundContainerSetDataPacket's writeShort/readShort truncation.
      */
     private static void applyOverNetwork(MenuDataSlots data, int start, int[] encoded) {
-        for (int index = 0; index < encoded.length; index++)
+        for (int index = 0; index < encoded.length; index++) {
             data.set(start + index, (short) encoded[index]);
+        }
     }
 }

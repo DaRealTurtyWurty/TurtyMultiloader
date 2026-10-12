@@ -67,13 +67,16 @@ public class MultiblockControllerBlockEntity extends BlockEntity {
         super(type, pos, state);
     }
 
-    public static void tick(final Level level, final BlockPos pos, final BlockState state, final MultiblockControllerBlockEntity controller) {
-        if (!(level instanceof ServerLevel serverLevel)) {
+    public static void tick(
+        final Level level,
+        final BlockPos pos,
+        final BlockState state,
+        final MultiblockControllerBlockEntity controller
+    ) {
+        if (!(level instanceof ServerLevel serverLevel))
             return;
-        }
-        if (!controller.isFormed()) {
+        if (!controller.isFormed())
             return;
-        }
         if (!controller.breaking && !controller.isStructureIntact(serverLevel)) {
             controller.breakMultiblock();
             return;
@@ -82,7 +85,11 @@ public class MultiblockControllerBlockEntity extends BlockEntity {
         controller.pushOutputs(serverLevel);
     }
 
-    public void configure(final Identifier definitionId, final List<MultiblockPartEntry> parts, final List<PortInstance> ports) {
+    public void configure(
+        final Identifier definitionId,
+        final List<MultiblockPartEntry> parts,
+        final List<PortInstance> ports
+    ) {
         this.definitionId = definitionId;
         this.parts.clear();
         this.parts.addAll(parts);
@@ -134,17 +141,15 @@ public class MultiblockControllerBlockEntity extends BlockEntity {
 
     public <T> T getCustomPortStorage(final BlockPos worldPos, final String typeId, final Class<T> clazz) {
         Object storage = getCustomPortStorage(worldPos, typeId);
-        if (!clazz.isInstance(storage)) {
+        if (!clazz.isInstance(storage))
             return null;
-        }
         return clazz.cast(storage);
     }
 
     public ResourceStorage<ResourceVariant<Item>> getItemStorageForExternal(final BlockPos worldPos) {
         PortRuntime port = getPortRuntime(worldPos);
-        if (port == null || port.itemStorage == null) {
+        if (port == null || port.itemStorage == null)
             return null;
-        }
         return port.itemStorage.restrictedTo(externalSupport(port.io));
     }
 
@@ -157,9 +162,8 @@ public class MultiblockControllerBlockEntity extends BlockEntity {
 
     public ResourceStorage<ResourceVariant<Fluid>> getFluidStorageForExternal(final BlockPos worldPos) {
         PortRuntime port = getPortRuntime(worldPos);
-        if (port == null || port.fluidStorage == null) {
+        if (port == null || port.fluidStorage == null)
             return null;
-        }
         return port.fluidStorage.restrictedTo(externalSupport(port.io));
     }
 
@@ -172,9 +176,8 @@ public class MultiblockControllerBlockEntity extends BlockEntity {
 
     public ResourceStorage<ResourceVariant<UnitResource>> getEnergyStorageForExternal(final BlockPos worldPos) {
         PortRuntime port = getPortRuntime(worldPos);
-        if (port == null || port.energyStorage == null) {
+        if (port == null || port.energyStorage == null)
             return null;
-        }
         return port.energyStorage.restrictedTo(externalSupport(port.io));
     }
 
@@ -188,9 +191,8 @@ public class MultiblockControllerBlockEntity extends BlockEntity {
     public List<ResourceStorage<ResourceVariant<Item>>> getItemPorts(final PortIO io) {
         List<ResourceStorage<ResourceVariant<Item>>> result = new ArrayList<>();
         for (PortRuntime runtime : this.portRuntimes) {
-            if (!runtime.matchesIO(io)) {
+            if (!runtime.matchesIO(io))
                 continue;
-            }
             if (runtime.itemStorage != null) {
                 result.add(runtime.itemStorage);
             }
@@ -201,9 +203,8 @@ public class MultiblockControllerBlockEntity extends BlockEntity {
     public List<ResourceStorage<ResourceVariant<Fluid>>> getFluidPorts(final PortIO io) {
         List<ResourceStorage<ResourceVariant<Fluid>>> result = new ArrayList<>();
         for (PortRuntime runtime : this.portRuntimes) {
-            if (!runtime.matchesIO(io)) {
+            if (!runtime.matchesIO(io))
                 continue;
-            }
             if (runtime.fluidStorage != null) {
                 result.add(runtime.fluidStorage);
             }
@@ -214,9 +215,8 @@ public class MultiblockControllerBlockEntity extends BlockEntity {
     public List<ResourceStorage<ResourceVariant<UnitResource>>> getEnergyPorts(final PortIO io) {
         List<ResourceStorage<ResourceVariant<UnitResource>>> result = new ArrayList<>();
         for (PortRuntime runtime : this.portRuntimes) {
-            if (!runtime.matchesIO(io)) {
+            if (!runtime.matchesIO(io))
                 continue;
-            }
             if (runtime.energyStorage != null) {
                 result.add(runtime.energyStorage);
             }
@@ -243,15 +243,13 @@ public class MultiblockControllerBlockEntity extends BlockEntity {
         final BlockPos worldPos,
         final @Nullable Direction worldSide
     ) {
-        if (!isFormed()) {
+        if (!isFormed())
             return null;
-        }
 
         return getDefinedPorts().find(
             transfer,
             getPortLocalOffset(worldPos),
-            getPortLocalSide(worldSide)
-        );
+            getPortLocalSide(worldSide));
     }
 
     public boolean isBreaking() {
@@ -260,7 +258,8 @@ public class MultiblockControllerBlockEntity extends BlockEntity {
 
     @Override
     public void setRemoved() {
-        if (!this.breaking && this.level instanceof ServerLevel serverLevel && serverLevel.isLoaded(this.getBlockPos())) {
+        if (!this.breaking && this.level instanceof ServerLevel serverLevel
+            && serverLevel.isLoaded(this.getBlockPos())) {
             BlockState worldState = serverLevel.getBlockState(this.getBlockPos());
             if (!worldState.is(this.getBlockState().getBlock())) {
                 this.breakMultiblock();
@@ -271,13 +270,11 @@ public class MultiblockControllerBlockEntity extends BlockEntity {
     }
 
     public void breakMultiblock() {
-        if (this.breaking) {
+        if (this.breaking)
             return;
-        }
         Level level = this.getLevel();
-        if (!(level instanceof ServerLevel serverLevel)) {
+        if (!(level instanceof ServerLevel serverLevel))
             return;
-        }
 
         this.breaking = true;
         List<MultiblockPartEntry> partsToRestore = new ArrayList<>(this.parts);
@@ -285,16 +282,14 @@ public class MultiblockControllerBlockEntity extends BlockEntity {
             MultiblockWorldData data = MultiblockWorldData.get(serverLevel);
             data.removePartsForController(this.getBlockPos());
             for (MultiblockPartEntry entry : partsToRestore) {
-                if (entry.offset().equals(BlockPos.ZERO)) {
+                if (entry.offset().equals(BlockPos.ZERO))
                     continue;
-                }
                 BlockPos worldPos = this.getBlockPos().offset(entry.offset());
                 level.setBlock(worldPos, entry.state(), 3);
             }
             for (MultiblockPartEntry entry : partsToRestore) {
-                if (!entry.offset().equals(BlockPos.ZERO)) {
+                if (!entry.offset().equals(BlockPos.ZERO))
                     continue;
-                }
                 BlockPos worldPos = this.getBlockPos();
                 level.setBlock(worldPos, entry.state(), 3);
             }
@@ -309,15 +304,13 @@ public class MultiblockControllerBlockEntity extends BlockEntity {
             BlockPos worldPos = this.getBlockPos().offset(entry.offset());
             BlockState state = level.getBlockState(worldPos);
             if (entry.offset().equals(BlockPos.ZERO)) {
-                if (!MultiblockLib.isControllerBlock(state.getBlock())) {
+                if (!MultiblockLib.isControllerBlock(state.getBlock()))
                     return false;
-                }
                 continue;
             }
 
-            if (!state.is(MultiblockLib.MULTIBLOCK_PART)) {
+            if (!state.is(MultiblockLib.MULTIBLOCK_PART))
                 return false;
-            }
         }
         return true;
     }
@@ -371,7 +364,7 @@ public class MultiblockControllerBlockEntity extends BlockEntity {
         this.portRuntimes.clear();
         this.portByOffset.clear();
         for (PortInstance port : this.ports) {
-            PortRuntime runtime = new PortRuntime(port.offset(), port.types(), port.io(), this::setChanged);
+            var runtime = new PortRuntime(port.offset(), port.types(), port.io(), this::setChanged);
             this.portRuntimes.add(runtime);
             this.portByOffset.put(port.offset(), runtime);
         }
@@ -405,7 +398,8 @@ public class MultiblockControllerBlockEntity extends BlockEntity {
                 for (Map.Entry<String, Object> customEntry : runtime.customStorages.entrySet()) {
                     PortType type = PortTypeRegistry.get(customEntry.getKey());
                     if (type == null) {
-                        MultiblockLib.LOGGER.warn("Unable to save custom port storage for unknown type '{}'", customEntry.getKey());
+                        MultiblockLib.LOGGER.warn("Unable to save custom port storage for unknown type '{}'",
+                            customEntry.getKey());
                         continue;
                     }
 
@@ -420,13 +414,11 @@ public class MultiblockControllerBlockEntity extends BlockEntity {
     private void loadPortStorage(final ValueInput input) {
         for (ValueInput child : input.childrenListOrEmpty("port_data")) {
             BlockPos offset = child.read("offset", BlockPos.CODEC).orElse(null);
-            if (offset == null) {
+            if (offset == null)
                 continue;
-            }
             PortRuntime runtime = this.portByOffset.get(offset);
-            if (runtime == null) {
+            if (runtime == null)
                 continue;
-            }
             if (runtime.itemStorage != null) {
                 child.read("item", ItemStack.CODEC).ifPresent(runtime.itemStorage::loadStack);
             }
@@ -438,27 +430,28 @@ public class MultiblockControllerBlockEntity extends BlockEntity {
                 try (TransferTransaction transaction = TransferTransaction.openRoot()) {
                     runtime.energyStorage.setAmount(
                         Math.min(energy, runtime.energyStorage.getCapacity()),
-                        transaction
-                    );
+                        transaction);
                     transaction.commit();
                 }
             }
             for (ValueInput customChild : child.childrenListOrEmpty("custom")) {
                 String typeId = customChild.getString("type").orElse(null);
-                if (typeId == null || typeId.isBlank()) {
+                if (typeId == null || typeId.isBlank())
                     continue;
-                }
 
                 String normalizedTypeId = normalizeTypeId(typeId);
                 PortType type = PortTypeRegistry.get(normalizedTypeId);
                 if (type == null) {
-                    MultiblockLib.LOGGER.warn("Unable to load custom port storage for unknown type '{}'", normalizedTypeId);
+                    MultiblockLib.LOGGER.warn("Unable to load custom port storage for unknown type '{}'",
+                        normalizedTypeId);
                     continue;
                 }
 
                 Object storage = runtime.customStorages.get(normalizedTypeId);
                 if (storage == null) {
-                    MultiblockLib.LOGGER.warn("Unable to load custom port storage for type '{}' at {} because no runtime storage exists", normalizedTypeId, this.getBlockPos().offset(runtime.offset));
+                    MultiblockLib.LOGGER.warn(
+                        "Unable to load custom port storage for type '{}' at {} because no runtime storage exists",
+                        normalizedTypeId, this.getBlockPos().offset(runtime.offset));
                     continue;
                 }
 
@@ -471,21 +464,18 @@ public class MultiblockControllerBlockEntity extends BlockEntity {
         pushDefinedOutputs(level);
 
         for (PortRuntime runtime : this.portRuntimes) {
-            if (runtime.io != PortIO.OUTPUT) {
+            if (runtime.io != PortIO.OUTPUT)
                 continue;
-            }
             BlockPos worldPos = this.getBlockPos().offset(runtime.offset);
             for (Direction direction : Direction.values()) {
                 BlockPos targetPos = worldPos.relative(direction);
                 Direction toTarget = direction.getOpposite();
-                if (isPartOfThisMultiblock(targetPos)) {
+                if (isPartOfThisMultiblock(targetPos))
                     continue;
-                }
 
                 if (runtime.itemStorage != null) {
                     ResourceStorage<ResourceVariant<Item>> target = TransferService.get().findBlock(
-                        StorageKeys.ITEM, level, targetPos, toTarget
-                    );
+                        StorageKeys.ITEM, level, targetPos, toTarget);
                     if (target != null) {
                         moveFirst(runtime.itemStorage, target, OUTPUT_ITEM_PUSH);
                     }
@@ -493,8 +483,7 @@ public class MultiblockControllerBlockEntity extends BlockEntity {
 
                 if (runtime.fluidStorage != null) {
                     ResourceStorage<ResourceVariant<Fluid>> target = TransferService.get().findBlock(
-                        StorageKeys.FLUID, level, targetPos, toTarget
-                    );
+                        StorageKeys.FLUID, level, targetPos, toTarget);
                     if (target != null) {
                         moveFirst(runtime.fluidStorage, target, OUTPUT_FLUID_PUSH);
                     }
@@ -502,8 +491,7 @@ public class MultiblockControllerBlockEntity extends BlockEntity {
 
                 if (runtime.energyStorage != null) {
                     ResourceStorage<ResourceVariant<UnitResource>> target = TransferService.get().findBlock(
-                        StorageKeys.ENERGY, level, targetPos, toTarget
-                    );
+                        StorageKeys.ENERGY, level, targetPos, toTarget);
                     if (target != null) {
                         moveFirst(runtime.energyStorage, target, OUTPUT_ENERGY_PUSH);
                     }
@@ -522,23 +510,20 @@ public class MultiblockControllerBlockEntity extends BlockEntity {
 
     private <S> void pushDefinedOutput(final ServerLevel level, final PortBinding<S> binding) {
         S source = binding.storage().get();
-        if (source == null) {
+        if (source == null)
             return;
-        }
 
         for (MultiblockPartEntry part : this.parts) {
             BlockPos portPos = this.getBlockPos().offset(part.offset());
             BlockPos localOffset = getPortLocalOffset(portPos);
             for (Direction worldSide : Direction.values()) {
                 Direction localSide = getPortLocalSide(worldSide);
-                if (!binding.exposes(localOffset, localSide)) {
+                if (!binding.exposes(localOffset, localSide))
                     continue;
-                }
 
                 BlockPos targetPos = portPos.relative(worldSide);
-                if (isPartOfThisMultiblock(targetPos)) {
+                if (isPartOfThisMultiblock(targetPos))
                     continue;
-                }
 
                 S target = binding.transfer().find(level, targetPos, worldSide.getOpposite());
                 if (target != null) {
@@ -554,9 +539,8 @@ public class MultiblockControllerBlockEntity extends BlockEntity {
         final long maxAmount
     ) {
         for (int index = 0; index < source.size(); index++) {
-            if (source.amount(index) <= 0) {
+            if (source.amount(index) <= 0)
                 continue;
-            }
             source.moveTo(target, source.resource(index), maxAmount);
             return;
         }
@@ -564,7 +548,7 @@ public class MultiblockControllerBlockEntity extends BlockEntity {
 
     private PortRegistrar getDefinedPorts() {
         if (this.definedPorts == null) {
-            PortRegistrar registrar = new PortRegistrar();
+            var registrar = new PortRegistrar();
             definePorts(registrar);
             this.definedPorts = registrar;
         }
@@ -588,33 +572,40 @@ public class MultiblockControllerBlockEntity extends BlockEntity {
         private PortRuntime(final BlockPos offset, final Set<String> types, final PortIO io, final Runnable onChange) {
             this.offset = offset;
             this.io = io;
-            Set<String> normalized = types.stream().map(type -> type.toLowerCase(Locale.ROOT)).collect(Collectors.toSet());
-            this.itemStorage = normalized.contains("item") ? new MultiblockItemPortStorage(DEFAULT_ITEM_CAPACITY, io, onChange) : null;
-            this.fluidStorage = normalized.contains("fluid") ? new MultiblockFluidPortStorage(DEFAULT_FLUID_CAPACITY, io, onChange) : null;
-            this.energyStorage = normalized.contains("energy") ? new MultiblockEnergyPortStorage(DEFAULT_ENERGY_CAPACITY, io, onChange) : null;
+            Set<String> normalized = types.stream().map(type -> type.toLowerCase(Locale.ROOT))
+                .collect(Collectors.toSet());
+            this.itemStorage = normalized.contains("item")
+                ? new MultiblockItemPortStorage(DEFAULT_ITEM_CAPACITY, io, onChange)
+                : null;
+            this.fluidStorage = normalized.contains("fluid")
+                ? new MultiblockFluidPortStorage(DEFAULT_FLUID_CAPACITY, io, onChange)
+                : null;
+            this.energyStorage = normalized.contains("energy")
+                ? new MultiblockEnergyPortStorage(DEFAULT_ENERGY_CAPACITY, io, onChange)
+                : null;
             this.customStorages = new HashMap<>();
             for (String typeId : normalized) {
-                if (typeId.equals("item") || typeId.equals("fluid") || typeId.equals("energy")) {
+                if (typeId.equals("item") || typeId.equals("fluid") || typeId.equals("energy"))
                     continue;
-                }
                 PortType type = PortTypeRegistry.get(typeId);
                 if (type == null) {
-                    MultiblockLib.LOGGER.warn("Ignoring unknown custom port type '{}' for port offset {}", typeId, offset);
+                    MultiblockLib.LOGGER.warn("Ignoring unknown custom port type '{}' for port offset {}", typeId,
+                        offset);
                     continue;
                 }
                 Object storage = type.createStorage(io, onChange);
                 if (storage != null) {
                     this.customStorages.put(typeId, storage);
                 } else {
-                    MultiblockLib.LOGGER.warn("Custom port type '{}' returned null storage for port offset {}", typeId, offset);
+                    MultiblockLib.LOGGER.warn("Custom port type '{}' returned null storage for port offset {}", typeId,
+                        offset);
                 }
             }
         }
 
         private boolean matchesIO(final PortIO io) {
-            if (io == null) {
+            if (io == null)
                 return true;
-            }
             return this.io == PortIO.BOTH || this.io == io;
         }
     }

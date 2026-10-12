@@ -25,7 +25,8 @@ public final class GasVariantAttributes {
     }
 
     public static synchronized void register(Gas gas, GasVariantAttributeHandler handler) {
-        if (HANDLERS.putIfAbsent(Objects.requireNonNull(gas, "gas"), Objects.requireNonNull(handler, "handler")) != null)
+        if (HANDLERS.putIfAbsent(Objects.requireNonNull(gas, "gas"),
+            Objects.requireNonNull(handler, "handler")) != null)
             throw new IllegalArgumentException("Duplicate handler registration for gas " + gas);
     }
 

@@ -24,22 +24,18 @@ public final class TestModNeoForge {
         TransferService.get().apply();
 
         modBus.addListener(RegisterGameTestsEvent.class, TestModNeoForge::registerGameTests);
-        modBus.addListener(GatherDataRegistryEntriesEvent.class, event ->
-            NeoForgeDataGeneration.run(event, TestDataGeneration.SPEC)
-        );
-        modBus.addListener(GatherDataEvent.Client.class, event ->
-            NeoForgeDataGeneration.run(event, TestDataGeneration.SPEC)
-        );
-        modBus.addListener(GatherDataEvent.Server.class, event ->
-            NeoForgeDataGeneration.run(event, TestDataGeneration.SPEC)
-        );
+        modBus.addListener(GatherDataRegistryEntriesEvent.class,
+            event -> NeoForgeDataGeneration.run(event, TestDataGeneration.SPEC));
+        modBus.addListener(GatherDataEvent.Client.class,
+            event -> NeoForgeDataGeneration.run(event, TestDataGeneration.SPEC));
+        modBus.addListener(GatherDataEvent.Server.class,
+            event -> NeoForgeDataGeneration.run(event, TestDataGeneration.SPEC));
     }
 
     private static void registerGameTests(RegisterGameTestsEvent event) {
         var environment = event.registerEnvironment(
             Identifier.fromNamespaceAndPath(TestModContent.MOD_ID, "default"),
-            new TestEnvironmentDefinition.AllOf()
-        );
+            new TestEnvironmentDefinition.AllOf());
         var testData = new TestData<>(environment, RegistryGameTests.EMPTY_STRUCTURE, 20, 0, true);
         event.registerTest(
             RegistryGameTests.TEST_ID,
@@ -48,8 +44,7 @@ public final class TestModNeoForge {
                 public void run(GameTestHelper helper) {
                     RegistryGameTests.verifyRegistryService(helper);
                 }
-            }
-        );
+            });
         event.registerTest(
             MultiblockModuleGameTests.TEST_ID,
             new FunctionGameTestInstance(BuiltinTestFunctions.ALWAYS_PASS, testData) {
@@ -57,8 +52,7 @@ public final class TestModNeoForge {
                 public void run(GameTestHelper helper) {
                     MultiblockModuleGameTests.verifyModule(helper);
                 }
-            }
-        );
+            });
         var menuTestData = new TestData<>(environment, RegistryGameTests.EMPTY_STRUCTURE, 20, 0, true);
         event.registerTest(
             MenuGameTests.TEST_ID,
@@ -67,8 +61,7 @@ public final class TestModNeoForge {
                 public void run(GameTestHelper helper) {
                     MenuGameTests.verifyMenuService(helper);
                 }
-            }
-        );
+            });
         var attachmentTestData = new TestData<>(environment, RegistryGameTests.EMPTY_STRUCTURE, 20, 0, true);
         event.registerTest(
             AttachmentGameTests.TEST_ID,
@@ -77,8 +70,7 @@ public final class TestModNeoForge {
                 public void run(GameTestHelper helper) {
                     AttachmentGameTests.verifyAttachmentService(helper);
                 }
-            }
-        );
+            });
         var transferTestData = new TestData<>(environment, RegistryGameTests.EMPTY_STRUCTURE, 20, 0, true);
         event.registerTest(
             TransferGameTests.TEST_ID,
@@ -87,8 +79,7 @@ public final class TestModNeoForge {
                 public void run(GameTestHelper helper) {
                     TransferGameTests.verifyTransferService(helper);
                 }
-            }
-        );
+            });
         event.registerTest(
             NeoForgeTransferGameTests.TEST_ID,
             new FunctionGameTestInstance(BuiltinTestFunctions.ALWAYS_PASS, transferTestData) {
@@ -96,8 +87,7 @@ public final class TestModNeoForge {
                 public void run(GameTestHelper helper) {
                     NeoForgeTransferGameTests.verifyNestedTransaction(helper);
                 }
-            }
-        );
+            });
         event.registerTest(
             NeoForgeTransferGameTests.LONG_TRANSFER_TEST_ID,
             new FunctionGameTestInstance(BuiltinTestFunctions.ALWAYS_PASS, transferTestData) {
@@ -105,8 +95,7 @@ public final class TestModNeoForge {
                 public void run(GameTestHelper helper) {
                     NeoForgeTransferGameTests.verifyLongTransferIsBounded(helper);
                 }
-            }
-        );
+            });
         var worldGenerationTestData = new TestData<>(environment, RegistryGameTests.EMPTY_STRUCTURE, 20, 0, true);
         event.registerTest(
             WorldGenerationGameTests.TEST_ID,
@@ -115,8 +104,7 @@ public final class TestModNeoForge {
                 public void run(GameTestHelper helper) {
                     WorldGenerationGameTests.verifyWorldGenerationService(helper);
                 }
-            }
-        );
+            });
         var configTestData = new TestData<>(environment, RegistryGameTests.EMPTY_STRUCTURE, 20, 0, true);
         event.registerTest(
             ConfigurationGameTests.TEST_ID,
@@ -125,7 +113,6 @@ public final class TestModNeoForge {
                 public void run(GameTestHelper helper) {
                     ConfigurationGameTests.verifyConfigurationService(helper);
                 }
-            }
-        );
+            });
     }
 }

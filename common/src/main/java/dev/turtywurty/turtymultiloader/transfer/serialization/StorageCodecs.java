@@ -16,8 +16,8 @@ public final class StorageCodecs {
     public static <V extends ResourceVariant<?>> Codec<StorageSnapshot<V>> codec(Codec<V> resourceCodec) {
         Codec<StorageSnapshot.Entry<V>> entryCodec = RecordCodecBuilder.create(instance -> instance.group(
             resourceCodec.fieldOf("resource").forGetter(StorageSnapshot.Entry::resource),
-            Codec.LONG.fieldOf("amount").forGetter(StorageSnapshot.Entry::amount)
-        ).apply(instance, StorageSnapshot.Entry::new));
+            Codec.LONG.fieldOf("amount").forGetter(StorageSnapshot.Entry::amount))
+            .apply(instance, StorageSnapshot.Entry::new));
         return entryCodec.listOf().xmap(StorageSnapshot::new, StorageSnapshot::entries);
     }
 
@@ -29,8 +29,9 @@ public final class StorageCodecs {
             public StorageSnapshot<V> decode(RegistryFriendlyByteBuf buffer) {
                 int size = buffer.readVarInt();
                 List<StorageSnapshot.Entry<V>> entries = new ArrayList<>(size);
-                for (int index = 0; index < size; index++)
+                for (int index = 0; index < size; index++) {
                     entries.add(new StorageSnapshot.Entry<>(resourceCodec.decode(buffer), buffer.readVarLong()));
+                }
                 return new StorageSnapshot<>(entries);
             }
 

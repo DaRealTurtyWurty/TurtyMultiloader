@@ -11,6 +11,7 @@ import net.minecraft.world.inventory.MenuType;
 import java.util.Objects;
 import java.util.OptionalInt;
 import java.util.function.Supplier;
+import net.minecraft.world.MenuProvider;
 
 /**
  * The registry handle and opening-data contract for one extended menu type.
@@ -19,7 +20,7 @@ public final class ExtendedMenuRegistration<M extends AbstractContainerMenu, D> 
     private final RegistrationHandle<MenuType<?>, MenuType<M>> handle;
     private final StreamCodec<? super RegistryFriendlyByteBuf, D> openingDataCodec;
 
-    ExtendedMenuRegistration(
+    protected ExtendedMenuRegistration(
         RegistrationHandle<MenuType<?>, MenuType<M>> handle,
         StreamCodec<? super RegistryFriendlyByteBuf, D> openingDataCodec
     ) {
@@ -49,12 +50,11 @@ public final class ExtendedMenuRegistration<M extends AbstractContainerMenu, D> 
         return open(player, provider, provider.getMenuOpeningData(player));
     }
 
-    public OptionalInt open(ServerPlayer player, net.minecraft.world.MenuProvider provider, D openingData) {
+    public OptionalInt open(ServerPlayer player, MenuProvider provider, D openingData) {
         return MenuService.get().openExtendedMenu(
             Objects.requireNonNull(player, "player"),
             Objects.requireNonNull(provider, "provider"),
             Objects.requireNonNull(openingData, "openingData"),
-            openingDataCodec
-        );
+            openingDataCodec);
     }
 }

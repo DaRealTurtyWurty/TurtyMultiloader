@@ -23,12 +23,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public final class WorldGenerationGameTests {
     public static final Identifier TEST_ID = id("world_generation_service");
     public static final ResourceKey<Registry<TestWorldgenValue>> TEST_REGISTRY = ResourceKey.createRegistryKey(
-        id("test_worldgen_value")
-    );
+        id("test_worldgen_value"));
     public static final ResourceKey<TestWorldgenValue> BOOTSTRAPPED_VALUE = ResourceKey.create(
         TEST_REGISTRY,
-        id("bootstrapped")
-    );
+        id("bootstrapped"));
     private static final AtomicBoolean REGISTERED = new AtomicBoolean();
 
     private WorldGenerationGameTests() {
@@ -41,13 +39,11 @@ public final class WorldGenerationGameTests {
         WorldGeneration.registerDatapackRegistry(TEST_REGISTRY, TestWorldgenValue.CODEC);
         WorldGeneration.registerBootstrap(
             TEST_REGISTRY,
-            context -> context.register(BOOTSTRAPPED_VALUE, new TestWorldgenValue("data-generator bootstrap"))
-        );
+            context -> context.register(BOOTSTRAPPED_VALUE, new TestWorldgenValue("data-generator bootstrap")));
         WorldGeneration.registerBuiltInDatapack(
             id("worldgen_test_pack"),
             Component.literal("TurtyMultiloader world-generation test pack"),
-            BuiltInDatapackActivation.NORMAL
-        );
+            BuiltInDatapackActivation.NORMAL);
 
         // False selectors exercise both code-modifier backends without altering test-world generation or spawns.
         var disabledPlains = BiomeSelectors.foundInOverworld()
@@ -57,8 +53,7 @@ public final class WorldGenerationGameTests {
             id("disabled_feature_addition"),
             disabledPlains,
             GenerationStep.Decoration.UNDERGROUND_ORES,
-            OrePlacements.ORE_COAL_UPPER
-        );
+            OrePlacements.ORE_COAL_UPPER);
         WorldGeneration.addSpawn(
             id("disabled_spawn_addition"),
             disabledPlains,
@@ -66,28 +61,24 @@ public final class WorldGenerationGameTests {
             () -> EntityTypes.COW,
             10,
             2,
-            4
-        );
+            4);
         WorldGeneration.removeSpawn(
             id("disabled_spawn_removal"),
             disabledPlains,
-            () -> EntityTypes.PIG
-        );
+            () -> EntityTypes.PIG);
     }
 
     public static void verifyWorldGenerationService(GameTestHelper helper) {
-        RegistrySetBuilder builder = new RegistrySetBuilder();
+        var builder = new RegistrySetBuilder();
         WorldGeneration.addBootstraps(builder);
         var generatedRegistries = builder.build(RegistryAccess.EMPTY);
         helper.assertValueEqual(
             generatedRegistries.lookupOrThrow(TEST_REGISTRY).getOrThrow(BOOTSTRAPPED_VALUE).value().description(),
             "data-generator bootstrap",
-            "Collected registry bootstrap value"
-        );
+            "Collected registry bootstrap value");
         helper.assertTrue(
             helper.getLevel().registryAccess().lookup(TEST_REGISTRY).isPresent(),
-            "Custom datapack registry was not loaded"
-        );
+            "Custom datapack registry was not loaded");
         helper.succeed();
     }
 
@@ -98,7 +89,6 @@ public final class WorldGenerationGameTests {
     public record TestWorldgenValue(String description) {
         public static final Codec<TestWorldgenValue> CODEC = Codec.STRING.xmap(
             TestWorldgenValue::new,
-            TestWorldgenValue::description
-        );
+            TestWorldgenValue::description);
     }
 }

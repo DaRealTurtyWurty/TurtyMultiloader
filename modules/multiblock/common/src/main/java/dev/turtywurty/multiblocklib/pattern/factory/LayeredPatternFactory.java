@@ -18,16 +18,14 @@ public class LayeredPatternFactory implements MultiblockPatternFactory {
     @Override
     public MultiblockPattern create(final JsonObject json) {
         JsonArray layers = GsonHelper.getAsJsonArray(json, "layers");
-        if (layers.isEmpty()) {
+        if (layers.isEmpty())
             throw new IllegalArgumentException("Layered pattern requires at least one layer");
-        }
 
         int size = GsonHelper.getAsInt(json, "size", 3);
         int width = GsonHelper.getAsInt(json, "width", size);
         int depth = GsonHelper.getAsInt(json, "depth", size);
-        if (width <= 0 || depth <= 0) {
+        if (width <= 0 || depth <= 0)
             throw new IllegalArgumentException("Layered pattern width/depth must be >= 1");
-        }
 
         JsonElement defaultBlocks = readMatcherElement(json, "blocks", "block");
         BlockMatcherList defaultMatcher = defaultBlocks != null && !defaultBlocks.isJsonNull()
@@ -43,11 +41,9 @@ public class LayeredPatternFactory implements MultiblockPatternFactory {
             } else {
                 layerMatcher = BlockMatchers.parseMatcherList(layerElement);
             }
-            if (layerMatcher == null) {
+            if (layerMatcher == null)
                 throw new IllegalArgumentException(
-                    "Layered pattern layer " + y + " is null and no default 'block'/'blocks' is defined"
-                );
-            }
+                    "Layered pattern layer " + y + " is null and no default 'block'/'blocks' is defined");
 
             for (int z = 0; z < depth; z++) {
                 for (int x = 0; x < width; x++) {
@@ -59,7 +55,11 @@ public class LayeredPatternFactory implements MultiblockPatternFactory {
         return new GridPattern(new BlockPos(width, layers.size(), depth), matchers);
     }
 
-    private static JsonElement readMatcherElement(final JsonObject json, final String pluralKey, final String singularKey) {
+    private static JsonElement readMatcherElement(
+        final JsonObject json,
+        final String pluralKey,
+        final String singularKey
+    ) {
         JsonElement matcher = json.get(pluralKey);
         if (matcher == null) {
             matcher = json.get(singularKey);

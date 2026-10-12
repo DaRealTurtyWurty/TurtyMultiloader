@@ -19,7 +19,7 @@ public interface ServerConfigurationTaskContext {
      *
      * @return {@code true} when sent; {@code false} for an unsupported optional payload
      * @throws IllegalStateException if the payload is undeclared, has the wrong phase/direction, or a required
-     *                               payload was not negotiated
+     *             payload was not negotiated
      */
     boolean send(CustomPacketPayload payload);
 

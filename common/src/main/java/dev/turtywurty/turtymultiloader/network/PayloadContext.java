@@ -55,7 +55,8 @@ public interface PayloadContext {
      * acknowledgement payload. It is only valid for a serverbound payload in the configuration phase.
      */
     default void completeConfigurationTask(Identifier taskId) {
-        throw new IllegalStateException("Configuration tasks can only be completed by a serverbound configuration payload");
+        throw new IllegalStateException(
+            "Configuration tasks can only be completed by a serverbound configuration payload");
     }
 
     /**

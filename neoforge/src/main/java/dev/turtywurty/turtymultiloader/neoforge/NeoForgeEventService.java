@@ -46,16 +46,12 @@ public final class NeoForgeEventService implements EventService {
     private final CopyOnWriteArrayList<Consumer<ServerPlayer>> playerJoinCallbacks = new CopyOnWriteArrayList<>();
     private final CopyOnWriteArrayList<Consumer<ServerPlayer>> playerDisconnectCallbacks = new CopyOnWriteArrayList<>();
     private final CopyOnWriteArrayList<Consumer<ServerPlayer>> playerRespawnCallbacks = new CopyOnWriteArrayList<>();
-    private final CopyOnWriteArrayList<PlayerDimensionChangeCallback> playerDimensionChangeCallbacks =
-        new CopyOnWriteArrayList<>();
+    private final CopyOnWriteArrayList<PlayerDimensionChangeCallback> playerDimensionChangeCallbacks = new CopyOnWriteArrayList<>();
     private final CopyOnWriteArrayList<BlockBreakCallback> blockBreakCallbacks = new CopyOnWriteArrayList<>();
     private final CopyOnWriteArrayList<LivingDamageCallback> livingDamageCallbacks = new CopyOnWriteArrayList<>();
-    private final CopyOnWriteArrayList<BiConsumer<LivingEntity, DamageSource>> livingKillCallbacks =
-        new CopyOnWriteArrayList<>();
-    private final CopyOnWriteArrayList<Consumer<CommandDispatcher<CommandSourceStack>>> commandCallbacks =
-        new CopyOnWriteArrayList<>();
-    private final CopyOnWriteArrayList<Consumer<MinecraftServer>> datapackReloadCallbacks =
-        new CopyOnWriteArrayList<>();
+    private final CopyOnWriteArrayList<BiConsumer<LivingEntity, DamageSource>> livingKillCallbacks = new CopyOnWriteArrayList<>();
+    private final CopyOnWriteArrayList<Consumer<CommandDispatcher<CommandSourceStack>>> commandCallbacks = new CopyOnWriteArrayList<>();
+    private final CopyOnWriteArrayList<Consumer<MinecraftServer>> datapackReloadCallbacks = new CopyOnWriteArrayList<>();
 
     public NeoForgeEventService() {
         var bus = NeoForge.EVENT_BUS;
@@ -195,13 +191,15 @@ public final class NeoForgeEventService implements EventService {
     }
 
     private void handleLevelLoad(LevelEvent.Load event) {
-        if (event.getLevel() instanceof ServerLevel level)
+        if (event.getLevel() instanceof ServerLevel level) {
             levelLoadCallbacks.forEach(callback -> callback.accept(level));
+        }
     }
 
     private void handleLevelUnload(LevelEvent.Unload event) {
-        if (event.getLevel() instanceof ServerLevel level)
+        if (event.getLevel() instanceof ServerLevel level) {
             levelUnloadCallbacks.forEach(callback -> callback.accept(level));
+        }
     }
 
     private void handleStartServerTick(ServerTickEvent.Pre event) {
@@ -213,28 +211,33 @@ public final class NeoForgeEventService implements EventService {
     }
 
     private void handleStartLevelTick(LevelTickEvent.Pre event) {
-        if (event.getLevel() instanceof ServerLevel level)
+        if (event.getLevel() instanceof ServerLevel level) {
             startLevelTickCallbacks.forEach(callback -> callback.accept(level));
+        }
     }
 
     private void handleEndLevelTick(LevelTickEvent.Post event) {
-        if (event.getLevel() instanceof ServerLevel level)
+        if (event.getLevel() instanceof ServerLevel level) {
             endLevelTickCallbacks.forEach(callback -> callback.accept(level));
+        }
     }
 
     private void handlePlayerJoin(PlayerEvent.PlayerLoggedInEvent event) {
-        if (event.getEntity() instanceof ServerPlayer player)
+        if (event.getEntity() instanceof ServerPlayer player) {
             playerJoinCallbacks.forEach(callback -> callback.accept(player));
+        }
     }
 
     private void handlePlayerDisconnect(PlayerEvent.PlayerLoggedOutEvent event) {
-        if (event.getEntity() instanceof ServerPlayer player)
+        if (event.getEntity() instanceof ServerPlayer player) {
             playerDisconnectCallbacks.forEach(callback -> callback.accept(player));
+        }
     }
 
     private void handlePlayerRespawn(PlayerEvent.PlayerRespawnEvent event) {
-        if (event.getEntity() instanceof ServerPlayer player)
+        if (event.getEntity() instanceof ServerPlayer player) {
             playerRespawnCallbacks.forEach(callback -> callback.accept(player));
+        }
     }
 
     private void handlePlayerDimensionChange(PlayerEvent.PlayerChangedDimensionEvent event) {
@@ -245,9 +248,7 @@ public final class NeoForgeEventService implements EventService {
         ServerLevel destination = server.getLevel(event.getTo());
         if (origin == null || destination == null)
             return;
-        playerDimensionChangeCallbacks.forEach(callback ->
-            callback.afterDimensionChange(player, origin, destination)
-        );
+        playerDimensionChangeCallbacks.forEach(callback -> callback.afterDimensionChange(player, origin, destination));
     }
 
     private void handleBlockDrops(BlockDropsEvent event) {
@@ -258,8 +259,7 @@ public final class NeoForgeEventService implements EventService {
             player,
             event.getPos(),
             event.getState(),
-            event.getBlockEntity()
-        ));
+            event.getBlockEntity()));
     }
 
     private void handleLivingDamage(LivingDamageEvent.Post event) {
@@ -268,8 +268,7 @@ public final class NeoForgeEventService implements EventService {
         livingDamageCallbacks.forEach(callback -> callback.afterDamage(
             event.getEntity(),
             event.getSource(),
-            event.getHealthDamage()
-        ));
+            event.getHealthDamage()));
     }
 
     private void handleLivingDrops(LivingDropsEvent event) {

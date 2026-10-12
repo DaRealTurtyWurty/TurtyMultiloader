@@ -78,9 +78,8 @@ public interface ClientRegistrationService {
 
     final class ServiceHolder {
         private static final ClientRegistrationService INSTANCE = ServiceLoader.load(
-                ClientRegistrationService.class,
-                ClientRegistrationService.class.getClassLoader()
-            )
+            ClientRegistrationService.class,
+            ClientRegistrationService.class.getClassLoader())
             .findFirst()
             .orElseThrow(() -> new IllegalStateException("No client registration service is available"));
 

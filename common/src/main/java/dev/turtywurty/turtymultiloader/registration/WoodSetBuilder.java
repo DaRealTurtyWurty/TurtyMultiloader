@@ -37,8 +37,8 @@ public final class WoodSetBuilder {
     private final Identifier id;
     private final TreeGrower treeGrower;
     private final Map<BlockType, BlockFactory> blockFactories = new EnumMap<>(BlockType.class);
-    private final Map<BlockType, UnaryOperator<BlockBehaviour.Properties>> propertyOverrides =
-        new EnumMap<>(BlockType.class);
+    private final Map<BlockType, UnaryOperator<BlockBehaviour.Properties>> propertyOverrides = new EnumMap<>(
+        BlockType.class);
     private BiFunction<WoodSetContext, Item.Properties, Item> signItemFactory;
     private BiFunction<WoodSetContext, Item.Properties, Item> hangingSignItemFactory;
     private BiFunction<WoodSetContext, Item.Properties, Item> boatItemFactory;
@@ -188,13 +188,11 @@ public final class WoodSetBuilder {
 
         String base = id.getPath();
         QueuedValue<BlockSetType> blockSetType = registries.registerBlockSetType(
-            () -> blockSetTypeFactory.apply(id.toString())
-        );
+            () -> blockSetTypeFactory.apply(id.toString()));
         QueuedValue<WoodType> woodType = registries.registerWoodType(
-            () -> woodTypeFactory.apply(id.toString(), blockSetType.get())
-        );
+            () -> woodTypeFactory.apply(id.toString(), blockSetType.get()));
         Map<BlockType, RegistrationHandle<Block, Block>> blocks = new EnumMap<>(BlockType.class);
-        WoodSetContext context = new WoodSetContext(id, treeGrower, blockSetType, woodType, blocks);
+        var context = new WoodSetContext(id, treeGrower, blockSetType, woodType, blocks);
 
         BlockWithItem planks = blockWithItem(context, BlockType.PLANKS, base + "_planks", Blocks.OAK_PLANKS,
             (ctx, properties) -> new Block(properties));
@@ -211,19 +209,22 @@ public final class WoodSetBuilder {
         BlockWithItem sapling = blockWithItem(context, BlockType.SAPLING, base + "_sapling", Blocks.OAK_SAPLING,
             (ctx, properties) -> new PublicSaplingBlock(ctx.treeGrower(), properties));
         BlockWithItem stairs = blockWithItem(context, BlockType.STAIRS, base + "_stairs", Blocks.OAK_STAIRS,
-            (ctx, properties) -> new PublicStairBlock(ctx.requiredBlock(BlockType.PLANKS).defaultBlockState(), properties));
+            (ctx, properties) -> new PublicStairBlock(ctx.requiredBlock(BlockType.PLANKS).defaultBlockState(),
+                properties));
         BlockWithItem slab = blockWithItem(context, BlockType.SLAB, base + "_slab", Blocks.OAK_SLAB,
             (ctx, properties) -> new SlabBlock(properties));
         BlockWithItem fence = blockWithItem(context, BlockType.FENCE, base + "_fence", Blocks.OAK_FENCE,
             (ctx, properties) -> new FenceBlock(properties));
-        BlockWithItem fenceGate = blockWithItem(context, BlockType.FENCE_GATE, base + "_fence_gate", Blocks.OAK_FENCE_GATE,
+        BlockWithItem fenceGate = blockWithItem(context, BlockType.FENCE_GATE, base + "_fence_gate",
+            Blocks.OAK_FENCE_GATE,
             (ctx, properties) -> new FenceGateBlock(ctx.woodType().get(), properties));
         BlockWithItem door = blockWithItem(context, BlockType.DOOR, base + "_door", Blocks.OAK_DOOR,
             (ctx, properties) -> new PublicDoorBlock(ctx.blockSetType().get(), properties));
         BlockWithItem trapdoor = blockWithItem(context, BlockType.TRAPDOOR, base + "_trapdoor", Blocks.OAK_TRAPDOOR,
             (ctx, properties) -> new PublicTrapDoorBlock(ctx.blockSetType().get(), properties));
         BlockWithItem pressurePlate = blockWithItem(context, BlockType.PRESSURE_PLATE, base + "_pressure_plate",
-            Blocks.OAK_PRESSURE_PLATE, (ctx, properties) -> new PublicPressurePlateBlock(ctx.blockSetType().get(), properties));
+            Blocks.OAK_PRESSURE_PLATE,
+            (ctx, properties) -> new PublicPressurePlateBlock(ctx.blockSetType().get(), properties));
         BlockWithItem button = blockWithItem(context, BlockType.BUTTON, base + "_button", Blocks.OAK_BUTTON,
             (ctx, properties) -> new PublicButtonBlock(ctx.blockSetType().get(), 30, properties));
 
@@ -232,39 +233,43 @@ public final class WoodSetBuilder {
         RegistrationHandle<Block, Block> wallSign = block(context, BlockType.WALL_SIGN, base + "_wall_sign",
             Blocks.OAK_WALL_SIGN, (ctx, properties) -> new WallSignBlock(ctx.woodType().get(), properties));
         RegistrationHandle<Block, Block> hangingSign = block(context, BlockType.HANGING_SIGN, base + "_hanging_sign",
-            Blocks.OAK_HANGING_SIGN, (ctx, properties) -> new CeilingHangingSignBlock(ctx.woodType().get(), properties));
+            Blocks.OAK_HANGING_SIGN,
+            (ctx, properties) -> new CeilingHangingSignBlock(ctx.woodType().get(), properties));
         RegistrationHandle<Block, Block> wallHangingSign = block(context, BlockType.WALL_HANGING_SIGN,
             base + "_wall_hanging_sign", Blocks.OAK_WALL_HANGING_SIGN,
             (ctx, properties) -> new WallHangingSignBlock(ctx.woodType().get(), properties));
 
         RegistrationHandle<Item, Item> signItem = item(base + "_sign", properties -> signItemFactory == null
-            ? new StandingAndWallBlockItem(sign.get(), wallSign.get(), Direction.DOWN, properties.stacksTo(16).signText())
+            ? new StandingAndWallBlockItem(sign.get(), wallSign.get(), Direction.DOWN,
+                properties.stacksTo(16).signText())
             : signItemFactory.apply(context, properties));
-        RegistrationHandle<Item, Item> hangingSignItem = item(base + "_hanging_sign", properties -> hangingSignItemFactory == null
-            ? new HangingSignItem(hangingSign.get(), wallHangingSign.get(), properties.stacksTo(16).signText())
-            : hangingSignItemFactory.apply(context, properties));
+        RegistrationHandle<Item, Item> hangingSignItem = item(base + "_hanging_sign",
+            properties -> hangingSignItemFactory == null
+                ? new HangingSignItem(hangingSign.get(), wallHangingSign.get(), properties.stacksTo(16).signText())
+                : hangingSignItemFactory.apply(context, properties));
 
         AtomicReference<RegistrationHandle<Item, Item>> boatItemRef = new AtomicReference<>();
         AtomicReference<RegistrationHandle<Item, Item>> chestBoatItemRef = new AtomicReference<>();
         Identifier boatId = child(base + "_boat");
         Identifier chestBoatId = child(base + "_chest_boat");
-        RegistrationHandle<EntityType<?>, EntityType<Boat>> boatEntity = registries.registerEntityType(boatId, () ->
-            boatType.apply(EntityType.Builder.<Boat>of(
-                    (type, level) -> new Boat(type, level, () -> boatItemRef.get().get()), MobCategory.MISC
-                ).noLootTable().sized(1.375F, 0.5625F).eyeHeight(0.5625F).clientTrackingRange(10))
-                .build(ResourceKey.create(Registries.ENTITY_TYPE, boatId))
-        );
-        RegistrationHandle<EntityType<?>, EntityType<ChestBoat>> chestBoatEntity = registries.registerEntityType(chestBoatId, () ->
-            chestBoatType.apply(EntityType.Builder.<ChestBoat>of(
-                    (type, level) -> new ChestBoat(type, level, () -> chestBoatItemRef.get().get()), MobCategory.MISC
-                ).noLootTable().sized(1.375F, 0.5625F).eyeHeight(0.5625F).clientTrackingRange(10))
-                .build(ResourceKey.create(Registries.ENTITY_TYPE, chestBoatId))
-        );
+        RegistrationHandle<EntityType<?>, EntityType<Boat>> boatEntity = registries.registerEntityType(boatId,
+            () -> boatType.apply(EntityType.Builder.<Boat>of(
+                (type, level) -> new Boat(type, level, () -> boatItemRef.get().get()), MobCategory.MISC).noLootTable()
+                .sized(1.375F, 0.5625F).eyeHeight(0.5625F).clientTrackingRange(10))
+                .build(ResourceKey.create(Registries.ENTITY_TYPE, boatId)));
+        RegistrationHandle<EntityType<?>, EntityType<ChestBoat>> chestBoatEntity = registries
+            .registerEntityType(chestBoatId, () -> chestBoatType.apply(EntityType.Builder.<ChestBoat>of(
+                (type, level) -> new ChestBoat(type, level, () -> chestBoatItemRef.get().get()), MobCategory.MISC)
+                .noLootTable().sized(1.375F, 0.5625F).eyeHeight(0.5625F).clientTrackingRange(10))
+                .build(ResourceKey.create(Registries.ENTITY_TYPE, chestBoatId)));
         RegistrationHandle<Item, Item> boatItem = item(base + "_boat", properties -> boatItemFactory == null
-            ? new BoatItem(boatEntity.get(), properties.stacksTo(1)) : boatItemFactory.apply(context, properties));
+            ? new BoatItem(boatEntity.get(), properties.stacksTo(1))
+            : boatItemFactory.apply(context, properties));
         boatItemRef.set(boatItem);
-        RegistrationHandle<Item, Item> chestBoatItem = item(base + "_chest_boat", properties -> chestBoatItemFactory == null
-            ? new BoatItem(chestBoatEntity.get(), properties.stacksTo(1)) : chestBoatItemFactory.apply(context, properties));
+        RegistrationHandle<Item, Item> chestBoatItem = item(base + "_chest_boat",
+            properties -> chestBoatItemFactory == null
+                ? new BoatItem(chestBoatEntity.get(), properties.stacksTo(1))
+                : chestBoatItemFactory.apply(context, properties));
         chestBoatItemRef.set(chestBoatItem);
 
         registerLifecycle(planks, log, strippedLog, strippedWood, wood, leaves, sapling, stairs, slab, fence,
@@ -279,7 +284,11 @@ public final class WoodSetBuilder {
     }
 
     private BlockWithItem blockWithItem(
-        WoodSetContext context, BlockType type, String path, Block copy, BlockFactory fallback
+        WoodSetContext context,
+        BlockType type,
+        String path,
+        Block copy,
+        BlockFactory fallback
     ) {
         RegistrationHandle<Block, Block> block = block(context, type, path, copy, fallback);
         RegistrationHandle<Item, Item> item = item(path, properties -> new BlockItem(block.get(), properties));
@@ -287,7 +296,11 @@ public final class WoodSetBuilder {
     }
 
     private RegistrationHandle<Block, Block> block(
-        WoodSetContext context, BlockType type, String path, Block copy, BlockFactory fallback
+        WoodSetContext context,
+        BlockType type,
+        String path,
+        Block copy,
+        BlockFactory fallback
     ) {
         Identifier blockId = child(path);
         ResourceKey<Block> key = ResourceKey.create(Registries.BLOCK, blockId);
@@ -308,15 +321,29 @@ public final class WoodSetBuilder {
     }
 
     private void registerLifecycle(
-        BlockWithItem planks, BlockWithItem log, BlockWithItem strippedLog, BlockWithItem strippedWood,
-        BlockWithItem wood, BlockWithItem leaves, BlockWithItem sapling, BlockWithItem stairs, BlockWithItem slab,
-        BlockWithItem fence, BlockWithItem fenceGate, BlockWithItem door, BlockWithItem trapdoor,
-        BlockWithItem pressurePlate, BlockWithItem button, RegistrationHandle<Block, Block> sign,
-        RegistrationHandle<Block, Block> wallSign, RegistrationHandle<Block, Block> hangingSign,
+        BlockWithItem planks,
+        BlockWithItem log,
+        BlockWithItem strippedLog,
+        BlockWithItem strippedWood,
+        BlockWithItem wood,
+        BlockWithItem leaves,
+        BlockWithItem sapling,
+        BlockWithItem stairs,
+        BlockWithItem slab,
+        BlockWithItem fence,
+        BlockWithItem fenceGate,
+        BlockWithItem door,
+        BlockWithItem trapdoor,
+        BlockWithItem pressurePlate,
+        BlockWithItem button,
+        RegistrationHandle<Block, Block> sign,
+        RegistrationHandle<Block, Block> wallSign,
+        RegistrationHandle<Block, Block> hangingSign,
         RegistrationHandle<Block, Block> wallHangingSign,
         RegistrationHandle<EntityType<?>, EntityType<Boat>> boatEntity,
         RegistrationHandle<EntityType<?>, EntityType<ChestBoat>> chestBoatEntity,
-        RegistrationHandle<Item, Item> boatItem, RegistrationHandle<Item, Item> chestBoatItem
+        RegistrationHandle<Item, Item> boatItem,
+        RegistrationHandle<Item, Item> chestBoatItem
     ) {
         registries.registerStrippable(log, strippedLog);
         registries.registerStrippable(wood, strippedWood);
@@ -327,10 +354,12 @@ public final class WoodSetBuilder {
         flammable(wood, 5, 5);
         flammable(leaves, 30, 60);
         flammable(sapling, 60, 20);
-        for (BlockWithItem block : List.of(stairs, slab, fence, fenceGate, door, trapdoor, pressurePlate, button))
+        for (BlockWithItem block : List.of(stairs, slab, fence, fenceGate, door, trapdoor, pressurePlate, button)) {
             flammable(block, 5, 20);
-        for (RegistrationHandle<Block, Block> block : List.of(sign, wallSign, hangingSign, wallHangingSign))
+        }
+        for (RegistrationHandle<Block, Block> block : List.of(sign, wallSign, hangingSign, wallHangingSign)) {
             registries.registerFlammable(block, 5, 20);
+        }
         registries.addBlockEntityValidBlocks(() -> BlockEntityTypes.SIGN,
             List.of(sign, wallSign));
         registries.addBlockEntityValidBlocks(() -> BlockEntityTypes.HANGING_SIGN,
@@ -348,8 +377,24 @@ public final class WoodSetBuilder {
     }
 
     public enum BlockType {
-        PLANKS, LOG, STRIPPED_LOG, STRIPPED_WOOD, WOOD, LEAVES, SAPLING, STAIRS, SLAB, FENCE,
-        FENCE_GATE, DOOR, TRAPDOOR, PRESSURE_PLATE, BUTTON, SIGN, WALL_SIGN, HANGING_SIGN,
+        PLANKS,
+        LOG,
+        STRIPPED_LOG,
+        STRIPPED_WOOD,
+        WOOD,
+        LEAVES,
+        SAPLING,
+        STAIRS,
+        SLAB,
+        FENCE,
+        FENCE_GATE,
+        DOOR,
+        TRAPDOOR,
+        PRESSURE_PLATE,
+        BUTTON,
+        SIGN,
+        WALL_SIGN,
+        HANGING_SIGN,
         WALL_HANGING_SIGN
     }
 

@@ -20,23 +20,18 @@ public class PyramidPatternFactory implements MultiblockPatternFactory {
         int topRadius = GsonHelper.getAsInt(json, "top_radius", 0);
         int defaultHeight = baseRadius - topRadius + 1;
         int height = GsonHelper.getAsInt(json, "height", defaultHeight);
-        if (baseRadius < 0) {
+        if (baseRadius < 0)
             throw new IllegalArgumentException("Pyramid base_radius must be >= 0");
-        }
-        if (topRadius < 0) {
+        if (topRadius < 0)
             throw new IllegalArgumentException("Pyramid top_radius must be >= 0");
-        }
-        if (topRadius > baseRadius) {
+        if (topRadius > baseRadius)
             throw new IllegalArgumentException("Pyramid top_radius must be <= base_radius");
-        }
-        if (height <= 0) {
+        if (height <= 0)
             throw new IllegalArgumentException("Pyramid height must be >= 1");
-        }
 
         JsonElement blocks = readMatcherElement(json, "blocks", "block");
-        if (blocks == null || blocks.isJsonNull()) {
+        if (blocks == null || blocks.isJsonNull())
             throw new IllegalArgumentException("Pyramid pattern requires 'block' or 'blocks' to be defined");
-        }
         BlockMatcherList matcher = BlockMatchers.parseMatcherList(blocks);
 
         Map<BlockPos, BlockMatcherList> matchers = new HashMap<>();
@@ -58,7 +53,11 @@ public class PyramidPatternFactory implements MultiblockPatternFactory {
         return new GridPattern(new BlockPos(width, height, width), matchers);
     }
 
-    private static JsonElement readMatcherElement(final JsonObject json, final String pluralKey, final String singularKey) {
+    private static JsonElement readMatcherElement(
+        final JsonObject json,
+        final String pluralKey,
+        final String singularKey
+    ) {
         JsonElement matcher = json.get(pluralKey);
         if (matcher == null) {
             matcher = json.get(singularKey);

@@ -6,9 +6,11 @@ import dev.turtywurty.turtymultiloader.transfer.transaction.TransferContext;
 /**
  * Machine-owned storage with a trusted mutation path.
  *
- * <p>The internal operations deliberately bypass the storage's externally advertised
+ * <p>
+ * The internal operations deliberately bypass the storage's externally advertised
  * {@link TransferSupport}. They still enforce resource type, validity, and capacity invariants and participate in the
- * supplied transaction. These methods must not be exposed directly to external automation.</p>
+ * supplied transaction. These methods must not be exposed directly to external automation.
+ * </p>
  */
 public interface MutableResourceStorage<V extends ResourceVariant<?>> extends ResourceStorage<V> {
     long insertInternal(int index, V resource, long maxAmount, TransferContext transaction);
@@ -25,16 +27,18 @@ public interface MutableResourceStorage<V extends ResourceVariant<?>> extends Re
     default long insertInternal(V resource, long maxAmount, TransferContext transaction) {
         StoragePreconditions.check(resource, maxAmount);
         long inserted = 0;
-        for (int index = 0; index < size() && inserted < maxAmount; index++)
+        for (int index = 0; index < size() && inserted < maxAmount; index++) {
             inserted += insertInternal(index, resource, maxAmount - inserted, transaction);
+        }
         return inserted;
     }
 
     default long extractInternal(V resource, long maxAmount, TransferContext transaction) {
         StoragePreconditions.check(resource, maxAmount);
         long extracted = 0;
-        for (int index = 0; index < size() && extracted < maxAmount; index++)
+        for (int index = 0; index < size() && extracted < maxAmount; index++) {
             extracted += extractInternal(index, resource, maxAmount - extracted, transaction);
+        }
         return extracted;
     }
 }

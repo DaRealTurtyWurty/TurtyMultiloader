@@ -23,8 +23,7 @@ public final class SlurryApi {
 
     public static final CustomRegistry<Slurry> SLURRIES = RegistryService.get().customRegistry(
         id("slurries"),
-        CustomRegistryOptions.DEFAULT.withSync()
-    );
+        CustomRegistryOptions.DEFAULT.withSync());
     public static final RegistrationHandle<Slurry, Slurry> EMPTY = register("empty");
 
     public static final UnitDimension DIMENSION = UnitDimension.of(id("slurry"));
@@ -39,17 +38,15 @@ public final class SlurryApi {
         EMPTY::holder,
         UNIT,
         RegistryFixedCodec.create(SLURRIES.key()),
-        ByteBufCodecs.holderRegistry(SLURRIES.key())
-    );
+        ByteBufCodecs.holderRegistry(SLURRIES.key()));
     private static boolean initialized;
 
     private SlurryApi() {
     }
 
     public static synchronized void initialize() {
-        if (initialized) {
+        if (initialized)
             return;
-        }
 
         initialized = true;
         TransferService.get().registerStorageKey(RESOURCE_FAMILY.storageKey());

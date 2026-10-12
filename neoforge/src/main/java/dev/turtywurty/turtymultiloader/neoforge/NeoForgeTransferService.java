@@ -67,15 +67,17 @@ public final class NeoForgeTransferService implements TransferService {
 
     @Override
     @SafeVarargs
-    public final <V extends ResourceVariant<?>> void registerBlockProvider(StorageKey<V> key,
-                                                                           BlockStorageProvider<V> provider,
-                                                                           Supplier<? extends Block>... blocks) {
+    public final <V extends ResourceVariant<?>> void registerBlockProvider(
+        StorageKey<V> key,
+        BlockStorageProvider<V> provider,
+        Supplier<? extends Block>... blocks
+    ) {
         ensureOpen();
         CapabilitiesForKey<V> capabilities = capabilities(key);
         this.declarations.add(event -> event.registerBlock(capabilities.block,
             (level, pos, state, blockEntity, side) -> adapt(
-                provider.find(level, pos, state, blockEntity, side), capabilities.toNative
-            ), supplied(blocks, Block[]::new)));
+                provider.find(level, pos, state, blockEntity, side), capabilities.toNative),
+            supplied(blocks, Block[]::new)));
     }
 
     @Override
@@ -100,26 +102,33 @@ public final class NeoForgeTransferService implements TransferService {
         CapabilitiesForKey<V> capabilities = capabilities(key);
         this.declarations.add(event -> event.registerEntity(capabilities.entity, entityType.get(),
             (entity, nativeContext) -> adapt(provider.find(
-                entity, capabilities.entityContext.apply(nativeContext)
-            ), capabilities.toNative)));
+                entity, capabilities.entityContext.apply(nativeContext)), capabilities.toNative)));
     }
 
     @Override
     @SafeVarargs
-    public final <V extends ResourceVariant<?>> void registerItemProvider(StorageKey<V> key,
-                                                                          ItemStorageProvider<V> provider,
-                                                                          Supplier<? extends Item>... items) {
+    public final <V extends ResourceVariant<?>> void registerItemProvider(
+        StorageKey<V> key,
+        ItemStorageProvider<V> provider,
+        Supplier<? extends Item>... items
+    ) {
         ensureOpen();
         CapabilitiesForKey<V> capabilities = capabilities(key);
         this.declarations.add(event -> event.registerItem(capabilities.item,
             (stack, itemAccess) -> adapt(
-                provider.find(new NeoForgeMutableItemContext(stack, itemAccess)), capabilities.toNative
-            ), supplied(items, Item[]::new)));
+                provider.find(new NeoForgeMutableItemContext(stack, itemAccess)), capabilities.toNative),
+            supplied(items, Item[]::new)));
     }
 
     @Override
-    public <V extends ResourceVariant<?>> ResourceStorage<V> findBlock(StorageKey<V> key, Level level, BlockPos pos,
-                                                                       BlockState state, BlockEntity blockEntity, Direction side) {
+    public <V extends ResourceVariant<?>> ResourceStorage<V> findBlock(
+        StorageKey<V> key,
+        Level level,
+        BlockPos pos,
+        BlockState state,
+        BlockEntity blockEntity,
+        Direction side
+    ) {
         CapabilitiesForKey<V> capabilities = capabilities(key);
         Object found = state == null
             ? level.getCapability(capabilities.block, pos, side)
@@ -128,8 +137,11 @@ public final class NeoForgeTransferService implements TransferService {
     }
 
     @Override
-    public <V extends ResourceVariant<?>> ResourceStorage<V> findEntity(StorageKey<V> key, Entity entity,
-                                                                        EntityStorageContext context) {
+    public <V extends ResourceVariant<?>> ResourceStorage<V> findEntity(
+        StorageKey<V> key,
+        Entity entity,
+        EntityStorageContext context
+    ) {
         CapabilitiesForKey<V> capabilities = capabilities(key);
         Object found = entity.getCapability(capabilities.entity, capabilities.nativeEntityContext.apply(context));
         return found == null ? null : capabilities.fromNative.apply(found);
@@ -149,10 +161,14 @@ public final class NeoForgeTransferService implements TransferService {
     }
 
     @Override
-    public <V extends ResourceVariant<?>> BlockStorageCache<V> createBlockCache(StorageKey<V> key, ServerLevel level,
-                                                                                BlockPos pos, Direction side) {
+    public <V extends ResourceVariant<?>> BlockStorageCache<V> createBlockCache(
+        StorageKey<V> key,
+        ServerLevel level,
+        BlockPos pos,
+        Direction side
+    ) {
         CapabilitiesForKey<V> capabilities = capabilities(key);
-        AtomicBoolean open = new AtomicBoolean(true);
+        var open = new AtomicBoolean(true);
         BlockCapabilityCache<Object, Direction> nativeCache = BlockCapabilityCache.create(
             capabilities.block,
             level,
@@ -160,8 +176,7 @@ public final class NeoForgeTransferService implements TransferService {
             side,
             open::get,
             () -> {
-            }
-        );
+            });
         return new BlockStorageCache<>() {
             @Override
             public ResourceStorage<V> find() {
@@ -173,14 +188,16 @@ public final class NeoForgeTransferService implements TransferService {
 
             @Override
             public void invalidate() {
-                if (open.get())
+                if (open.get()) {
                     level.invalidateCapabilities(pos);
+                }
             }
 
             @Override
             public void close() {
-                if (open.getAndSet(false))
+                if (open.getAndSet(false)) {
                     level.invalidateCapabilities(pos);
+                }
             }
         };
     }
@@ -241,7 +258,8 @@ public final class NeoForgeTransferService implements TransferService {
             block = Capabilities.Item.BLOCK;
             item = Capabilities.Item.ITEM;
             entity = Capabilities.Item.ENTITY_AUTOMATION;
-            fromNative = nativeHandler -> NeoForgeStorageAdapter.fromNeoForgeItems((ResourceHandler<ItemResource>) nativeHandler);
+            fromNative = nativeHandler -> NeoForgeStorageAdapter
+                .fromNeoForgeItems((ResourceHandler<ItemResource>) nativeHandler);
             toNative = neutral -> NeoForgeStorageAdapter.toNeoForge(neutral,
                 value -> NeoForgeResourceAdapters.fromNeoForge((ItemResource) value),
                 value -> NeoForgeResourceAdapters.toNeoForgeItem((ResourceVariant<Item>) value),
@@ -266,8 +284,7 @@ public final class NeoForgeTransferService implements TransferService {
             entity = Capabilities.Energy.ENTITY;
             fromNative = nativeHandler -> NeoForgeEnergyAdapter.fromNeoForge((EnergyHandler) nativeHandler);
             toNative = neutral -> NeoForgeEnergyAdapter.toNeoForge(
-                (ResourceStorage<ResourceVariant<UnitResource>>) neutral
-            );
+                (ResourceStorage<ResourceVariant<UnitResource>>) neutral);
             entityContext = context -> new EntityStorageContext((Direction) context, null);
             nativeEntityContext = EntityStorageContext::side;
         } else {
@@ -289,12 +306,16 @@ public final class NeoForgeTransferService implements TransferService {
 
     private static <T> T[] supplied(Supplier<? extends T>[] suppliers, IntFunction<T[]> factory) {
         T[] values = factory.apply(suppliers.length);
-        for (int index = 0; index < suppliers.length; index++)
+        for (int index = 0; index < suppliers.length; index++) {
             values[index] = suppliers[index].get();
+        }
         return values;
     }
 
-    private static <V extends ResourceVariant<?>> Object adapt(ResourceStorage<V> storage, Function<ResourceStorage<V>, Object> adapter) {
+    private static <V extends ResourceVariant<?>> Object adapt(
+        ResourceStorage<V> storage,
+        Function<ResourceStorage<V>, Object> adapter
+    ) {
         return storage == null ? null : adapter.apply(storage);
     }
 

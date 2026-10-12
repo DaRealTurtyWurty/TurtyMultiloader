@@ -16,23 +16,19 @@ public final class PortTypeRegistry {
     }
 
     public static void register(final String id, final PortType type) {
-        if (id == null || id.isBlank()) {
+        if (id == null || id.isBlank())
             throw new IllegalArgumentException("Port type id must not be blank");
-        }
-        if (type == null) {
+        if (type == null)
             throw new IllegalArgumentException("Port type must not be null");
-        }
         String normalizedId = normalize(id);
-        if (TYPES.putIfAbsent(normalizedId, type) != null) {
+        if (TYPES.putIfAbsent(normalizedId, type) != null)
             throw new IllegalStateException("Port type already registered: " + normalizedId);
-        }
         LOGGER.info("Registered port type {}", normalizedId);
     }
 
     public static PortType get(final String id) {
-        if (id == null || id.isBlank()) {
+        if (id == null || id.isBlank())
             return null;
-        }
 
         return TYPES.get(normalize(id));
     }

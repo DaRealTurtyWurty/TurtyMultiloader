@@ -17,8 +17,7 @@ import net.minecraft.world.item.Items;
 public final class MultiblockModuleGameTests {
     public static final Identifier TEST_ID = Identifier.fromNamespaceAndPath(
         TestModContent.MOD_ID,
-        "multiblock_module"
-    );
+        "multiblock_module");
 
     private MultiblockModuleGameTests() {
     }
@@ -27,19 +26,16 @@ public final class MultiblockModuleGameTests {
         helper.assertValueEqual(
             BuiltInRegistries.BLOCK.getValue(MultiblockLib.MULTIBLOCK_PART_KEY.identifier()),
             MultiblockLib.MULTIBLOCK_PART,
-            "Multiblock part registration"
-        );
+            "Multiblock part registration");
         helper.assertTrue(
             MultiblockLib.MULTIBLOCK_CONTROLLER_ENTITY_HANDLE.get()
                 .isValid(MultiblockLib.MULTIBLOCK_CONTROLLER.defaultBlockState()),
-            "Multiblock controller block-entity type does not accept its block"
-        );
+            "Multiblock controller block-entity type does not accept its block");
         helper.assertTrue(
             MultiblockPatternRegistry.get(Identifier.fromNamespaceAndPath(MultiblockLib.MOD_ID, "grid")) != null,
-            "Built-in multiblock patterns were not initialized"
-        );
+            "Built-in multiblock patterns were not initialized");
 
-        MultiblockItemPortStorage storage = new MultiblockItemPortStorage(8, PortIO.BOTH, () -> {
+        var storage = new MultiblockItemPortStorage(8, PortIO.BOTH, () -> {
         });
         ResourceVariant<Item> stone = ResourceTypes.ITEM.of(Items.STONE.builtInRegistryHolder());
         try (TransferTransaction transaction = TransferTransaction.openRoot()) {
@@ -50,8 +46,7 @@ public final class MultiblockModuleGameTests {
             helper.assertValueEqual(
                 storage.restrictedTo(TransferSupport.EXTRACT_ONLY).insert(stone, 1, transaction),
                 0L,
-                "Output-only port accepted insertion"
-            );
+                "Output-only port accepted insertion");
         }
         helper.assertValueEqual(storage.getAmount(), 5L, "Neutral item port amount");
         helper.succeed();

@@ -24,28 +24,23 @@ public final class FabricDataGeneration {
     public static void run(FabricDataGenerator generator, DataGenerationSpec spec) {
         Objects.requireNonNull(generator, "generator");
         Objects.requireNonNull(spec, "spec");
-        if (!generator.getModId().equals(spec.modId())) {
+        if (!generator.getModId().equals(spec.modId()))
             throw new IllegalArgumentException(
-                "Data-generation spec for " + spec.modId() + " cannot run for Fabric mod " + generator.getModId()
-            );
-        }
+                "Data-generation spec for " + spec.modId() + " cannot run for Fabric mod " + generator.getModId());
 
         FabricDataGenerator.Pack pack = generator.createPack();
         for (DataGenerationSpec.ProviderDeclaration declaration : spec.providers()) {
             pack.addProvider((FabricDataGenerator.Pack.Factory<?>) output -> declaration.factory().create(
-                new DataProviderContext(spec.modId(), output, generator.getRegistries())
-            ));
+                new DataProviderContext(spec.modId(), output, generator.getRegistries())));
         }
-
 
         if (spec.generatesDynamicRegistries()) {
             pack.addProvider((output, registries) -> new FabricDynamicRegistryProvider(output, registries) {
                 @Override
                 protected void configure(HolderLookup.Provider lookup, Entries entries) {
                     if (spec.generatesAllDynamicRegistries()) {
-                        DynamicRegistries.getAllDynamicRegistries().forEach(registry ->
-                            addAll(entries, lookup, registry.key())
-                        );
+                        DynamicRegistries.getAllDynamicRegistries()
+                            .forEach(registry -> addAll(entries, lookup, registry.key()));
                     } else {
                         spec.dynamicRegistries().forEach(registry -> addAll(entries, lookup, registry));
                     }
@@ -65,9 +60,8 @@ public final class FabricDataGeneration {
         HolderLookup.Provider lookup,
         ResourceKey<? extends Registry<?>> registry
     ) {
-        lookup.lookup((ResourceKey) registry).ifPresent(registryLookup ->
-            addAllUnchecked(entries, (HolderLookup.RegistryLookup) registryLookup)
-        );
+        lookup.lookup((ResourceKey) registry)
+            .ifPresent(registryLookup -> addAllUnchecked(entries, (HolderLookup.RegistryLookup) registryLookup));
     }
 
     private static <T> void addAllUnchecked(

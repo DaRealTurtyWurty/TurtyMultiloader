@@ -22,8 +22,7 @@ public class MultiblockWorldData extends SavedData {
         MultiblockWorldData::new,
         Entry.CODEC.listOf()
             .xmap(MultiblockWorldData::new, MultiblockWorldData::toEntries),
-        DataFixTypes.SAVED_DATA_COMMAND_STORAGE
-    );
+        DataFixTypes.SAVED_DATA_COMMAND_STORAGE);
 
     private final Long2ObjectMap<PartData> partToControllerMap;
 
@@ -52,7 +51,8 @@ public class MultiblockWorldData extends SavedData {
     }
 
     public void mapPart(final BlockPos partPos, final BlockPos controllerPos, final BlockState originalState) {
-        this.partToControllerMap.put(partPos.asLong(), new PartData(controllerPos.asLong(), Block.getId(originalState)));
+        this.partToControllerMap.put(partPos.asLong(),
+            new PartData(controllerPos.asLong(), Block.getId(originalState)));
         this.setDirty();
     }
 
@@ -76,9 +76,8 @@ public class MultiblockWorldData extends SavedData {
                 toRemove.add(entry.getLongKey());
             }
         }
-        if (toRemove.isEmpty()) {
+        if (toRemove.isEmpty())
             return;
-        }
         for (Long key : toRemove) {
             this.partToControllerMap.remove(key.longValue());
         }
@@ -94,9 +93,8 @@ public class MultiblockWorldData extends SavedData {
                 toRestore.add(new RestoreEntry(entry.getLongKey(), data.stateId()));
             }
         }
-        if (toRestore.isEmpty()) {
+        if (toRestore.isEmpty())
             return;
-        }
         for (RestoreEntry entry : toRestore) {
             level.setBlock(BlockPos.of(entry.part()), Block.stateById(entry.stateId()), 3);
             this.partToControllerMap.remove(entry.part());
@@ -114,7 +112,6 @@ public class MultiblockWorldData extends SavedData {
         private static final Codec<Entry> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             Codec.LONG.fieldOf("part").forGetter(Entry::part),
             Codec.LONG.fieldOf("controller").forGetter(Entry::controller),
-            Codec.INT.fieldOf("state_id").forGetter(Entry::stateId)
-        ).apply(instance, Entry::new));
+            Codec.INT.fieldOf("state_id").forGetter(Entry::stateId)).apply(instance, Entry::new));
     }
 }

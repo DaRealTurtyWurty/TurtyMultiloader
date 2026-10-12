@@ -16,9 +16,11 @@ import java.util.Objects;
 /**
  * Loader-neutral fluid attributes with common, variant-aware overlays.
  *
- * <p>A registered handler takes precedence for its fluid. Unmodified handler methods continue to use the
+ * <p>
+ * A registered handler takes precedence for its fluid. Unmodified handler methods continue to use the
  * loader's native attributes, so an overlay can safely replace only viscosity, luminance, or another individual
- * property. Register still and flowing fluids separately when both must share an overlay.</p>
+ * property. Register still and flowing fluids separately when both must share an overlay.
+ * </p>
  */
 public final class FluidVariantAttributes {
     private static final Map<Fluid, FluidVariantAttributeHandler> HANDLERS = new IdentityHashMap<>();
@@ -31,8 +33,7 @@ public final class FluidVariantAttributes {
     public static synchronized void register(Fluid fluid, FluidVariantAttributeHandler handler) {
         if (HANDLERS.putIfAbsent(
             Objects.requireNonNull(fluid, "fluid"),
-            Objects.requireNonNull(handler, "handler")
-        ) != null)
+            Objects.requireNonNull(handler, "handler")) != null)
             throw new IllegalArgumentException("Duplicate handler registration for fluid " + fluid);
     }
 

@@ -46,10 +46,13 @@ public class MultiblockControllerBlock extends Block implements EntityBlock {
 
     @Nullable
     @Override
-    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(final Level level, final @NonNull BlockState state, final @NonNull BlockEntityType<T> type) {
-        if (level.isClientSide()) {
+    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(
+        final Level level,
+        final @NonNull BlockState state,
+        final @NonNull BlockEntityType<T> type
+    ) {
+        if (level.isClientSide())
             return null;
-        }
         return (lvl, pos, blockState, be) -> {
             if (be instanceof MultiblockControllerBlockEntity controller) {
                 MultiblockControllerBlockEntity.tick(lvl, pos, blockState, controller);
@@ -58,7 +61,12 @@ public class MultiblockControllerBlock extends Block implements EntityBlock {
     }
 
     @Override
-    public @NonNull BlockState playerWillDestroy(final Level level, final @NonNull BlockPos pos, final @NonNull BlockState state, final @NonNull Player player) {
+    public @NonNull BlockState playerWillDestroy(
+        final Level level,
+        final @NonNull BlockPos pos,
+        final @NonNull BlockState state,
+        final @NonNull Player player
+    ) {
         if (level instanceof ServerLevel serverLevel) {
             teardown(serverLevel, pos);
         }
@@ -67,7 +75,12 @@ public class MultiblockControllerBlock extends Block implements EntityBlock {
     }
 
     @Override
-    protected void affectNeighborsAfterRemoval(final @NonNull BlockState state, final @NonNull ServerLevel level, final @NonNull BlockPos pos, final boolean movedByPiston) {
+    protected void affectNeighborsAfterRemoval(
+        final @NonNull BlockState state,
+        final @NonNull ServerLevel level,
+        final @NonNull BlockPos pos,
+        final boolean movedByPiston
+    ) {
         teardown(level, pos);
         super.affectNeighborsAfterRemoval(state, level, pos, movedByPiston);
     }

@@ -32,8 +32,9 @@ public final class StorageSynchronizer<V extends ResourceVariant<?>> {
     public boolean receive(StorageSnapshot<V> snapshot) {
         Objects.requireNonNull(snapshot, "snapshot");
         boolean applied = snapshot.apply(this.storage);
-        if (applied)
+        if (applied) {
             this.lastSnapshot = StorageSnapshot.capture(this.storage);
+        }
         return applied;
     }
 }

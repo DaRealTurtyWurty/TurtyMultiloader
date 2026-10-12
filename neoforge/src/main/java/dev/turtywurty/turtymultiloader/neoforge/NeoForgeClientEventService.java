@@ -36,15 +36,12 @@ public final class NeoForgeClientEventService implements ClientEventService {
     private final CopyOnWriteArrayList<Consumer<ClientLevel>> endLevelTickCallbacks = new CopyOnWriteArrayList<>();
     private final CopyOnWriteArrayList<Consumer<ClientLevel>> levelEnterCallbacks = new CopyOnWriteArrayList<>();
     private final CopyOnWriteArrayList<Consumer<ClientLevel>> levelLeaveCallbacks = new CopyOnWriteArrayList<>();
-    private final CopyOnWriteArrayList<BiConsumer<BlockEntity, ClientLevel>> blockEntityUnloadCallbacks =
-        new CopyOnWriteArrayList<>();
+    private final CopyOnWriteArrayList<BiConsumer<BlockEntity, ClientLevel>> blockEntityUnloadCallbacks = new CopyOnWriteArrayList<>();
     private final CopyOnWriteArrayList<Consumer<Minecraft>> connectionCallbacks = new CopyOnWriteArrayList<>();
     private final CopyOnWriteArrayList<Consumer<Minecraft>> disconnectionCallbacks = new CopyOnWriteArrayList<>();
     private final CopyOnWriteArrayList<TooltipCallback> tooltipCallbacks = new CopyOnWriteArrayList<>();
-    private final CopyOnWriteArrayList<Consumer<LevelRenderContext>> collectSubmitsCallbacks =
-        new CopyOnWriteArrayList<>();
-    private final CopyOnWriteArrayList<Consumer<LevelRenderContext>> afterSolidFeaturesCallbacks =
-        new CopyOnWriteArrayList<>();
+    private final CopyOnWriteArrayList<Consumer<LevelRenderContext>> collectSubmitsCallbacks = new CopyOnWriteArrayList<>();
+    private final CopyOnWriteArrayList<Consumer<LevelRenderContext>> afterSolidFeaturesCallbacks = new CopyOnWriteArrayList<>();
     private final CopyOnWriteArrayList<KeyMapping> keyMappings = new CopyOnWriteArrayList<>();
     private final Map<Identifier, PreparableReloadListener> reloadListeners = new LinkedHashMap<>();
     private boolean keyMappingRegistrationFinished;
@@ -141,7 +138,8 @@ public final class NeoForgeClientEventService implements ClientEventService {
     @Override
     public synchronized void registerResourceReloadListener(Identifier id, PreparableReloadListener listener) {
         if (reloadListenerRegistrationFinished)
-            throw new IllegalStateException("Resource reload listeners must be registered during client initialization");
+            throw new IllegalStateException(
+                "Resource reload listeners must be registered during client initialization");
         if (reloadListeners.putIfAbsent(require(id), require(listener)) != null)
             throw new IllegalStateException("A resource reload listener is already registered as " + id);
     }
@@ -165,23 +163,27 @@ public final class NeoForgeClientEventService implements ClientEventService {
     }
 
     private void handleStartLevelTick(LevelTickEvent.Pre event) {
-        if (event.getLevel() instanceof ClientLevel level)
+        if (event.getLevel() instanceof ClientLevel level) {
             startLevelTickCallbacks.forEach(callback -> callback.accept(level));
+        }
     }
 
     private void handleEndLevelTick(LevelTickEvent.Post event) {
-        if (event.getLevel() instanceof ClientLevel level)
+        if (event.getLevel() instanceof ClientLevel level) {
             endLevelTickCallbacks.forEach(callback -> callback.accept(level));
+        }
     }
 
     private void handleLevelEnter(LevelEvent.Load event) {
-        if (event.getLevel() instanceof ClientLevel level)
+        if (event.getLevel() instanceof ClientLevel level) {
             levelEnterCallbacks.forEach(callback -> callback.accept(level));
+        }
     }
 
     private void handleLevelLeave(LevelEvent.Unload event) {
-        if (event.getLevel() instanceof ClientLevel level)
+        if (event.getLevel() instanceof ClientLevel level) {
             levelLeaveCallbacks.forEach(callback -> callback.accept(level));
+        }
     }
 
     private void handleConnection(ClientPlayerNetworkEvent.LoggingIn event) {
@@ -199,16 +201,14 @@ public final class NeoForgeClientEventService implements ClientEventService {
             event.getItemStack(),
             event.getContext(),
             event.getFlags(),
-            event.getToolTip()
-        ));
+            event.getToolTip()));
     }
 
     private void handleCollectSubmits(SubmitCustomGeometryEvent event) {
         LevelRenderContext context = wrap(
             event.getLevelRenderState(),
             event.getPoseStack(),
-            event.getSubmitNodeCollector()
-        );
+            event.getSubmitNodeCollector());
         collectSubmitsCallbacks.forEach(callback -> callback.accept(context));
     }
 
@@ -241,8 +241,7 @@ public final class NeoForgeClientEventService implements ClientEventService {
             levelState,
             poseStack,
             client.gameRenderer.renderBuffers().stagedVertexBuffer(),
-            submitNodeCollector
-        );
+            submitNodeCollector);
     }
 
     private static NeoForgeClientEventService instance() {

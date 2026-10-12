@@ -75,9 +75,8 @@ public interface WorldGenerationService {
 
     final class ServiceHolder {
         private static final WorldGenerationService INSTANCE = ServiceLoader.load(
-                WorldGenerationService.class,
-                WorldGenerationService.class.getClassLoader()
-            )
+            WorldGenerationService.class,
+            WorldGenerationService.class.getClassLoader())
             .findFirst()
             .orElseThrow(() -> new IllegalStateException("No world-generation service is available"));
 

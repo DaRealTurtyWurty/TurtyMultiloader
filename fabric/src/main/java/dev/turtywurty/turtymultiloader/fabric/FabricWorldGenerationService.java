@@ -42,10 +42,11 @@ public final class FabricWorldGenerationService implements WorldGenerationServic
         @Nullable Codec<T> networkCodec
     ) {
         requireNew(datapackRegistries, registryKey, "datapack registry");
-        if (networkCodec == null)
+        if (networkCodec == null) {
             DynamicRegistries.register(registryKey, datapackCodec);
-        else
+        } else {
             DynamicRegistries.registerSynced(registryKey, datapackCodec, networkCodec);
+        }
     }
 
     @Override
@@ -60,7 +61,7 @@ public final class FabricWorldGenerationService implements WorldGenerationServic
     public synchronized void addBootstraps(RegistrySetBuilder builder) {
         Map<ResourceKey<? extends Registry<?>>, List<BootstrapDeclaration<?>>> grouped = new LinkedHashMap<>();
         bootstraps.forEach(declaration -> grouped
-            .computeIfAbsent(declaration.registryKey(), ignored -> new ArrayList<>())
+            .computeIfAbsent(declaration.registryKey(), _ -> new ArrayList<>())
             .add(declaration));
         grouped.forEach((registryKey, declarations) -> addBootstraps(builder, registryKey, declarations));
     }
@@ -74,8 +75,7 @@ public final class FabricWorldGenerationService implements WorldGenerationServic
         requireNew(builtInDatapacks, id, "built-in datapack");
         var container = FabricLoader.getInstance().getModContainer(id.getNamespace())
             .orElseThrow(() -> new IllegalArgumentException(
-                "No Fabric mod owns the built-in datapack namespace " + id.getNamespace()
-            ));
+                "No Fabric mod owns the built-in datapack namespace " + id.getNamespace()));
         boolean registered = ResourceLoader.registerBuiltinPack(
             id,
             container,
@@ -84,13 +84,11 @@ public final class FabricWorldGenerationService implements WorldGenerationServic
                 case NORMAL -> PackActivationType.NORMAL;
                 case DEFAULT_ENABLED -> PackActivationType.DEFAULT_ENABLED;
                 case ALWAYS_ENABLED -> PackActivationType.ALWAYS_ENABLED;
-            }
-        );
+            });
         if (!registered) {
             builtInDatapacks.remove(id);
             throw new IllegalArgumentException(
-                "Could not find built-in datapack resourcepacks/" + id.getPath() + " for " + id
-            );
+                "Could not find built-in datapack resourcepacks/" + id.getPath() + " for " + id);
         }
     }
 
@@ -103,9 +101,9 @@ public final class FabricWorldGenerationService implements WorldGenerationServic
     ) {
         create(modificationId).add(
             ModificationPhase.ADDITIONS,
-            context -> selector.test(new BiomeSelectionContext(context.getBiomeKey(), context.getBiomeHolder(), context.getBiome())),
-            context -> context.getGenerationSettings().addFeature(step, feature)
-        );
+            context -> selector
+                .test(new BiomeSelectionContext(context.getBiomeKey(), context.getBiomeHolder(), context.getBiome())),
+            context -> context.getGenerationSettings().addFeature(step, feature));
     }
 
     @Override
@@ -117,9 +115,9 @@ public final class FabricWorldGenerationService implements WorldGenerationServic
     ) {
         create(modificationId).add(
             ModificationPhase.REMOVALS,
-            context -> selector.test(new BiomeSelectionContext(context.getBiomeKey(), context.getBiomeHolder(), context.getBiome())),
-            context -> context.getGenerationSettings().removeFeature(step, feature)
-        );
+            context -> selector
+                .test(new BiomeSelectionContext(context.getBiomeKey(), context.getBiomeHolder(), context.getBiome())),
+            context -> context.getGenerationSettings().removeFeature(step, feature));
     }
 
     @Override
@@ -135,21 +133,18 @@ public final class FabricWorldGenerationService implements WorldGenerationServic
         validateSpawn(weight, minimumGroupSize, maximumGroupSize);
         create(modificationId).add(
             ModificationPhase.ADDITIONS,
-            context -> selector.test(new BiomeSelectionContext(context.getBiomeKey(), context.getBiomeHolder(), context.getBiome())),
+            context -> selector
+                .test(new BiomeSelectionContext(context.getBiomeKey(), context.getBiomeHolder(), context.getBiome())),
             context -> {
                 EntityType<?> type = Objects.requireNonNull(entityType.get(), "entityType supplier result");
-                if (type.getCategory() != category) {
+                if (type.getCategory() != category)
                     throw new IllegalArgumentException(
-                        "Entity category " + type.getCategory() + " does not match requested category " + category
-                    );
-                }
+                        "Entity category " + type.getCategory() + " does not match requested category " + category);
                 context.getMobSpawnSettings().addSpawn(
                     category,
                     new MobSpawnSettings.SpawnerData(type, UniformInt.of(minimumGroupSize, maximumGroupSize)),
-                    weight
-                );
-            }
-        );
+                    weight);
+            });
     }
 
     @Override
@@ -160,11 +155,10 @@ public final class FabricWorldGenerationService implements WorldGenerationServic
     ) {
         create(modificationId).add(
             ModificationPhase.REMOVALS,
-            context -> selector.test(new BiomeSelectionContext(context.getBiomeKey(), context.getBiomeHolder(), context.getBiome())),
+            context -> selector
+                .test(new BiomeSelectionContext(context.getBiomeKey(), context.getBiomeHolder(), context.getBiome())),
             context -> context.getMobSpawnSettings().removeSpawnsOfEntityType(
-                Objects.requireNonNull(entityType.get(), "entityType supplier result")
-            )
-        );
+                Objects.requireNonNull(entityType.get(), "entityType supplier result")));
     }
 
     private BiomeModification create(Identifier id) {
@@ -175,11 +169,9 @@ public final class FabricWorldGenerationService implements WorldGenerationServic
     private static void validateSpawn(int weight, int minimumGroupSize, int maximumGroupSize) {
         if (weight <= 0)
             throw new IllegalArgumentException("Spawn weight must be positive");
-        if (minimumGroupSize <= 0 || maximumGroupSize < minimumGroupSize) {
+        if (minimumGroupSize <= 0 || maximumGroupSize < minimumGroupSize)
             throw new IllegalArgumentException(
-                "Spawn group sizes must satisfy 0 < minimumGroupSize <= maximumGroupSize"
-            );
-        }
+                "Spawn group sizes must satisfy 0 < minimumGroupSize <= maximumGroupSize");
     }
 
     private static <T> void requireNew(Set<T> values, T value, String kind) {
@@ -193,9 +185,8 @@ public final class FabricWorldGenerationService implements WorldGenerationServic
         ResourceKey<? extends Registry<?>> registryKey,
         List<BootstrapDeclaration<?>> declarations
     ) {
-        builder.add((ResourceKey) registryKey, context -> declarations.forEach(declaration ->
-            ((SingleRegistryBootstrap) declaration.bootstrap()).run(context)
-        ));
+        builder.add((ResourceKey) registryKey, context -> declarations
+            .forEach(declaration -> ((SingleRegistryBootstrap) declaration.bootstrap()).run(context)));
     }
 
     private record BootstrapDeclaration<T>(

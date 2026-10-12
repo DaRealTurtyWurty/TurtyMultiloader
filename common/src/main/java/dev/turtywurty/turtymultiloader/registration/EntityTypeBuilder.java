@@ -122,23 +122,22 @@ public final class EntityTypeBuilder<T extends LivingEntity> {
             Objects.requireNonNull(selector, "selector"),
             weight,
             minimumGroupSize,
-            maximumGroupSize
-        ));
+            maximumGroupSize));
         return this;
     }
 
-    EntityType<T> build(ResourceKey<EntityType<?>> key) {
+    protected EntityType<T> build(ResourceKey<EntityType<?>> key) {
         return vanillaBuilder.build(Objects.requireNonNull(key, "key"));
     }
 
-    Supplier<AttributeSupplier> attributes() {
+    protected Supplier<AttributeSupplier> attributes() {
         if (attributes == null)
             throw new IllegalStateException("No attributes configured for living entity type " + id);
 
         return attributes;
     }
 
-    void registerSpawns(Supplier<? extends EntityType<?>> entityType) {
+    protected void registerSpawns(Supplier<? extends EntityType<?>> entityType) {
         spawns.forEach(spawn -> WorldGeneration.addSpawn(
             spawn.modificationId(),
             spawn.selector(),
@@ -146,8 +145,7 @@ public final class EntityTypeBuilder<T extends LivingEntity> {
             entityType,
             spawn.weight(),
             spawn.minimumGroupSize(),
-            spawn.maximumGroupSize()
-        ));
+            spawn.maximumGroupSize()));
     }
 
     private record SpawnDeclaration(

@@ -12,8 +12,10 @@ import net.minecraft.world.level.material.Fluid;
 
 public final class StorageKeys {
     public static final StorageKey<ResourceVariant<Item>> ITEM = key("item", ResourceTypes.ITEM, Units.ITEM);
-    public static final StorageKey<ResourceVariant<Fluid>> FLUID = key("fluid", ResourceTypes.FLUID, Units.FLUID_DROPLET);
-    public static final StorageKey<ResourceVariant<UnitResource>> ENERGY = key("energy", ResourceTypes.ENERGY, Units.ENERGY);
+    public static final StorageKey<ResourceVariant<Fluid>> FLUID = key("fluid", ResourceTypes.FLUID,
+        Units.FLUID_DROPLET);
+    public static final StorageKey<ResourceVariant<UnitResource>> ENERGY = key("energy", ResourceTypes.ENERGY,
+        Units.ENERGY);
 
     private StorageKeys() {
     }

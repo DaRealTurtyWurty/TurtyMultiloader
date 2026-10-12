@@ -15,8 +15,9 @@ public record ResourceVariant<T>(ResourceType<T> type, Holder<T> holder, DataCom
         Objects.requireNonNull(type, "type");
         Objects.requireNonNull(holder, "holder");
         Objects.requireNonNull(components, "components");
-        if (holder.isBound() && type.isEmpty(holder.value()))
+        if (holder.isBound() && type.isEmpty(holder.value())) {
             components = DataComponentPatch.EMPTY;
+        }
     }
 
     public static <T> ResourceVariant<T> of(ResourceType<T> type, Holder<T> holder) {

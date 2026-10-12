@@ -34,8 +34,7 @@ public class MultiblockPartBlockEntity extends BlockEntity {
                 this.worldPosition,
                 this.getBlockState(),
                 this.getBlockState(),
-                Block.UPDATE_ALL
-            );
+                Block.UPDATE_ALL);
         }
     }
 
@@ -59,7 +58,7 @@ public class MultiblockPartBlockEntity extends BlockEntity {
     @Override
     @Nullable
     public Packet<ClientGamePacketListener> getUpdatePacket() {
-        return ClientboundBlockEntityDataPacket.create(this, (blockEntity, registries) ->
-            this.saveCustomOnly(registries));
+        return ClientboundBlockEntityDataPacket.create(this,
+            (blockEntity, registries) -> this.saveCustomOnly(registries));
     }
 }

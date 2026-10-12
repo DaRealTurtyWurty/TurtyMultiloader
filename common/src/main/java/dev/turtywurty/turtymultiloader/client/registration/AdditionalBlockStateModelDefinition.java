@@ -9,8 +9,10 @@ import java.util.Objects;
 /**
  * Loader-neutral description of a standalone block-state model before it is baked.
  *
- * <p>Fabric converts this to a {@code SimpleUnbakedExtraModel}; NeoForge converts it to a
- * {@code SimpleUnbakedStandaloneModel}.</p>
+ * <p>
+ * Fabric converts this to a {@code SimpleUnbakedExtraModel}; NeoForge converts it to a
+ * {@code SimpleUnbakedStandaloneModel}.
+ * </p>
  */
 public record AdditionalBlockStateModelDefinition(Identifier modelId, ModelState modelState) {
     public AdditionalBlockStateModelDefinition {

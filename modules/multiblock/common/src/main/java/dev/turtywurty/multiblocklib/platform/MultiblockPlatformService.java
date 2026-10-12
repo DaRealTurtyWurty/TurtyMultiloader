@@ -26,9 +26,8 @@ public interface MultiblockPlatformService {
 
     final class ServiceHolder {
         private static final MultiblockPlatformService INSTANCE = ServiceLoader.load(
-                MultiblockPlatformService.class,
-                MultiblockPlatformService.class.getClassLoader()
-            )
+            MultiblockPlatformService.class,
+            MultiblockPlatformService.class.getClassLoader())
             .findFirst()
             .orElseThrow(() -> new IllegalStateException("No multiblock platform service is available"));
 

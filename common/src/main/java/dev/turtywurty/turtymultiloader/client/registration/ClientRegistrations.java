@@ -35,8 +35,10 @@ import java.util.function.Supplier;
 /**
  * Client-only facade for renderer, tint, fluid, and model registration.
  *
- * <p>Menu screens are registered through {@code ClientMenus}; key mappings, tooltip callbacks,
- * reload listeners, and world render stages are registered through {@code ClientEvents}.</p>
+ * <p>
+ * Menu screens are registered through {@code ClientMenus}; key mappings, tooltip callbacks,
+ * reload listeners, and world render stages are registered through {@code ClientEvents}.
+ * </p>
  */
 public final class ClientRegistrations {
     private ClientRegistrations() {
@@ -69,7 +71,8 @@ public final class ClientRegistrations {
         Supplier<? extends BlockEntityType<? extends E>> blockEntityType,
         BlockEntityRendererProvider<E, S> rendererProvider
     ) {
-        ClientRegistrationService.get().registerBlockEntityRenderer(require(blockEntityType), require(rendererProvider));
+        ClientRegistrationService.get().registerBlockEntityRenderer(require(blockEntityType),
+            require(rendererProvider));
     }
 
     public static void registerModelLayer(ModelLayerLocation layer, Supplier<LayerDefinition> definition) {
@@ -78,7 +81,8 @@ public final class ClientRegistrations {
 
     public static void registerBlockTintSources(List<BlockTintSource> tintSources, Block... blocks) {
         require(blocks);
-        registerBlockTintSources(tintSources, Arrays.stream(blocks).<Supplier<? extends Block>>map(block -> () -> block).toList());
+        registerBlockTintSources(tintSources,
+            Arrays.stream(blocks).<Supplier<? extends Block>>map(block -> () -> block).toList());
     }
 
     @SafeVarargs
@@ -96,8 +100,7 @@ public final class ClientRegistrations {
     ) {
         ClientRegistrationService.get().registerBlockTintSources(
             List.copyOf(require(tintSources)),
-            List.copyOf(require(blocks))
-        );
+            List.copyOf(require(blocks)));
     }
 
     public static void registerItemTintSource(Identifier id, MapCodec<? extends ItemTintSource> codec) {
@@ -137,8 +140,7 @@ public final class ClientRegistrations {
         Identifier id = require(modelId);
         return registerAdditionalBlockStateModel(
             id,
-            AdditionalBlockStateModelDefinition.blockStateModel(id)
-        );
+            AdditionalBlockStateModelDefinition.blockStateModel(id));
     }
 
     public static AdditionalModel<BlockStateModel> registerAdditionalBlockStateModel(
@@ -148,8 +150,7 @@ public final class ClientRegistrations {
         Identifier id = require(modelId);
         return registerAdditionalBlockStateModel(
             id,
-            AdditionalBlockStateModelDefinition.blockStateModel(id, require(modelState))
-        );
+            AdditionalBlockStateModelDefinition.blockStateModel(id, require(modelState)));
     }
 
     public static AdditionalModel<BlockStateModel> registerAdditionalBlockStateModel(

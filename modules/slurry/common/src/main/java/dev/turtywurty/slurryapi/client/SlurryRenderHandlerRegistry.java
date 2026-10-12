@@ -22,8 +22,7 @@ public final class SlurryRenderHandlerRegistry {
         public TextureAtlasSprite getSprite(BlockAndTintGetter view, BlockPos pos) {
             if (missingSprite == null) {
                 missingSprite = Minecraft.getInstance().getAtlasManager().get(
-                    new SpriteId(TextureAtlas.LOCATION_BLOCKS, MissingTextureAtlasSprite.getLocation())
-                );
+                    new SpriteId(TextureAtlas.LOCATION_BLOCKS, MissingTextureAtlasSprite.getLocation()));
             }
             return missingSprite;
         }
@@ -39,8 +38,7 @@ public final class SlurryRenderHandlerRegistry {
     public static synchronized void register(Slurry slurry, SlurryRenderHandler handler) {
         if (HANDLERS.putIfAbsent(
             Objects.requireNonNull(slurry, "slurry"),
-            Objects.requireNonNull(handler, "handler")
-        ) != null)
+            Objects.requireNonNull(handler, "handler")) != null)
             throw new IllegalStateException("Duplicate handler for slurry: " + slurry);
     }
 

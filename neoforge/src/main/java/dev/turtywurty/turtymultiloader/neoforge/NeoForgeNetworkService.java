@@ -36,6 +36,10 @@ import net.neoforged.neoforge.server.ServerLifecycleHooks;
 
 import java.util.*;
 import java.util.function.Consumer;
+import java.util.concurrent.CompletableFuture;
+import net.minecraft.client.Minecraft;
+import net.minecraft.network.chat.Component;
+import net.neoforged.neoforge.network.handling.IPayloadHandler;
 
 public final class NeoForgeNetworkService implements NetworkService {
     private static volatile IEventBus modBus;
@@ -93,11 +97,11 @@ public final class NeoForgeNetworkService implements NetworkService {
         Objects.requireNonNull(type, "type");
         Objects.requireNonNull(codec, "codec");
         Objects.requireNonNull(options, "options");
-        if (flow != PayloadFlow.CLIENTBOUND)
+        if (flow != PayloadFlow.CLIENTBOUND) {
             Objects.requireNonNull(serverHandler, "serverHandler");
+        }
         if (payloads.putIfAbsent(type.id(), new PayloadDeclaration<>(
-            phase, flow, type, codec, options, serverHandler
-        )) != null)
+            phase, flow, type, codec, options, serverHandler)) != null)
             throw new IllegalStateException("Payload " + type.id() + " is already registered");
     }
 
@@ -139,8 +143,9 @@ public final class NeoForgeNetworkService implements NetworkService {
     public int sendToPlayer(ServerPlayer player, Iterable<? extends CustomPacketPayload> payloads) {
         int sent = 0;
         for (CustomPacketPayload payload : Objects.requireNonNull(payloads, "payloads")) {
-            if (sendToPlayer(player, Objects.requireNonNull(payload, "payload")))
+            if (sendToPlayer(player, Objects.requireNonNull(payload, "payload"))) {
                 sent++;
+            }
         }
         return sent;
     }
@@ -156,8 +161,9 @@ public final class NeoForgeNetworkService implements NetworkService {
         Objects.requireNonNull(entity, "entity");
         if (entity.level().isClientSide())
             throw new IllegalStateException("Cannot send clientbound payloads on the client");
-        if (entity.level().getChunkSource() instanceof ServerChunkCache chunkCache)
+        if (entity.level().getChunkSource() instanceof ServerChunkCache chunkCache) {
             send(chunkCache.chunkMap.getPlayersWatching(entity), payload);
+        }
     }
 
     @Override
@@ -165,8 +171,7 @@ public final class NeoForgeNetworkService implements NetworkService {
         Objects.requireNonNull(level, "level");
         send(level.getChunkSource().chunkMap.getPlayers(
             ChunkPos.containing(Objects.requireNonNull(pos, "pos")),
-            false
-        ), payload);
+            false), payload);
     }
 
     @Override
@@ -182,14 +187,15 @@ public final class NeoForgeNetworkService implements NetworkService {
         Objects.requireNonNull(payload, "payload");
         double radiusSquared = radius * radius;
         for (ServerPlayer player : Objects.requireNonNull(level, "level").players()) {
-            if (player.position().distanceToSqr(position) < radiusSquared)
+            if (player.position().distanceToSqr(position) < radiusSquared) {
                 sendToPlayer(player, payload);
+            }
         }
     }
 
     @Override
     public boolean canSendToServer(CustomPacketPayload.Type<?> type) {
-        var listener = net.minecraft.client.Minecraft.getInstance().getConnection();
+        var listener = Minecraft.getInstance().getConnection();
         return listener != null && ((ICommonPacketListener) listener).hasChannel(Objects.requireNonNull(type, "type"));
     }
 
@@ -201,8 +207,9 @@ public final class NeoForgeNetworkService implements NetworkService {
 
     private void send(Iterable<ServerPlayer> players, CustomPacketPayload payload) {
         Objects.requireNonNull(payload, "payload");
-        for (ServerPlayer player : players)
+        for (ServerPlayer player : players) {
             sendToPlayer(player, payload);
+        }
     }
 
     @Override
@@ -247,11 +254,12 @@ public final class NeoForgeNetworkService implements NetworkService {
     private synchronized void registerPayloads(RegisterPayloadHandlersEvent event) {
         for (PayloadDeclaration declaration : payloads.values()) {
             PayloadRegistrar registrar = event.registrar(declaration.options().protocolVersion());
-            if (declaration.options().support() == PayloadSupport.OPTIONAL)
+            if (declaration.options().support() == PayloadSupport.OPTIONAL) {
                 registrar = registrar.optional();
+            }
 
-            var handler = (net.neoforged.neoforge.network.handling.IPayloadHandler) (payload, context) ->
-                declaration.serverHandler().handle(payload, neoContext(declaration.phase(), context));
+            var handler = (IPayloadHandler) (payload, context) -> declaration.serverHandler().handle(payload,
+                neoContext(declaration.phase(), context));
             if (declaration.phase() == PayloadPhase.PLAY) {
                 switch (declaration.flow()) {
                     case CLIENTBOUND -> registrar.playToClient(declaration.type(), declaration.codec());
@@ -264,8 +272,7 @@ public final class NeoForgeNetworkService implements NetworkService {
                     case SERVERBOUND ->
                         registrar.configurationToServer(declaration.type(), declaration.codec(), handler);
                     case BIDIRECTIONAL -> registrar.configurationBidirectional(
-                        declaration.type(), declaration.codec(), handler
-                    );
+                        declaration.type(), declaration.codec(), handler);
                 }
             }
         }
@@ -276,9 +283,8 @@ public final class NeoForgeNetworkService implements NetworkService {
         for (Map.Entry<Identifier, PayloadHandler<?>> entry : clientHandlers.entrySet()) {
             PayloadHandler handler = entry.getValue();
             PayloadDeclaration declaration = payloads.get(entry.getKey());
-            event.register(declaration.type(), (payload, context) ->
-                handler.handle(payload, neoContext(declaration.phase(), context))
-            );
+            event.register(declaration.type(),
+                (payload, context) -> handler.handle(payload, neoContext(declaration.phase(), context)));
         }
     }
 
@@ -287,16 +293,13 @@ public final class NeoForgeNetworkService implements NetworkService {
         ICommonPacketListener commonListener = (ICommonPacketListener) listener;
         MinecraftServer server = Objects.requireNonNull(
             ServerLifecycleHooks.getCurrentServer(),
-            "No server is active during configuration"
-        );
-        ServerConnectionContext context = new ServerConnectionContext(
+            "No server is active during configuration");
+        var context = new ServerConnectionContext(
             server,
             commonListener.getConnection(),
-            listener.getOwner()
-        );
+            listener.getOwner());
         configurationTasks.values().forEach(task -> event.register(createConfigurationTask(
-            task, listener, commonListener, context
-        )));
+            task, listener, commonListener, context)));
         server.execute(() -> connectionCallbacks.forEach(callback -> callback.accept(context)));
     }
 
@@ -306,19 +309,17 @@ public final class NeoForgeNetworkService implements NetworkService {
         ICommonPacketListener commonListener,
         ServerConnectionContext connection
     ) {
-        ConfigurationTask.Type type = new ConfigurationTask.Type(task.id());
+        var type = new ConfigurationTask.Type(task.id());
         return new ICustomConfigurationTask() {
             @Override
             public void run(Consumer<CustomPacketPayload> sender) {
-                NeoForgeConfigurationTaskContext context = new NeoForgeConfigurationTaskContext(
-                    connection, listener, commonListener, sender, type
-                );
+                var context = new NeoForgeConfigurationTaskContext(
+                    connection, listener, commonListener, sender, type);
                 try {
                     task.run(context);
                 } catch (RuntimeException exception) {
-                    context.fail(net.minecraft.network.chat.Component.literal(
-                        "Configuration task " + task.id() + " failed"
-                    ));
+                    context.fail(Component.literal(
+                        "Configuration task " + task.id() + " failed"));
                     throw exception;
                 }
             }
@@ -338,8 +339,9 @@ public final class NeoForgeNetworkService implements NetworkService {
     }
 
     private void onPlayerDisconnect(PlayerEvent.PlayerLoggedOutEvent event) {
-        if (event.getEntity() instanceof ServerPlayer player)
+        if (event.getEntity() instanceof ServerPlayer player) {
             disconnectCallbacks.forEach(callback -> callback.accept(player));
+        }
     }
 
     private void handleClientJoin(ClientPlayerNetworkEvent.LoggingIn event) {
@@ -398,27 +400,27 @@ public final class NeoForgeNetworkService implements NetworkService {
         }
 
         @Override
-        public void disconnect(net.minecraft.network.chat.Component reason) {
+        public void disconnect(Component reason) {
             delegate.disconnect(Objects.requireNonNull(reason, "reason"));
         }
 
         @Override
         public void completeConfigurationTask(Identifier taskId) {
-            if (phase != PayloadPhase.CONFIGURATION || receptionSide != LogicalSide.SERVER)
+            if (phase != PayloadPhase.CONFIGURATION || receptionSide != LogicalSide.SERVER) {
                 PayloadContext.super.completeConfigurationTask(taskId);
+            }
             Identifier checkedTaskId = Objects.requireNonNull(taskId, "taskId");
             try {
                 delegate.finishCurrentTask(new ConfigurationTask.Type(checkedTaskId));
             } catch (RuntimeException exception) {
-                delegate.disconnect(net.minecraft.network.chat.Component.literal(
-                    "Invalid configuration task acknowledgement " + checkedTaskId
-                ));
+                delegate.disconnect(Component.literal(
+                    "Invalid configuration task acknowledgement " + checkedTaskId));
                 throw exception;
             }
         }
 
         @Override
-        public java.util.concurrent.CompletableFuture<Void> enqueueWork(Runnable work) {
+        public CompletableFuture<Void> enqueueWork(Runnable work) {
             return delegate.enqueueWork(Objects.requireNonNull(work, "work"));
         }
     }
@@ -473,10 +475,9 @@ public final class NeoForgeNetworkService implements NetworkService {
             if (!canSend(payload.type())) {
                 if (declaration.options().support() == PayloadSupport.OPTIONAL)
                     return false;
-                fail(net.minecraft.network.chat.Component.literal(
+                fail(Component.literal(
                     "Incompatible network payload " + declaration.type().id()
-                        + " (required protocol " + declaration.options().protocolVersion() + ")"
-                ));
+                        + " (required protocol " + declaration.options().protocolVersion() + ")"));
                 throw new IllegalStateException("The client does not accept required configuration payload "
                     + payload.type().id());
             }
@@ -493,7 +494,7 @@ public final class NeoForgeNetworkService implements NetworkService {
         }
 
         @Override
-        public void fail(net.minecraft.network.chat.Component reason) {
+        public void fail(Component reason) {
             if (finished)
                 return;
             finished = true;

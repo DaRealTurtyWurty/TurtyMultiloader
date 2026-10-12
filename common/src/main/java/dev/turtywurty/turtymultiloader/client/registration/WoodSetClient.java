@@ -21,17 +21,14 @@ public final class WoodSetClient {
         ClientRegistrations.registerModelLayer(boatLayer, BoatModel::createBoatModel);
         ClientRegistrations.registerModelLayer(chestBoatLayer, BoatModel::createChestBoatModel);
         ClientRegistrations.registerEntityRenderer(
-            woodSet.boatEntityType(), context -> new WoodSetBoatRenderer(context, boatLayer)
-        );
+            woodSet.boatEntityType(), context -> new WoodSetBoatRenderer(context, boatLayer));
         ClientRegistrations.registerEntityRenderer(
-            woodSet.chestBoatEntityType(), context -> new WoodSetBoatRenderer(context, chestBoatLayer)
-        );
+            woodSet.chestBoatEntityType(), context -> new WoodSetBoatRenderer(context, chestBoatLayer));
     }
 
     private static ModelLayerLocation layer(WoodSet woodSet, String directory) {
         Identifier model = Identifier.fromNamespaceAndPath(
-            woodSet.id().getNamespace(), directory + "/" + woodSet.id().getPath()
-        );
+            woodSet.id().getNamespace(), directory + "/" + woodSet.id().getPath());
         return new ModelLayerLocation(model, "main");
     }
 }

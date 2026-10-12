@@ -18,10 +18,10 @@ import java.util.function.Consumer;
  * Bridges Fabric and neutral transaction contexts in both directions.
  */
 public final class FabricTransactionAdapters {
-    private static final ThreadLocal<Map<TransferContext, Transaction>>
-        NATIVE_BY_NEUTRAL = ThreadLocal.withInitial(IdentityHashMap::new);
-    private static final ThreadLocal<Map<TransactionContext, FabricContext>>
-        NEUTRAL_BY_NATIVE = ThreadLocal.withInitial(IdentityHashMap::new);
+    private static final ThreadLocal<Map<TransferContext, Transaction>> NATIVE_BY_NEUTRAL = ThreadLocal
+        .withInitial(IdentityHashMap::new);
+    private static final ThreadLocal<Map<TransactionContext, FabricContext>> NEUTRAL_BY_NATIVE = ThreadLocal
+        .withInitial(IdentityHashMap::new);
 
     private FabricTransactionAdapters() {
     }
@@ -35,13 +35,15 @@ public final class FabricTransactionAdapters {
                 .orElseGet(Transaction::openOuter);
             context.addCloseCallback(result -> {
                 try {
-                    if (result == TransferResult.COMMITTED)
+                    if (result == TransferResult.COMMITTED) {
                         nativeTransaction.commit();
+                    }
                 } finally {
                     nativeTransaction.close();
                     map.remove(context);
-                    if (map.isEmpty())
+                    if (map.isEmpty()) {
                         NATIVE_BY_NEUTRAL.remove();
+                    }
                 }
             });
             return nativeTransaction;
@@ -66,18 +68,20 @@ public final class FabricTransactionAdapters {
             participants = ((FabricContext) fromFabric(parent)).participants;
         }
 
-        FabricContext result = new FabricContext(fabric, participants);
+        var result = new FabricContext(fabric, participants);
         map.put(fabric, result);
         fabric.addCloseCallback((transaction, closeResult) -> {
             map.remove(fabric);
-            if (map.isEmpty())
+            if (map.isEmpty()) {
                 NEUTRAL_BY_NATIVE.remove();
+            }
         });
         return result;
     }
 
     private static final class ParticipantBridge
-        extends SnapshotParticipant<Object> {
+        extends
+            SnapshotParticipant<Object> {
         private final TransactionParticipant<?> participant;
         private Object finalSnapshot;
 
@@ -140,15 +144,15 @@ public final class FabricTransactionAdapters {
         @Override
         public void addCloseCallback(Consumer<TransferResult> callback) {
             this.fabric.addCloseCallback((transaction, result) -> callback.accept(
-                result.wasCommitted() ? TransferResult.COMMITTED : TransferResult.ROLLED_BACK
-            ));
+                result.wasCommitted() ? TransferResult.COMMITTED : TransferResult.ROLLED_BACK));
         }
 
         @Override
         public void addCommitCallback(Runnable callback) {
             this.fabric.addOuterCloseCallback(result -> {
-                if (result.wasCommitted())
+                if (result.wasCommitted()) {
                     callback.run();
+                }
             });
         }
 

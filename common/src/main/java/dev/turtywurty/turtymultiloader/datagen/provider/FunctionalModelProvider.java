@@ -31,13 +31,12 @@ public final class FunctionalModelProvider implements DataProvider {
 
     @Override
     public CompletableFuture<?> run(CachedOutput output) {
-        ModelGenerationContext context = new ModelGenerationContext();
+        var context = new ModelGenerationContext();
         generator.generate(context);
 
         List<CompletableFuture<?>> writes = new ArrayList<>();
-        context.resources().forEach((resource, json) ->
-            writes.add(DataProvider.saveStable(output, json, path(resource)))
-        );
+        context.resources()
+            .forEach((resource, json) -> writes.add(DataProvider.saveStable(output, json, path(resource))));
         return CompletableFuture.allOf(writes.toArray(CompletableFuture[]::new));
     }
 

@@ -19,8 +19,10 @@ import java.util.function.Supplier;
 /**
  * Complete declaration for a registry-backed resource family owned by a consuming mod.
  *
- * <p>The caller supplies its registry and corresponding vanilla holder codecs. The resulting type,
- * lookup key, and codecs cannot accidentally disagree.</p>
+ * <p>
+ * The caller supplies its registry and corresponding vanilla holder codecs. The resulting type,
+ * lookup key, and codecs cannot accidentally disagree.
+ * </p>
  */
 public record ResourceFamily<T>(
     ResourceType<T> type,
@@ -55,7 +57,6 @@ public record ResourceFamily<T>(
             type,
             StorageKeys.key(id, type, storageUnit),
             ResourceVariantCodecs.codec(type, holderCodec),
-            ResourceVariantCodecs.streamCodec(type, holderStreamCodec)
-        );
+            ResourceVariantCodecs.streamCodec(type, holderStreamCodec));
     }
 }

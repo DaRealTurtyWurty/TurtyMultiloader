@@ -22,7 +22,6 @@ public final class TestModFabricClient implements ClientModInitializer {
             PayloadPhase.PLAY,
             TestModContent.TEST_PAYLOAD_TYPE,
             (payload, context) -> {
-            }
-        );
+            });
     }
 }

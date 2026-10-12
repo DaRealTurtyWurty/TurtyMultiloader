@@ -17,8 +17,7 @@ public final class UnitRegistry {
     private final Codec<TransferUnit> codec = Identifier.CODEC.comapFlatMap(this::decode, TransferUnit::id);
     private final StreamCodec<ByteBuf, TransferUnit> streamCodec = Identifier.STREAM_CODEC.map(
         this::getOrThrow,
-        TransferUnit::id
-    );
+        TransferUnit::id);
 
     public synchronized TransferUnit register(
         Identifier id,
@@ -36,7 +35,7 @@ public final class UnitRegistry {
             throw new IllegalArgumentException("Transfer unit is already registered: " + id);
 
         long divisor = BigInteger.valueOf(numerator).gcd(BigInteger.valueOf(denominator)).longValueExact();
-        TransferUnit unit = new TransferUnit(id, dimension, symbol, numerator / divisor, denominator / divisor);
+        var unit = new TransferUnit(id, dimension, symbol, numerator / divisor, denominator / divisor);
         this.units.put(id, unit);
         return unit;
     }

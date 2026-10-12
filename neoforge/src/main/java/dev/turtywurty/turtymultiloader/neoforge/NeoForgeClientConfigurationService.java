@@ -10,10 +10,9 @@ public final class NeoForgeClientConfigurationService implements ClientConfigura
     @Override
     public void registerScreen(String modId, ConfigScreenFactory factory) {
         ConfigurationManager.instance().registerScreen(modId, factory);
-        var container = ModList.get().getModContainerById(modId).orElseThrow(() ->
-            new IllegalArgumentException("No loaded mod has id " + modId)
-        );
-        IConfigScreenFactory extension = (ignored, parent) -> factory.create(parent);
+        var container = ModList.get().getModContainerById(modId)
+            .orElseThrow(() -> new IllegalArgumentException("No loaded mod has id " + modId));
+        IConfigScreenFactory extension = (_, parent) -> factory.create(parent);
         container.registerExtensionPoint(IConfigScreenFactory.class, extension);
     }
 }

@@ -13,8 +13,8 @@ import net.minecraft.network.codec.StreamCodec;
  */
 public final class GasVariant {
     public static final Codec<ResourceVariant<Gas>> CODEC = GasApi.RESOURCE_FAMILY.codec();
-    public static final StreamCodec<RegistryFriendlyByteBuf, ResourceVariant<Gas>> STREAM_CODEC =
-        GasApi.RESOURCE_FAMILY.streamCodec();
+    public static final StreamCodec<RegistryFriendlyByteBuf, ResourceVariant<Gas>> STREAM_CODEC = GasApi.RESOURCE_FAMILY
+        .streamCodec();
 
     private GasVariant() {
     }

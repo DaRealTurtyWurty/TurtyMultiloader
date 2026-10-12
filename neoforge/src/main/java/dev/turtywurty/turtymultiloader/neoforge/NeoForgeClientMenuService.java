@@ -42,8 +42,7 @@ public final class NeoForgeClientMenuService implements ClientMenuService {
 
         screens.add(new ScreenDeclaration<>(
             Objects.requireNonNull(menuType, "menuType"),
-            Objects.requireNonNull(screenFactory, "screenFactory")
-        ));
+            Objects.requireNonNull(screenFactory, "screenFactory")));
     }
 
     private static void registerScreens(RegisterMenuScreensEvent event) {

@@ -22,7 +22,9 @@ import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 
-public class MultiblockControllerBlockEntityRenderer implements BlockEntityRenderer<MultiblockControllerBlockEntity, MultiblockControllerRenderState> {
+public class MultiblockControllerBlockEntityRenderer
+    implements
+        BlockEntityRenderer<MultiblockControllerBlockEntity, MultiblockControllerRenderState> {
     private static BlockState portMarkerState(final PortInstance port) {
         boolean multi = port.types().size() > 1;
         String primary = port.types().stream().findFirst().orElse("");
@@ -34,9 +36,8 @@ public class MultiblockControllerBlockEntityRenderer implements BlockEntityRende
             primary = "item";
         }
 
-        if (multi) {
+        if (multi)
             return Blocks.STAINED_GLASS.white().defaultBlockState();
-        }
 
         return switch (primary) {
             case "energy" -> Blocks.STAINED_GLASS.yellow().defaultBlockState();
@@ -64,9 +65,9 @@ public class MultiblockControllerBlockEntityRenderer implements BlockEntityRende
         state.portMarkers.clear();
         Level level = blockEntity.getLevel();
         List<MultiblockPartEntry> parts = blockEntity.getParts();
-        if (!(level instanceof ClientLevel clientLevel) || !blockEntity.isFormed() || !isStructureRenderable(level, blockEntity.getBlockPos(), parts)) {
+        if (!(level instanceof ClientLevel clientLevel) || !blockEntity.isFormed()
+            || !isStructureRenderable(level, blockEntity.getBlockPos(), parts))
             return;
-        }
 
         for (MultiblockPartEntry entry : parts) {
             BlockPos partPos = blockEntity.getBlockPos().offset(entry.offset());
@@ -75,7 +76,8 @@ public class MultiblockControllerBlockEntityRenderer implements BlockEntityRende
 
         for (PortInstance port : blockEntity.getPorts()) {
             BlockPos portPos = blockEntity.getBlockPos().offset(port.offset());
-            state.portMarkers.add(new RenderPart(port.offset(), createMovingBlock(portPos, portMarkerState(port), clientLevel)));
+            state.portMarkers
+                .add(new RenderPart(port.offset(), createMovingBlock(portPos, portMarkerState(port), clientLevel)));
         }
     }
 
@@ -109,9 +111,8 @@ public class MultiblockControllerBlockEntityRenderer implements BlockEntityRende
     @Override
     public boolean shouldRender(final MultiblockControllerBlockEntity blockEntity, final Vec3 cameraPos) {
         AABB renderBounds = createMultiblockRenderBounds(blockEntity);
-        if (renderBounds == null) {
+        if (renderBounds == null)
             return BlockEntityRenderer.super.shouldRender(blockEntity, cameraPos);
-        }
 
         double viewDistance = getViewDistance();
         return distanceToSqr(renderBounds, cameraPos) < viewDistance * viewDistance;
@@ -122,8 +123,12 @@ public class MultiblockControllerBlockEntityRenderer implements BlockEntityRende
         return renderBounds != null ? renderBounds : new AABB(blockEntity.getBlockPos());
     }
 
-    private static MovingBlockRenderState createMovingBlock(final BlockPos pos, final BlockState blockState, final ClientLevel level) {
-        MovingBlockRenderState renderState = new MovingBlockRenderState();
+    private static MovingBlockRenderState createMovingBlock(
+        final BlockPos pos,
+        final BlockState blockState,
+        final ClientLevel level
+    ) {
+        var renderState = new MovingBlockRenderState();
         renderState.randomSeedPos = pos;
         renderState.blockPos = pos;
         renderState.blockState = blockState;
@@ -133,24 +138,25 @@ public class MultiblockControllerBlockEntityRenderer implements BlockEntityRende
         return renderState;
     }
 
-    private static boolean isStructureRenderable(final Level level, final BlockPos controllerPos, final List<MultiblockPartEntry> parts) {
-        if (parts.isEmpty()) {
+    private static boolean isStructureRenderable(
+        final Level level,
+        final BlockPos controllerPos,
+        final List<MultiblockPartEntry> parts
+    ) {
+        if (parts.isEmpty())
             return false;
-        }
 
         for (MultiblockPartEntry entry : parts) {
             BlockPos worldPos = controllerPos.offset(entry.offset());
             BlockState state = level.getBlockState(worldPos);
             if (entry.offset().equals(BlockPos.ZERO)) {
-                if (!MultiblockLib.isControllerBlock(state.getBlock())) {
+                if (!MultiblockLib.isControllerBlock(state.getBlock()))
                     return false;
-                }
                 continue;
             }
 
-            if (!state.is(MultiblockLib.MULTIBLOCK_PART)) {
+            if (!state.is(MultiblockLib.MULTIBLOCK_PART))
                 return false;
-            }
         }
 
         return true;
@@ -158,9 +164,8 @@ public class MultiblockControllerBlockEntityRenderer implements BlockEntityRende
 
     private static AABB createMultiblockRenderBounds(final MultiblockControllerBlockEntity controller) {
         List<MultiblockPartEntry> parts = controller.getParts();
-        if (!controller.isFormed() || parts.isEmpty()) {
+        if (!controller.isFormed() || parts.isEmpty())
             return null;
-        }
 
         int minX = 0;
         int minY = 0;
@@ -180,13 +185,12 @@ public class MultiblockControllerBlockEntityRenderer implements BlockEntityRende
 
         BlockPos controllerPos = controller.getBlockPos();
         return new AABB(
-                controllerPos.getX() + minX,
-                controllerPos.getY() + minY,
-                controllerPos.getZ() + minZ,
-                controllerPos.getX() + maxX,
-                controllerPos.getY() + maxY,
-                controllerPos.getZ() + maxZ
-        );
+            controllerPos.getX() + minX,
+            controllerPos.getY() + minY,
+            controllerPos.getZ() + minZ,
+            controllerPos.getX() + maxX,
+            controllerPos.getY() + maxY,
+            controllerPos.getZ() + maxZ);
     }
 
     private static double distanceToSqr(final AABB bounds, final Vec3 pos) {

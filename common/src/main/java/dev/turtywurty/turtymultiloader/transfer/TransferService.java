@@ -21,9 +21,11 @@ import java.util.function.Supplier;
 /**
  * Loader-neutral storage exposure and lookup service. Provider declarations are applied at loader-safe timing.
  *
- * <p>On Fabric, declarations made after the first {@link #apply()} are registered immediately. On NeoForge,
+ * <p>
+ * On Fabric, declarations made after the first {@link #apply()} are registered immediately. On NeoForge,
  * declarations remain queued after {@code apply()} until the capability-registration event, and attempts made after
- * that event are rejected. Calling {@code apply()} more than once is always safe and has no additional effect.</p>
+ * that event are rejected. Calling {@code apply()} more than once is always safe and has no additional effect.
+ * </p>
  */
 public interface TransferService {
     static TransferService get() {
@@ -104,9 +106,8 @@ public interface TransferService {
 
     final class ServiceHolder {
         private static final TransferService INSTANCE = ServiceLoader.load(
-                TransferService.class,
-                TransferService.class.getClassLoader()
-            )
+            TransferService.class,
+            TransferService.class.getClassLoader())
             .findFirst()
             .orElseThrow(() -> new IllegalStateException("No transfer service is available"));
 

@@ -64,9 +64,8 @@ public interface EventService {
 
     final class ServiceHolder {
         private static final EventService INSTANCE = ServiceLoader.load(
-                EventService.class,
-                EventService.class.getClassLoader()
-            )
+            EventService.class,
+            EventService.class.getClassLoader())
             .findFirst()
             .orElseThrow(() -> new IllegalStateException("No event service is available"));
 

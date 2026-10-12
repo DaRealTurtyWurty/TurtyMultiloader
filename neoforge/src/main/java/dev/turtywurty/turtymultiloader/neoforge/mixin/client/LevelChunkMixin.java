@@ -15,7 +15,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import java.util.List;
 
 @Mixin(LevelChunk.class)
-abstract class LevelChunkMixin {
+public abstract class LevelChunkMixin {
     @Shadow
     public abstract Level getLevel();
 
@@ -24,8 +24,9 @@ abstract class LevelChunkMixin {
         if (!(getLevel() instanceof ClientLevel level))
             return;
         BlockEntity previous = ((LevelChunk) (Object) this).getBlockEntities().get(blockEntity.getBlockPos());
-        if (previous != null && previous != blockEntity)
+        if (previous != null && previous != blockEntity) {
             NeoForgeClientEventService.fireBlockEntityUnload(previous, level);
+        }
     }
 
     @Inject(method = "removeBlockEntity", at = @At("HEAD"))
@@ -33,8 +34,9 @@ abstract class LevelChunkMixin {
         if (!(getLevel() instanceof ClientLevel level))
             return;
         BlockEntity blockEntity = ((LevelChunk) (Object) this).getBlockEntities().get(pos);
-        if (blockEntity != null)
+        if (blockEntity != null) {
             NeoForgeClientEventService.fireBlockEntityUnload(blockEntity, level);
+        }
     }
 
     @Inject(method = "clearAllBlockEntities", at = @At("HEAD"))

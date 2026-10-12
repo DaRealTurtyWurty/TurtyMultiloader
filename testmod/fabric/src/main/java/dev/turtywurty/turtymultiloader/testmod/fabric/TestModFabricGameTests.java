@@ -72,16 +72,14 @@ public final class TestModFabricGameTests {
 
     @GameTest(structure = "minecraft:empty")
     public void teamRebornEnergy(GameTestHelper helper) {
-        BlockPos relative = new BlockPos(1, 1, 1);
+        var relative = new BlockPos(1, 1, 1);
         helper.setBlock(relative, TestModContent.TEST_LOG.get());
         EnergyStorage blockStorage = EnergyStorage.SIDED.find(
-            helper.getLevel(), helper.absolutePos(relative), Direction.UP
-        );
+            helper.getLevel(), helper.absolutePos(relative), Direction.UP);
         helper.assertTrue(blockStorage != null, "Team Reborn block energy lookup did not resolve");
 
         EnergyStorage itemStorage = ContainerItemContext.withConstant(
-            new ItemStack(TestModContent.TEST_LOG_ITEM.get())
-        ).find(EnergyStorage.ITEM);
+            new ItemStack(TestModContent.TEST_LOG_ITEM.get())).find(EnergyStorage.ITEM);
         helper.assertTrue(itemStorage != null, "Team Reborn item energy lookup did not resolve");
         helper.succeed();
     }
@@ -90,31 +88,24 @@ public final class TestModFabricGameTests {
     public void fabricContextAndCacheLifecycle(GameTestHelper helper) {
         ResourceVariant<Item> item = ResourceVariant.of(
             ResourceTypes.ITEM,
-            TestModContent.TEST_LOG_ITEM.holder()
-        );
-        SimpleSingleSlotStorage<ResourceVariant<Item>> main =
-            new SimpleSingleSlotStorage<>(ResourceTypes.ITEM, 64);
-        SimpleSingleSlotStorage<ResourceVariant<Item>> additional =
-            new SimpleSingleSlotStorage<>(ResourceTypes.ITEM, 64);
-        SimpleSingleSlotStorage<ResourceVariant<Item>> overflow =
-            new SimpleSingleSlotStorage<>(ResourceTypes.ITEM, 64);
+            TestModContent.TEST_LOG_ITEM.holder());
+        SimpleSingleSlotStorage<ResourceVariant<Item>> main = new SimpleSingleSlotStorage<>(ResourceTypes.ITEM, 64);
+        SimpleSingleSlotStorage<ResourceVariant<Item>> additional = new SimpleSingleSlotStorage<>(ResourceTypes.ITEM,
+            64);
+        SimpleSingleSlotStorage<ResourceVariant<Item>> overflow = new SimpleSingleSlotStorage<>(ResourceTypes.ITEM, 64);
         ContainerItemContext nativeContext = FabricMutableItemContext.toFabric(
-            new StorageItemContext(main, List.of(additional), overflow)
-        );
+            new StorageItemContext(main, List.of(additional), overflow));
         helper.assertValueEqual(nativeContext.getAdditionalSlots().size(), 1, "Fabric additional-slot count");
         try (Transaction transaction = Transaction.openOuter()) {
             helper.assertValueEqual(
                 nativeContext.getAdditionalSlots().getFirst().insert(
-                    FabricResourceAdapters.toFabricItem(item), 2, transaction
-                ),
+                    FabricResourceAdapters.toFabricItem(item), 2, transaction),
                 2L,
-                "Fabric additional-slot insertion"
-            );
+                "Fabric additional-slot insertion");
             helper.assertValueEqual(
                 nativeContext.insertOverflow(FabricResourceAdapters.toFabricItem(item), 3, transaction),
                 3L,
-                "Fabric overflow insertion"
-            );
+                "Fabric overflow insertion");
             transaction.commit();
         }
         helper.assertValueEqual(additional.amount(), 2L, "Neutral additional-slot amount");
@@ -122,8 +113,7 @@ public final class TestModFabricGameTests {
         helper.assertValueEqual(
             new FabricMutableItemContext(nativeContext).additionalSlots().size(),
             1,
-            "Neutral context did not preserve Fabric additional slots"
-        );
+            "Neutral context did not preserve Fabric additional slots");
 
         SingleVariantStorage<ItemVariant> resourceDependent = new SingleVariantStorage<>() {
             @Override
@@ -168,8 +158,7 @@ public final class TestModFabricGameTests {
             helper.assertValueEqual(
                 aggregateNeutral.restrictedTo(TransferSupport.INSERT_ONLY).insert(item, 2, transaction),
                 2L,
-                "Aggregate-only Fabric insertion"
-            );
+                "Aggregate-only Fabric insertion");
             transaction.commit();
         }
         helper.assertValueEqual(resourceDependent.getAmount(), 2L, "Aggregate-only Fabric insertion amount");
@@ -177,24 +166,22 @@ public final class TestModFabricGameTests {
         helper.assertValueEqual(
             indexed.capacity(0, differentItem),
             0L,
-            "Fabric slot capacity for a resource incompatible with its current contents"
-        );
+            "Fabric slot capacity for a resource incompatible with its current contents");
         boolean rejectedSnapshot = false;
         try {
             StorageSnapshot.capture(aggregateNeutral);
-        } catch (IllegalArgumentException ignored) {
+        } catch (IllegalArgumentException _) {
             rejectedSnapshot = true;
         }
         helper.assertTrue(rejectedSnapshot, "Aggregate-only Fabric storage allowed an indexed snapshot");
 
-        BlockPos relative = new BlockPos(2, 1, 1);
+        var relative = new BlockPos(2, 1, 1);
         helper.setBlock(relative, TestModContent.TEST_LOG.get());
         BlockStorageCache<ResourceVariant<Item>> cache = TestModContent.TRANSFERS.createBlockCache(
             StorageKeys.ITEM,
             helper.getLevel(),
             helper.absolutePos(relative),
-            Direction.UP
-        );
+            Direction.UP);
         helper.assertTrue(cache.find() != null, "Fabric cache did not resolve");
         helper.setBlock(relative, Blocks.AIR);
         helper.assertTrue(cache.find() == null, "Fabric cache retained the provider after block replacement");
@@ -204,7 +191,7 @@ public final class TestModFabricGameTests {
         boolean rejectedClosedLookup = false;
         try {
             cache.find();
-        } catch (IllegalStateException ignored) {
+        } catch (IllegalStateException _) {
             rejectedClosedLookup = true;
         }
         helper.assertTrue(rejectedClosedLookup, "Closed Fabric cache remained usable");

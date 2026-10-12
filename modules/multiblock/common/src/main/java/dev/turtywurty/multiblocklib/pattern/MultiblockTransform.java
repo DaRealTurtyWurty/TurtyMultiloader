@@ -6,7 +6,12 @@ public final class MultiblockTransform {
     private MultiblockTransform() {
     }
 
-    public static BlockPos transform(final BlockPos pos, final BlockPos size, final MultiblockRotation rotation, final boolean mirrorX) {
+    public static BlockPos transform(
+        final BlockPos pos,
+        final BlockPos size,
+        final MultiblockRotation rotation,
+        final boolean mirrorX
+    ) {
         BlockPos mirrored = mirrorX ? new BlockPos(size.getX() - 1 - pos.getX(), pos.getY(), pos.getZ()) : pos;
         return switch (rotation) {
             case NONE -> mirrored;

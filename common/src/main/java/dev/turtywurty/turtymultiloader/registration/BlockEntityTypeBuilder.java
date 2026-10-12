@@ -50,8 +50,9 @@ public final class BlockEntityTypeBuilder<T extends BlockEntity> {
 
     public BlockEntityTypeBuilder<T> validBlocks(Block... blocks) {
         Objects.requireNonNull(blocks, "blocks");
-        for (Block block : blocks)
+        for (Block block : blocks) {
             validBlock(block);
+        }
 
         return this;
     }
@@ -59,8 +60,9 @@ public final class BlockEntityTypeBuilder<T extends BlockEntity> {
     @SafeVarargs
     public final BlockEntityTypeBuilder<T> validBlocks(Supplier<? extends Block>... blocks) {
         Objects.requireNonNull(blocks, "blocks");
-        for (Supplier<? extends Block> block : blocks)
+        for (Supplier<? extends Block> block : blocks) {
             validBlock(block);
+        }
 
         return this;
     }
@@ -70,8 +72,9 @@ public final class BlockEntityTypeBuilder<T extends BlockEntity> {
      */
     public Block[] resolveValidBlocks() {
         Set<Block> resolvedBlocks = new LinkedHashSet<>(validBlocks.size());
-        for (Supplier<? extends Block> block : validBlocks)
+        for (Supplier<? extends Block> block : validBlocks) {
             resolvedBlocks.add(Objects.requireNonNull(block.get(), "valid block supplier result"));
+        }
 
         return resolvedBlocks.toArray(Block[]::new);
     }

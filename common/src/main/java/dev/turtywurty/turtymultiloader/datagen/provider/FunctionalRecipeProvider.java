@@ -19,8 +19,11 @@ public final class FunctionalRecipeProvider extends RecipeProvider {
     private final BootstrapContext<Advancement> advancements;
     private final RecipeGenerator generator;
 
-    public FunctionalRecipeProvider(BootstrapContext<Recipe<?>> recipes,
-        BootstrapContext<Advancement> advancements, RecipeGenerator generator) {
+    public FunctionalRecipeProvider(
+        BootstrapContext<Recipe<?>> recipes,
+        BootstrapContext<Advancement> advancements,
+        RecipeGenerator generator
+    ) {
         super(recipes, advancements);
         this.recipes = recipes;
         this.advancements = advancements;
@@ -42,8 +45,7 @@ public final class FunctionalRecipeProvider extends RecipeProvider {
             @Override
             public void run(BootstrapGetter registries) {
                 callbacks.forEach(callback -> callback.generate(
-                    registries.get(Registries.RECIPE), registries.get(Registries.ADVANCEMENT)
-                ));
+                    registries.get(Registries.RECIPE), registries.get(Registries.ADVANCEMENT)));
             }
         };
     }

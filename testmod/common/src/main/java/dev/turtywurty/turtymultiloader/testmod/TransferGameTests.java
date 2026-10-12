@@ -56,8 +56,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public final class TransferGameTests {
     public static final Identifier TEST_ID = id("transfer_service");
     private static final TransferUnit DOUBLE_ENERGY = Units.REGISTRY.register(
-        id("double_energy"), UnitDimension.ENERGY, "2E", 2
-    );
+        id("double_energy"), UnitDimension.ENERGY, "2E", 2);
 
     private TransferGameTests() {
     }
@@ -69,24 +68,20 @@ public final class TransferGameTests {
         ResourceType<UnitResource> energyType = ResourceType.direct(
             collidingTypeId,
             UnitDimension.ENERGY,
-            ignored -> false,
-            () -> UnitResource.VALUE
-        );
+            _ -> false,
+            () -> UnitResource.VALUE);
         ResourceType<UnitResource> fluidDimensionType = ResourceType.direct(
             collidingTypeId,
             UnitDimension.FLUID,
-            ignored -> true,
-            () -> UnitResource.VALUE
-        );
+            _ -> true,
+            () -> UnitResource.VALUE);
         helper.assertTrue(
             !energyType.equals(fluidDimensionType),
-            "Incompatible resource types with the same ID aliased"
-        );
+            "Incompatible resource types with the same ID aliased");
 
         ResourceVariant<Item> item = ResourceVariant.of(
             ResourceTypes.ITEM,
-            TestModContent.TEST_LOG_ITEM.holder()
-        );
+            TestModContent.TEST_LOG_ITEM.holder());
         clear(TestModContent.TEST_ITEM_STORAGE);
 
         try (TransferTransaction transaction = TransferTransaction.openRoot()) {
@@ -101,9 +96,10 @@ public final class TransferGameTests {
                 nested.commit();
             }
         }
-        helper.assertValueEqual(TestModContent.TEST_ITEM_STORAGE.amount(), 0L, "Nested commit followed by root rollback");
+        helper.assertValueEqual(TestModContent.TEST_ITEM_STORAGE.amount(), 0L,
+            "Nested commit followed by root rollback");
 
-        AtomicBoolean committed = new AtomicBoolean();
+        var committed = new AtomicBoolean();
         try (TransferTransaction transaction = TransferTransaction.openRoot()) {
             TestModContent.TEST_ITEM_STORAGE.insert(item, 12, transaction);
             transaction.addCommitCallback(() -> committed.set(true));
@@ -111,17 +107,16 @@ public final class TransferGameTests {
         }
         helper.assertTrue(committed.get(), "Root commit callback did not run");
         helper.assertValueEqual(TestModContent.TEST_ITEM_STORAGE.amount(), 12L, "Committed amount");
-        long simulated = TransferTransaction.runSimulation(transaction ->
-            TestModContent.TEST_ITEM_STORAGE.extract(item, 5, transaction));
+        long simulated = TransferTransaction
+            .runSimulation(transaction -> TestModContent.TEST_ITEM_STORAGE.extract(item, 5, transaction));
         helper.assertValueEqual(simulated, 5L, "Simulation result");
         helper.assertValueEqual(TestModContent.TEST_ITEM_STORAGE.amount(), 12L, "Simulation rollback");
 
-        BlockPos relative = new BlockPos(2, 1, 2);
+        var relative = new BlockPos(2, 1, 2);
         helper.setBlock(relative, TestModContent.TEST_LOG.get());
         BlockPos absolute = helper.absolutePos(relative);
         ResourceStorage<ResourceVariant<Item>> exposed = TestModContent.TRANSFERS.findBlock(
-            StorageKeys.ITEM, helper.getLevel(), absolute, Direction.UP
-        );
+            StorageKeys.ITEM, helper.getLevel(), absolute, Direction.UP);
         helper.assertTrue(exposed != null, "Loader-native block exposure was not found");
         try (TransferTransaction transaction = TransferTransaction.openRoot()) {
             helper.assertValueEqual(exposed.extract(item, 2, transaction), 2L, "Adapter extraction");
@@ -132,8 +127,7 @@ public final class TransferGameTests {
         ResourceVariant<UnitResource> energy = ResourceTypes.ENERGY.of(Holder.direct(UnitResource.VALUE));
         clear(TestModContent.TEST_ENERGY_STORAGE);
         ResourceStorage<ResourceVariant<UnitResource>> exposedEnergy = TestModContent.TRANSFERS.findBlock(
-            StorageKeys.ENERGY, helper.getLevel(), absolute, Direction.UP
-        );
+            StorageKeys.ENERGY, helper.getLevel(), absolute, Direction.UP);
         helper.assertTrue(exposedEnergy != null, "Loader-native energy block exposure was not found");
         try (TransferTransaction transaction = TransferTransaction.openRoot()) {
             helper.assertValueEqual(exposedEnergy.insert(energy, 250, transaction), 250L, "Energy adapter insertion");
@@ -142,62 +136,53 @@ public final class TransferGameTests {
         helper.assertValueEqual(TestModContent.TEST_ENERGY_STORAGE.amount(), 250L, "Energy adapter committed amount");
 
         StorageSynchronizer<ResourceVariant<UnitResource>> synchronizer = new StorageSynchronizer<>(exposedEnergy);
-        helper.assertTrue(synchronizer.sendIfChanged(ignored -> {
+        helper.assertTrue(synchronizer.sendIfChanged(_ -> {
         }), "Initial synchronization was not sent");
-        helper.assertTrue(!synchronizer.sendIfChanged(ignored -> {
+        helper.assertTrue(!synchronizer.sendIfChanged(_ -> {
         }), "Unchanged storage synchronized twice");
         try (TransferTransaction transaction = TransferTransaction.openRoot()) {
             exposedEnergy.insert(energy, 1, transaction);
             transaction.commit();
         }
         helper.assertTrue(
-            synchronizer.sendIfChanged(ignored -> {
+            synchronizer.sendIfChanged(_ -> {
             }),
-            "Synchronization missed a loader-native storage mutation"
-        );
+            "Synchronization missed a loader-native storage mutation");
 
         ResourceVariant<Fluid> water = ResourceTypes.FLUID.of(Fluids.WATER.builtInRegistryHolder());
         helper.assertValueEqual(
             FluidVariantAttributes.getViscosity(water, helper.getLevel()),
             5_000,
-            "Common fluid viscosity overlay"
-        );
-        ItemStack fluidComponentStack = new ItemStack(TestModContent.TEST_LOG_ITEM.get());
+            "Common fluid viscosity overlay");
+        var fluidComponentStack = new ItemStack(TestModContent.TEST_LOG_ITEM.get());
         fluidComponentStack.set(TestModContent.TEST_NUMBER.get(), 42);
         ResourceVariant<Fluid> componentWater = water.withComponents(fluidComponentStack.getComponentsPatch());
         helper.assertValueEqual(
             FluidVariantAttributes.getViscosity(componentWater, helper.getLevel()),
             7_500,
-            "Variant-dependent fluid viscosity overlay"
-        );
+            "Variant-dependent fluid viscosity overlay");
         helper.assertValueEqual(
             FluidVariantAttributes.getTemperature(water),
             FluidAttributeService.get().getTemperature(water),
-            "Fluid overlay masked loader-native temperature"
-        );
+            "Fluid overlay masked loader-native temperature");
         helper.assertValueEqual(
             FluidVariantAttributes.getLuminance(water),
             FluidAttributeService.get().getLuminance(water),
-            "Fluid overlay masked loader-native luminance"
-        );
+            "Fluid overlay masked loader-native luminance");
         helper.assertTrue(
-            FluidVariantAttributes.isLighterThanAir(water)
-                == FluidAttributeService.get().isLighterThanAir(water),
-            "Fluid overlay masked loader-native buoyancy"
-        );
+            FluidVariantAttributes.isLighterThanAir(water) == FluidAttributeService.get().isLighterThanAir(water),
+            "Fluid overlay masked loader-native buoyancy");
         ResourceVariant<Fluid> lava = ResourceTypes.FLUID.of(Fluids.LAVA.builtInRegistryHolder());
         helper.assertTrue(FluidVariantAttributes.getLuminance(lava) > 0, "Native lava luminance was not exposed");
         clear(TestModContent.TEST_FLUID_STORAGE);
         ResourceStorage<ResourceVariant<Fluid>> exposedFluid = TestModContent.TRANSFERS.findBlock(
-            StorageKeys.FLUID, helper.getLevel(), absolute, Direction.UP
-        );
+            StorageKeys.FLUID, helper.getLevel(), absolute, Direction.UP);
         helper.assertTrue(exposedFluid != null, "Loader-native fluid block exposure was not found");
         try (TransferTransaction transaction = TransferTransaction.openRoot()) {
             helper.assertValueEqual(
                 exposedFluid.insert(water, 81_000, transaction),
                 81_000L,
-                "One bucket did not cross the loader unit adapter"
-            );
+                "One bucket did not cross the loader unit adapter");
             transaction.commit();
         }
         helper.assertValueEqual(TestModContent.TEST_FLUID_STORAGE.amount(), 81_000L, "Neutral fluid amount");
@@ -205,8 +190,7 @@ public final class TransferGameTests {
         ResourceVariant<Gas> gas = GasVariant.of(TestModContent.TEST_GAS.holder());
         clear(TestModContent.TEST_GAS_STORAGE);
         ResourceStorage<ResourceVariant<Gas>> exposedGas = GasStorage.findBlock(
-            helper.getLevel(), absolute, Direction.UP
-        );
+            helper.getLevel(), absolute, Direction.UP);
         helper.assertTrue(exposedGas != null, "Custom gas capability was not found");
         try (TransferTransaction transaction = TransferTransaction.openRoot()) {
             helper.assertValueEqual(exposedGas.insert(gas, 4_000, transaction), 4_000L, "Gas adapter insertion");
@@ -215,14 +199,12 @@ public final class TransferGameTests {
         helper.assertValueEqual(TestModContent.TEST_GAS_STORAGE.amount(), 4_000L, "Gas committed amount");
         helper.assertTrue(
             new InputSingleGasStorage(1).support(0) == TransferSupport.INSERT_ONLY,
-            "Input gas storage advertised extraction support"
-        );
+            "Input gas storage advertised extraction support");
         helper.assertTrue(
             new OutputSingleGasStorage(1).support(0) == TransferSupport.EXTRACT_ONLY,
-            "Output gas storage advertised insertion support"
-        );
+            "Output gas storage advertised insertion support");
         ResourceVariant<Gas> air = GasVariant.of(GasApi.AIR.holder());
-        InputSingleGasStorage filteredGas = new InputSingleGasStorage(100, gas::equals);
+        var filteredGas = new InputSingleGasStorage(100, gas::equals);
         helper.assertTrue(!filteredGas.isValid(0, air), "Rejected gas was reported as valid");
         helper.assertValueEqual(filteredGas.capacity(0, air), 0L, "Rejected gas reported capacity");
         var registryOps = RegistryOps.create(JsonOps.INSTANCE, helper.getLevel().registryAccess());
@@ -230,65 +212,58 @@ public final class TransferGameTests {
         helper.assertValueEqual(
             GasVariant.CODEC.parse(registryOps, encodedGas).getOrThrow(),
             gas,
-            "Gas resource codec round-trip"
-        );
+            "Gas resource codec round-trip");
 
-        SimpleSingleSlotStorage<ResourceVariant<Item>> gasContainerSlot =
-            new SimpleSingleSlotStorage<>(ResourceTypes.ITEM, 1);
-        ItemStack componentContainer = new ItemStack(Items.BUCKET);
+        SimpleSingleSlotStorage<ResourceVariant<Item>> gasContainerSlot = new SimpleSingleSlotStorage<>(
+            ResourceTypes.ITEM, 1);
+        var componentContainer = new ItemStack(Items.BUCKET);
         componentContainer.set(TestModContent.TEST_NUMBER.get(), 42);
         try (TransferTransaction transaction = TransferTransaction.openRoot()) {
             gasContainerSlot.insert(ResourceVariant.ofItem(componentContainer), 1, transaction);
             transaction.commit();
         }
-        StorageItemContext gasContainerContext = new StorageItemContext(gasContainerSlot);
-        ItemStack gasComponentSource = new ItemStack(TestModContent.TEST_LOG_ITEM.get());
+        var gasContainerContext = new StorageItemContext(gasContainerSlot);
+        var gasComponentSource = new ItemStack(TestModContent.TEST_LOG_ITEM.get());
         gasComponentSource.set(TestModContent.TEST_NUMBER.get(), 73);
         ResourceVariant<Gas> componentGas = gas.withComponents(gasComponentSource.getComponentsPatch());
-        EmptyItemGasStorage emptyGasContainer = new EmptyItemGasStorage(
+        var emptyGasContainer = new EmptyItemGasStorage(
             gasContainerContext,
             (empty, inserted) -> ResourceVariant.of(
                 ResourceTypes.ITEM,
                 BuiltInRegistries.ITEM.wrapAsHolder(Items.GLASS_BOTTLE),
-                inserted.components()
-            ),
+                inserted.components()),
             TestModContent.TEST_GAS.get(),
-            1_000
-        );
+            1_000);
         try (TransferTransaction transaction = TransferTransaction.openRoot()) {
             helper.assertValueEqual(
                 emptyGasContainer.insert(componentGas, 1_000, transaction),
                 1_000L,
-                "Empty gas container insertion"
-            );
+                "Empty gas container insertion");
             transaction.commit();
         }
         helper.assertTrue(gasContainerContext.resource().value() == Items.GLASS_BOTTLE,
             "Gas insertion did not exchange the container item");
         helper.assertValueEqual(gasContainerContext.stack().get(TestModContent.TEST_NUMBER.get()), 73,
             "Gas container exchange lost inserted gas components");
-        FullItemGasStorage fullGasContainer = new FullItemGasStorage(
+        var fullGasContainer = new FullItemGasStorage(
             gasContainerContext,
             Items.BUCKET,
             componentGas,
-            1_000
-        );
+            1_000);
         try (TransferTransaction transaction = TransferTransaction.openRoot()) {
             helper.assertValueEqual(
                 fullGasContainer.extract(componentGas, 1_000, transaction),
                 1_000L,
-                "Full gas container extraction"
-            );
+                "Full gas container extraction");
             transaction.commit();
         }
         helper.assertTrue(gasContainerContext.resource().value() == Items.BUCKET,
             "Gas extraction did not exchange the container item");
-        EmptyItemGasStorage zeroGasContainer = new EmptyItemGasStorage(
+        var zeroGasContainer = new EmptyItemGasStorage(
             gasContainerContext,
             Items.GLASS_BOTTLE,
             TestModContent.TEST_GAS.get(),
-            0
-        );
+            0);
         try (TransferTransaction transaction = TransferTransaction.openRoot()) {
             helper.assertValueEqual(zeroGasContainer.insert(gas, 0, transaction), 0L,
                 "Zero gas insertion amount");
@@ -300,49 +275,43 @@ public final class TransferGameTests {
         ResourceVariant<Slurry> slurry = SlurryVariant.of(TestModContent.TEST_SLURRY.holder());
         clear(TestModContent.TEST_SLURRY_STORAGE);
         ResourceStorage<ResourceVariant<Slurry>> exposedSlurry = SlurryStorage.findBlock(
-            helper.getLevel(), absolute, Direction.UP
-        );
+            helper.getLevel(), absolute, Direction.UP);
         helper.assertTrue(exposedSlurry != null, "Custom slurry capability was not found");
         try (TransferTransaction transaction = TransferTransaction.openRoot()) {
             helper.assertValueEqual(
                 exposedSlurry.insert(slurry, 3_000, transaction),
                 3_000L,
-                "Slurry adapter insertion"
-            );
+                "Slurry adapter insertion");
             transaction.commit();
         }
         helper.assertValueEqual(TestModContent.TEST_SLURRY_STORAGE.amount(), 3_000L, "Slurry committed amount");
         helper.assertTrue(
             new InputSingleSlurryStorage(1).support(0) == TransferSupport.INSERT_ONLY,
-            "Input slurry storage advertised extraction support"
-        );
+            "Input slurry storage advertised extraction support");
         helper.assertTrue(
             new OutputSingleSlurryStorage(1).support(0) == TransferSupport.EXTRACT_ONLY,
-            "Output slurry storage advertised insertion support"
-        );
-        InputSingleSlurryStorage filteredSlurry = new InputSingleSlurryStorage(100, slurry::equals);
+            "Output slurry storage advertised insertion support");
+        var filteredSlurry = new InputSingleSlurryStorage(100, slurry::equals);
         helper.assertTrue(!filteredSlurry.isValid(0, SlurryVariant.blank()),
             "Rejected slurry was reported as valid");
         helper.assertValueEqual(filteredSlurry.capacity(0, SlurryVariant.blank()), 0L,
             "Rejected slurry reported capacity");
-        SimpleSingleSlotStorage<ResourceVariant<Item>> slurryContainerSlot =
-            new SimpleSingleSlotStorage<>(ResourceTypes.ITEM, 1);
+        SimpleSingleSlotStorage<ResourceVariant<Item>> slurryContainerSlot = new SimpleSingleSlotStorage<>(
+            ResourceTypes.ITEM, 1);
         try (TransferTransaction transaction = TransferTransaction.openRoot()) {
             slurryContainerSlot.insert(ResourceVariant.ofItem(new ItemStack(Items.BUCKET)), 1, transaction);
             transaction.commit();
         }
-        StorageItemContext slurryContainerContext = new StorageItemContext(slurryContainerSlot);
+        var slurryContainerContext = new StorageItemContext(slurryContainerSlot);
         ResourceVariant<Slurry> componentSlurry = slurry.withComponents(gasComponentSource.getComponentsPatch());
-        EmptyItemSlurryStorage emptySlurryContainer = new EmptyItemSlurryStorage(
+        var emptySlurryContainer = new EmptyItemSlurryStorage(
             slurryContainerContext,
             (empty, inserted) -> ResourceVariant.of(
                 ResourceTypes.ITEM,
                 BuiltInRegistries.ITEM.wrapAsHolder(Items.GLASS_BOTTLE),
-                inserted.components()
-            ),
+                inserted.components()),
             TestModContent.TEST_SLURRY.get(),
-            1_000
-        );
+            1_000);
         try (TransferTransaction transaction = TransferTransaction.openRoot()) {
             helper.assertValueEqual(emptySlurryContainer.insert(componentSlurry, 1_000, transaction), 1_000L,
                 "Empty slurry container insertion");
@@ -351,19 +320,18 @@ public final class TransferGameTests {
         helper.assertValueEqual(slurryContainerContext.stack().get(TestModContent.TEST_NUMBER.get()), 73,
             "Slurry container exchange lost inserted slurry components");
 
-        SimpleSingleSlotStorage<ResourceVariant<Item>> zeroSlurrySlot =
-            new SimpleSingleSlotStorage<>(ResourceTypes.ITEM, 1);
+        SimpleSingleSlotStorage<ResourceVariant<Item>> zeroSlurrySlot = new SimpleSingleSlotStorage<>(
+            ResourceTypes.ITEM, 1);
         try (TransferTransaction transaction = TransferTransaction.openRoot()) {
             zeroSlurrySlot.insert(ResourceVariant.ofItem(new ItemStack(Items.BUCKET)), 1, transaction);
             transaction.commit();
         }
-        StorageItemContext zeroSlurryContext = new StorageItemContext(zeroSlurrySlot);
-        EmptyItemSlurryStorage zeroSlurryContainer = new EmptyItemSlurryStorage(
+        var zeroSlurryContext = new StorageItemContext(zeroSlurrySlot);
+        var zeroSlurryContainer = new EmptyItemSlurryStorage(
             zeroSlurryContext,
             Items.GLASS_BOTTLE,
             TestModContent.TEST_SLURRY.get(),
-            0
-        );
+            0);
         try (TransferTransaction transaction = TransferTransaction.openRoot()) {
             helper.assertValueEqual(zeroSlurryContainer.insert(slurry, 0, transaction), 0L,
                 "Zero slurry insertion amount");
@@ -375,34 +343,31 @@ public final class TransferGameTests {
         helper.assertValueEqual(
             SlurryVariant.CODEC.parse(registryOps, encodedSlurry).getOrThrow(),
             slurry,
-            "Slurry resource codec round-trip"
-        );
+            "Slurry resource codec round-trip");
 
-        InputSingleGasStorage inputGas = new InputSingleGasStorage(100);
-        OutputSingleGasStorage outputGas = new OutputSingleGasStorage(100);
+        var inputGas = new InputSingleGasStorage(100);
+        var outputGas = new OutputSingleGasStorage(100);
         try (TransferTransaction transaction = TransferTransaction.openRoot()) {
             helper.assertValueEqual(inputGas.insert(gas, 40, transaction), 40L, "Input tank automation fill");
             helper.assertValueEqual(
                 inputGas.extractInternal(gas, 10, transaction),
                 10L,
-                "Input tank owner extraction"
-            );
+                "Input tank owner extraction");
             helper.assertValueEqual(outputGas.insert(gas, 10, transaction), 0L, "Output tank automation rejection");
             helper.assertValueEqual(
                 outputGas.insertInternal(gas, 25, transaction),
                 25L,
-                "Output tank owner insertion"
-            );
+                "Output tank owner insertion");
             transaction.commit();
         }
         helper.assertValueEqual(inputGas.amount(), 30L, "Input tank owner mutation amount");
         helper.assertValueEqual(outputGas.amount(), 25L, "Output tank owner mutation amount");
 
-        SingleGasStorage emptyGas = new SingleGasStorage(100);
+        var emptyGas = new SingleGasStorage(100);
         helper.assertTrue(StorageSnapshot.capture(emptyGas).apply(inputGas), "Input-only tank snapshot clear");
         helper.assertValueEqual(inputGas.amount(), 0L, "Input-only tank was not cleared by snapshot");
 
-        SingleGasStorage filledGas = new SingleGasStorage(100);
+        var filledGas = new SingleGasStorage(100);
         try (TransferTransaction transaction = TransferTransaction.openRoot()) {
             filledGas.insert(gas, 35, transaction);
             transaction.commit();
@@ -438,7 +403,7 @@ public final class TransferGameTests {
             transaction.commit();
         }
 
-        SimpleEnergyStorage simpleEnergy = new SimpleEnergyStorage(100, 10, 5);
+        var simpleEnergy = new SimpleEnergyStorage(100, 10, 5);
         try (TransferTransaction transaction = TransferTransaction.openRoot()) {
             helper.assertValueEqual(simpleEnergy.insert(50, transaction), 10L, "Energy maximum input");
             helper.assertValueEqual(simpleEnergy.insertInternal(50, transaction), 50L, "Energy owner insertion");
@@ -453,16 +418,15 @@ public final class TransferGameTests {
         }
         helper.assertTrue(filledGas.supportsExtraction(), "Restricted view changed backing storage policy");
 
-        SimpleSingleSlotStorage<ResourceVariant<Item>> itemContainer =
-            new SimpleSingleSlotStorage<>(ResourceTypes.ITEM, 64);
+        SimpleSingleSlotStorage<ResourceVariant<Item>> itemContainer = new SimpleSingleSlotStorage<>(ResourceTypes.ITEM,
+            64);
         try (TransferTransaction transaction = TransferTransaction.openRoot()) {
             itemContainer.insert(item, 1, transaction);
             transaction.commit();
         }
         ResourceStorage<ResourceVariant<Item>> itemExposed = TestModContent.TRANSFERS.findItem(
             StorageKeys.ITEM,
-            MutableItemContext.ofSingleSlot(itemContainer)
-        );
+            MutableItemContext.ofSingleSlot(itemContainer));
         helper.assertTrue(itemExposed != null, "Loader-native item exposure was not found");
         try (TransferTransaction transaction = TransferTransaction.openRoot()) {
             helper.assertValueEqual(itemExposed.extract(item, 1, transaction), 1L, "Item adapter extraction");
@@ -470,8 +434,7 @@ public final class TransferGameTests {
         }
         helper.assertValueEqual(TestModContent.TEST_ITEM_STORAGE.amount(), 9L, "Item adapter committed amount");
         MutableItemContext constantItem = MutableItemContext.withConstant(
-            new ItemStack(TestModContent.TEST_LOG_ITEM.get())
-        );
+            new ItemStack(TestModContent.TEST_LOG_ITEM.get()));
         ResourceStorage<ResourceVariant<UnitResource>> itemEnergy = constantItem.find(StorageKeys.ENERGY);
         helper.assertTrue(itemEnergy != null, "Loader-native energy item exposure was not found");
         helper.assertValueEqual(itemEnergy.amount(0), 251L, "Energy item adapter amount");
@@ -480,7 +443,7 @@ public final class TransferGameTests {
                 "Constant item context mutation");
         }
 
-        SimpleContainer inventory = new SimpleContainer(1);
+        var inventory = new SimpleContainer(1);
         inventory.setItem(0, new ItemStack(TestModContent.TEST_LOG_ITEM.get(), 2));
         MutableItemContext inventorySlot = MutableItemContext.ofContainerSlot(inventory, 0);
         try (TransferTransaction transaction = TransferTransaction.openRoot()) {
@@ -489,7 +452,7 @@ public final class TransferGameTests {
         }
         helper.assertValueEqual(inventory.getItem(0).getCount(), 2, "Inventory item context rollback");
 
-        TrackingWorldlyContainer wrappedContainer = new TrackingWorldlyContainer(2);
+        var wrappedContainer = new TrackingWorldlyContainer(2);
         wrappedContainer.setItem(0, new ItemStack(TestModContent.TEST_LOG_ITEM.get(), 2));
         wrappedContainer.setItem(1, new ItemStack(TestModContent.TEST_LOG_ITEM.get(), 3));
         wrappedContainer.resetChanges();
@@ -529,20 +492,18 @@ public final class TransferGameTests {
             "Sided container storage committed insertion");
 
         try (BlockStorageCache<ResourceVariant<Item>> cache = TestModContent.TRANSFERS.createBlockCache(
-            StorageKeys.ITEM, helper.getLevel(), absolute, Direction.UP
-        )) {
+            StorageKeys.ITEM, helper.getLevel(), absolute, Direction.UP)) {
             helper.assertTrue(cache.find() != null, "Cached lookup did not resolve");
             TestModContent.TRANSFERS.invalidateBlock(helper.getLevel(), absolute);
             cache.invalidate();
             helper.assertTrue(cache.find() != null, "Lookup did not recover after explicit invalidation");
         }
 
-        BlockPos multiRelative = new BlockPos(3, 1, 2);
+        var multiRelative = new BlockPos(3, 1, 2);
         helper.setBlock(multiRelative, TestModContent.STRIPPED_TEST_LOG.get());
         clear(TestModContent.TEST_MULTI_ITEM_STORAGE);
         ResourceStorage<ResourceVariant<Item>> exposedMulti = TestModContent.TRANSFERS.findBlock(
-            StorageKeys.ITEM, helper.getLevel(), helper.absolutePos(multiRelative), Direction.UP
-        );
+            StorageKeys.ITEM, helper.getLevel(), helper.absolutePos(multiRelative), Direction.UP);
         helper.assertTrue(exposedMulti != null, "Multi-slot block exposure was not found");
         helper.assertValueEqual(exposedMulti.size(), 2, "Multi-slot adapter size");
         try (TransferTransaction transaction = TransferTransaction.openRoot()) {
@@ -555,20 +516,18 @@ public final class TransferGameTests {
             StorageKeys.ENERGY,
             helper.getLevel(),
             helper.absolutePos(multiRelative),
-            Direction.UP
-        );
+            Direction.UP);
         helper.assertTrue(lateEnergy != null, "Provider declared while registration was open was not registered");
 
         StorageSnapshot<ResourceVariant<Item>> snapshot = StorageSnapshot.capture(TestModContent.TEST_ITEM_STORAGE);
-        SimpleSingleSlotStorage<ResourceVariant<Item>> restored =
-            new SimpleSingleSlotStorage<>(ResourceTypes.ITEM, 64);
+        SimpleSingleSlotStorage<ResourceVariant<Item>> restored = new SimpleSingleSlotStorage<>(ResourceTypes.ITEM, 64);
         helper.assertTrue(snapshot.apply(restored), "ResourceStorage snapshot did not apply");
         helper.assertValueEqual(restored.amount(), 9L, "Serialized/synchronized amount");
 
-        SimpleSingleSlotStorage<ResourceVariant<Item>> moveSource =
-            new SimpleSingleSlotStorage<>(ResourceTypes.ITEM, 100);
-        SimpleSingleSlotStorage<ResourceVariant<Item>> moveTarget =
-            new SimpleSingleSlotStorage<>(ResourceTypes.ITEM, 40);
+        SimpleSingleSlotStorage<ResourceVariant<Item>> moveSource = new SimpleSingleSlotStorage<>(ResourceTypes.ITEM,
+            100);
+        SimpleSingleSlotStorage<ResourceVariant<Item>> moveTarget = new SimpleSingleSlotStorage<>(ResourceTypes.ITEM,
+            40);
         try (TransferTransaction transaction = TransferTransaction.openRoot()) {
             moveSource.insert(item, 100, transaction);
             transaction.commit();
@@ -577,10 +536,10 @@ public final class TransferGameTests {
         helper.assertValueEqual(moveSource.amount(), 60L, "Partial move source amount");
         helper.assertValueEqual(moveTarget.amount(), 40L, "Partial move target amount");
 
-        SimpleSingleSlotStorage<ResourceVariant<Item>> composedSource =
-            new SimpleSingleSlotStorage<>(ResourceTypes.ITEM, 64);
-        SimpleSingleSlotStorage<ResourceVariant<Item>> composedTarget =
-            new SimpleSingleSlotStorage<>(ResourceTypes.ITEM, 64);
+        SimpleSingleSlotStorage<ResourceVariant<Item>> composedSource = new SimpleSingleSlotStorage<>(
+            ResourceTypes.ITEM, 64);
+        SimpleSingleSlotStorage<ResourceVariant<Item>> composedTarget = new SimpleSingleSlotStorage<>(
+            ResourceTypes.ITEM, 64);
         try (TransferTransaction transaction = TransferTransaction.openRoot()) {
             composedSource.insert(item, 10, transaction);
             transaction.commit();
@@ -589,16 +548,15 @@ public final class TransferGameTests {
             helper.assertValueEqual(
                 StorageTransfer.move(composedSource, composedTarget, item, 6, transaction),
                 6L,
-                "Composed transfer amount"
-            );
+                "Composed transfer amount");
         }
         helper.assertValueEqual(composedSource.amount(), 10L, "Outer rollback restored transfer source");
         helper.assertValueEqual(composedTarget.amount(), 0L, "Outer rollback restored transfer target");
 
-        SimpleSingleSlotStorage<ResourceVariant<Item>> snapshotSource =
-            new SimpleSingleSlotStorage<>(ResourceTypes.ITEM, 64);
-        SimpleSingleSlotStorage<ResourceVariant<Item>> snapshotTarget =
-            new SimpleSingleSlotStorage<>(ResourceTypes.ITEM, 64);
+        SimpleSingleSlotStorage<ResourceVariant<Item>> snapshotSource = new SimpleSingleSlotStorage<>(
+            ResourceTypes.ITEM, 64);
+        SimpleSingleSlotStorage<ResourceVariant<Item>> snapshotTarget = new SimpleSingleSlotStorage<>(
+            ResourceTypes.ITEM, 64);
         try (TransferTransaction transaction = TransferTransaction.openRoot()) {
             snapshotSource.insert(item, 3, transaction);
             transaction.commit();
@@ -610,8 +568,7 @@ public final class TransferGameTests {
         }
         helper.assertValueEqual(snapshotTarget.amount(), 0L, "Outer rollback restored snapshot target");
 
-        SimpleSingleSlotStorage<ResourceVariant<Item>> second =
-            new SimpleSingleSlotStorage<>(ResourceTypes.ITEM, 64);
+        SimpleSingleSlotStorage<ResourceVariant<Item>> second = new SimpleSingleSlotStorage<>(ResourceTypes.ITEM, 64);
         CombinedStorage<ResourceVariant<Item>> combined = CombinedStorage.of(restored, second);
         helper.assertValueEqual(combined.size(), 2, "Combined indexed view size");
         SidedStorage<ResourceVariant<Item>> sided = new SidedStorage<>(Map.of(Direction.UP, restored), second);
@@ -621,42 +578,36 @@ public final class TransferGameTests {
         helper.assertValueEqual(
             Units.FLUID_BUCKET.convert(1, Units.FLUID_MILLIBUCKET, RoundingMode.UNNECESSARY),
             1_000L,
-            "Fluid unit conversion"
-        );
+            "Fluid unit conversion");
         helper.assertTrue(
             Units.REGISTRY.get(DOUBLE_ENERGY.id()).orElseThrow() == DOUBLE_ENERGY,
-            "Custom unit did not resolve to its canonical registry value"
-        );
+            "Custom unit did not resolve to its canonical registry value");
         helper.assertValueEqual(
             GasApi.BUCKET.convert(1, GasApi.UNIT, RoundingMode.UNNECESSARY),
             81_000L,
-            "Gas module bucket conversion"
-        );
+            "Gas module bucket conversion");
         helper.assertValueEqual(
             SlurryApi.BUCKET.convert(1, SlurryApi.UNIT, RoundingMode.UNNECESSARY),
             81_000L,
-            "Slurry module bucket conversion"
-        );
+            "Slurry module bucket conversion");
         var encodedUnit = Units.REGISTRY.codec().encodeStart(JsonOps.INSTANCE, DOUBLE_ENERGY).getOrThrow();
         helper.assertTrue(
             Units.REGISTRY.codec().parse(JsonOps.INSTANCE, encodedUnit).getOrThrow() == DOUBLE_ENERGY,
-            "Unit codec did not resolve the canonical registry value"
-        );
+            "Unit codec did not resolve the canonical registry value");
         var encodedEnergy = ResourceVariantCodecs.ENERGY.encodeStart(JsonOps.INSTANCE, energy).getOrThrow();
         helper.assertValueEqual(
             ResourceVariantCodecs.ENERGY.parse(JsonOps.INSTANCE, encodedEnergy).getOrThrow(),
             energy,
-            "Energy resource codec round-trip"
-        );
+            "Energy resource codec round-trip");
         boolean rejectedMismatchedUnit = false;
         try {
             StorageKeys.key(id("invalid_fluid_unit"), ResourceTypes.FLUID, Units.ENERGY);
-        } catch (IllegalArgumentException ignored) {
+        } catch (IllegalArgumentException _) {
             rejectedMismatchedUnit = true;
         }
         helper.assertTrue(rejectedMismatchedUnit, "StorageKey accepted a unit from the wrong dimension");
 
-        ItemStack componentStack = new ItemStack(TestModContent.TEST_LOG_ITEM.get());
+        var componentStack = new ItemStack(TestModContent.TEST_LOG_ITEM.get());
         componentStack.set(TestModContent.TEST_NUMBER.get(), 42);
         ResourceVariant<Item> componentVariant = ResourceVariant.ofItem(componentStack);
         helper.assertTrue(componentVariant.hasComponents(), "Item variant did not retain its data components");
@@ -666,8 +617,9 @@ public final class TransferGameTests {
     private static <V extends ResourceVariant<?>> void clear(ResourceStorage<V> storage) {
         try (TransferTransaction transaction = TransferTransaction.openRoot()) {
             for (int index = 0; index < storage.size(); index++) {
-                if (storage.amount(index) > 0)
+                if (storage.amount(index) > 0) {
                     storage.extract(index, storage.resource(index), storage.amount(index), transaction);
+                }
             }
             transaction.commit();
         }

@@ -23,9 +23,8 @@ public interface ClientMenuService {
 
     final class ServiceHolder {
         private static final ClientMenuService INSTANCE = ServiceLoader.load(
-                ClientMenuService.class,
-                ClientMenuService.class.getClassLoader()
-            )
+            ClientMenuService.class,
+            ClientMenuService.class.getClassLoader())
             .findFirst()
             .orElseThrow(() -> new IllegalStateException("No client menu service is available"));
 

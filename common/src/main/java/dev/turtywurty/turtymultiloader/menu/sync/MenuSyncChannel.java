@@ -16,7 +16,8 @@ import java.util.function.BiConsumer;
 /**
  * A typed clientbound synchronization channel scoped to an open menu instance.
  *
- * <p>Declare channels during common initialization and attach their receiver during client initialization.
+ * <p>
+ * Declare channels during common initialization and attach their receiver during client initialization.
  */
 public final class MenuSyncChannel<M extends AbstractContainerMenu, T> {
     private final Class<M> menuClass;
@@ -33,7 +34,8 @@ public final class MenuSyncChannel<M extends AbstractContainerMenu, T> {
         this.menuClass = Objects.requireNonNull(menuClass, "menuClass");
         this.valueCodec = Objects.requireNonNull(valueCodec, "valueCodec");
         this.payloadType = new CustomPacketPayload.Type<>(Objects.requireNonNull(id, "id"));
-        NetworkService.get().registerPlayClientbound(payloadType, payloadCodec(), Objects.requireNonNull(options, "options"));
+        NetworkService.get().registerPlayClientbound(payloadType, payloadCodec(),
+            Objects.requireNonNull(options, "options"));
     }
 
     public static <M extends AbstractContainerMenu, T> MenuSyncChannel<M, T> register(
@@ -66,13 +68,13 @@ public final class MenuSyncChannel<M extends AbstractContainerMenu, T> {
             throw new IllegalStateException("Client receiver for menu sync channel " + id() + " is already registered");
 
         clientReceiverRegistered = true;
-        NetworkService.get().registerClientHandler(PayloadPhase.PLAY, payloadType, (payload, context) ->
-            context.player().ifPresent(player -> {
+        NetworkService.get().registerClientHandler(PayloadPhase.PLAY, payloadType,
+            (payload, context) -> context.player().ifPresent(player -> {
                 AbstractContainerMenu openMenu = player.containerMenu;
-                if (openMenu.containerId == payload.containerId() && menuClass.isInstance(openMenu))
+                if (openMenu.containerId == payload.containerId() && menuClass.isInstance(openMenu)) {
                     receiver.accept(menuClass.cast(openMenu), payload.value());
-            })
-        );
+                }
+            }));
     }
 
     /**

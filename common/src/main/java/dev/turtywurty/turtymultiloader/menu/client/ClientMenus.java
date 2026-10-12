@@ -37,7 +37,6 @@ public final class ClientMenus {
     ) {
         ClientMenuService.get().registerScreen(
             Objects.requireNonNull(menuType, "menuType"),
-            Objects.requireNonNull(screenFactory, "screenFactory")
-        );
+            Objects.requireNonNull(screenFactory, "screenFactory"));
     }
 }

@@ -12,8 +12,10 @@ import java.util.Optional;
 /**
  * Common, variant-aware overrides for fluid attributes.
  *
- * <p>Every default method delegates to the active loader's native attributes. Implementations may therefore
- * override only the values they own without replacing the other native properties.</p>
+ * <p>
+ * Every default method delegates to the active loader's native attributes. Implementations may therefore
+ * override only the values they own without replacing the other native properties.
+ * </p>
  */
 public interface FluidVariantAttributeHandler {
     default Component getName(ResourceVariant<Fluid> variant) {

@@ -53,22 +53,23 @@ public final class FabricNetworkService implements NetworkService {
         Objects.requireNonNull(type, "type");
         Objects.requireNonNull(codec, "codec");
         Objects.requireNonNull(options, "options");
-        if (flow != PayloadFlow.CLIENTBOUND)
+        if (flow != PayloadFlow.CLIENTBOUND) {
             Objects.requireNonNull(serverHandler, "serverHandler");
+        }
 
-        PayloadKey key = new PayloadKey(phase, type.id());
+        var key = new PayloadKey(phase, type.id());
         if (payloads.values().stream().anyMatch(existing -> existing.type().id().equals(type.id())))
             throw new IllegalStateException("Payload " + type.id() + " is already registered");
 
         VersionProbe probe = VersionProbe.create(phase, flow, type.id(), options.protocolVersion());
         PayloadDeclaration<B, T> declaration = new PayloadDeclaration<>(
-            phase, flow, type, codec, options, serverHandler, probe
-        );
+            phase, flow, type, codec, options, serverHandler, probe);
         payloads.put(key, declaration);
         registerTypes(declaration);
         registerServerHandler(declaration);
-        if (clientEventsRegistered)
+        if (clientEventsRegistered) {
             registerClientProbe(declaration);
+        }
         registerServerEvents();
     }
 
@@ -80,8 +81,7 @@ public final class FabricNetworkService implements NetworkService {
     ) {
         PayloadDeclaration<?, ?> untyped = payloads.get(new PayloadKey(
             Objects.requireNonNull(phase, "phase"),
-            Objects.requireNonNull(type, "type").id()
-        ));
+            Objects.requireNonNull(type, "type").id()));
         if (untyped == null)
             throw new IllegalStateException("Payload " + type.id() + " is not registered for " + phase);
         if (untyped.flow() == PayloadFlow.SERVERBOUND)
@@ -120,8 +120,9 @@ public final class FabricNetworkService implements NetworkService {
     public int sendToPlayer(ServerPlayer player, Iterable<? extends CustomPacketPayload> payloads) {
         int sent = 0;
         for (CustomPacketPayload payload : Objects.requireNonNull(payloads, "payloads")) {
-            if (sendToPlayer(player, Objects.requireNonNull(payload, "payload")))
+            if (sendToPlayer(player, Objects.requireNonNull(payload, "payload"))) {
                 sent++;
+            }
         }
         return sent;
     }
@@ -140,8 +141,7 @@ public final class FabricNetworkService implements NetworkService {
     public void sendToTracking(ServerLevel level, BlockPos pos, CustomPacketPayload payload) {
         send(PlayerLookup.tracking(
             Objects.requireNonNull(level, "level"),
-            Objects.requireNonNull(pos, "pos")
-        ), payload);
+            Objects.requireNonNull(pos, "pos")), payload);
     }
 
     @Override
@@ -156,8 +156,7 @@ public final class FabricNetworkService implements NetworkService {
         send(PlayerLookup.around(
             Objects.requireNonNull(level, "level"),
             Objects.requireNonNull(position, "position"),
-            radius
-        ), payload);
+            radius), payload);
     }
 
     @Override
@@ -229,11 +228,10 @@ public final class FabricNetworkService implements NetworkService {
             return;
         serverEventsRegistered = true;
         ServerConfigurationConnectionEvents.CONFIGURE.register((listener, server) -> {
-            ServerConnectionContext connectionContext = new ServerConnectionContext(
+            var connectionContext = new ServerConnectionContext(
                 server,
                 listener.getPacketContext().orElseThrow(PacketContext.CONNECTION),
-                listener.getOwner()
-            );
+                listener.getOwner());
             if (!validateServerRequired(PayloadPhase.CONFIGURATION, listener))
                 return;
             server.execute(() -> connectionCallbacks.forEach(callback -> callback.accept(connectionContext)));
@@ -246,9 +244,8 @@ public final class FabricNetworkService implements NetworkService {
             joinCallbacks.forEach(callback -> callback.accept(player));
             loginSyncProviders.forEach(provider -> sendToPlayer(player, provider.createPayloads(player)));
         });
-        ServerPlayConnectionEvents.DISCONNECT.register((listener, server) ->
-            disconnectCallbacks.forEach(callback -> callback.accept(listener.getPlayer()))
-        );
+        ServerPlayConnectionEvents.DISCONNECT.register(
+            (listener, server) -> disconnectCallbacks.forEach(callback -> callback.accept(listener.getPlayer())));
     }
 
     private void addConfigurationTask(
@@ -256,13 +253,12 @@ public final class FabricNetworkService implements NetworkService {
         ServerConnectionContext connection,
         ServerConfigurationTask task
     ) {
-        ConfigurationTask.Type type = new ConfigurationTask.Type(task.id().toString());
+        var type = new ConfigurationTask.Type(task.id().toString());
         ((FabricServerConfigurationPacketListenerImpl) listener).addTask(new ConfigurationTask() {
             @Override
             public void start(Consumer<Packet<?>> sender) {
-                FabricConfigurationTaskContext context = new FabricConfigurationTaskContext(
-                    connection, listener, sender, type
-                );
+                var context = new FabricConfigurationTaskContext(
+                    connection, listener, sender, type);
                 try {
                     task.run(context);
                 } catch (RuntimeException exception) {
@@ -322,14 +318,12 @@ public final class FabricNetworkService implements NetworkService {
                     context.responseSender()::sendPacket,
                     context.player().connection::disconnect,
                     context.server(),
-                    null
-                )
-            ));
+                    null)));
         } else {
             ServerConfigurationNetworking.registerGlobalReceiver(declaration.probe().type(), (payload, context) -> {
             });
             ServerConfigurationNetworking.registerGlobalReceiver(declaration.type(), (payload, context) -> {
-                FabricPayloadContext payloadContext = new FabricPayloadContext(
+                var payloadContext = new FabricPayloadContext(
                     PayloadPhase.CONFIGURATION,
                     LogicalSide.SERVER,
                     context.server(),
@@ -341,16 +335,13 @@ public final class FabricNetworkService implements NetworkService {
                     id -> {
                         try {
                             ((FabricServerConfigurationPacketListenerImpl) context.packetListener()).completeTask(
-                                new ConfigurationTask.Type(id.toString())
-                            );
+                                new ConfigurationTask.Type(id.toString()));
                         } catch (IllegalStateException exception) {
                             context.packetListener().disconnect(Component.literal(
-                                "Invalid configuration task acknowledgement " + id
-                            ));
+                                "Invalid configuration task acknowledgement " + id));
                             throw exception;
                         }
-                    }
-                );
+                    });
                 context.server().execute(() -> handler.handle(payload, payloadContext));
             });
         }
@@ -359,7 +350,7 @@ public final class FabricNetworkService implements NetworkService {
     private synchronized void registerClientProbe(PayloadDeclaration<?, ?> declaration) {
         if (declaration.flow() == PayloadFlow.SERVERBOUND)
             return;
-        PayloadKey key = new PayloadKey(declaration.phase(), declaration.probe().type().id());
+        var key = new PayloadKey(declaration.phase(), declaration.probe().type().id());
         if (!clientProbes.add(key))
             return;
         if (declaration.phase() == PayloadPhase.PLAY) {
@@ -375,23 +366,27 @@ public final class FabricNetworkService implements NetworkService {
                 continue;
             boolean supported = true;
             if (listener instanceof ServerPlayer player) {
-                if (declaration.flow() != PayloadFlow.SERVERBOUND)
+                if (declaration.flow() != PayloadFlow.SERVERBOUND) {
                     supported &= ServerPlayNetworking.canSend(player, declaration.type())
                         && ServerPlayNetworking.canSend(player, declaration.probe().type());
-                if (declaration.flow() != PayloadFlow.CLIENTBOUND)
+                }
+                if (declaration.flow() != PayloadFlow.CLIENTBOUND) {
                     supported &= ServerPlayNetworking.getReceived(player).contains(declaration.type().id())
                         && ServerPlayNetworking.getReceived(player).contains(declaration.probe().type().id());
+                }
                 if (!supported) {
                     player.connection.disconnect(incompatible(declaration));
                     return false;
                 }
-            } else if (listener instanceof net.minecraft.server.network.ServerConfigurationPacketListenerImpl config) {
-                if (declaration.flow() != PayloadFlow.SERVERBOUND)
+            } else if (listener instanceof ServerConfigurationPacketListenerImpl config) {
+                if (declaration.flow() != PayloadFlow.SERVERBOUND) {
                     supported &= ServerConfigurationNetworking.canSend(config, declaration.type())
                         && ServerConfigurationNetworking.canSend(config, declaration.probe().type());
-                if (declaration.flow() != PayloadFlow.CLIENTBOUND)
+                }
+                if (declaration.flow() != PayloadFlow.CLIENTBOUND) {
                     supported &= ServerConfigurationNetworking.getReceived(config).contains(declaration.type().id())
                         && ServerConfigurationNetworking.getReceived(config).contains(declaration.probe().type().id());
+                }
                 if (!supported) {
                     config.disconnect(incompatible(declaration));
                     return false;
@@ -401,16 +396,16 @@ public final class FabricNetworkService implements NetworkService {
         return true;
     }
 
-    boolean validateClientRequired(PayloadPhase phase) {
+    protected boolean validateClientRequired(PayloadPhase phase) {
         for (PayloadDeclaration<?, ?> declaration : payloads.values()) {
             if (declaration.phase() != phase || declaration.flow() == PayloadFlow.CLIENTBOUND
                 || declaration.options().support() != PayloadSupport.REQUIRED)
                 continue;
             boolean supported = phase == PayloadPhase.PLAY
                 ? FabricClientNetworkHooks.canSend(PayloadPhase.PLAY, declaration.type())
-                  && FabricClientNetworkHooks.canSend(PayloadPhase.PLAY, declaration.probe().type())
+                    && FabricClientNetworkHooks.canSend(PayloadPhase.PLAY, declaration.probe().type())
                 : FabricClientNetworkHooks.canSend(PayloadPhase.CONFIGURATION, declaration.type())
-                  && FabricClientNetworkHooks.canSend(PayloadPhase.CONFIGURATION, declaration.probe().type());
+                    && FabricClientNetworkHooks.canSend(PayloadPhase.CONFIGURATION, declaration.probe().type());
             if (!supported) {
                 FabricClientNetworkHooks.disconnect(incompatible(declaration));
                 return false;
@@ -419,11 +414,11 @@ public final class FabricNetworkService implements NetworkService {
         return true;
     }
 
-    void fireClientJoin() {
+    protected void fireClientJoin() {
         clientJoinCallbacks.forEach(Runnable::run);
     }
 
-    void fireClientDisconnect() {
+    protected void fireClientDisconnect() {
         clientDisconnectCallbacks.forEach(Runnable::run);
     }
 
@@ -462,14 +457,12 @@ public final class FabricNetworkService implements NetworkService {
         ) {
             String fingerprintSource = phase.name() + '\0' + flow.name() + '\0' + payloadId + '\0' + version;
             String fingerprint = UUID.nameUUIDFromBytes(
-                fingerprintSource.getBytes(StandardCharsets.UTF_8)
-            ).toString();
+                fingerprintSource.getBytes(StandardCharsets.UTF_8)).toString();
             Identifier id = Identifier.fromNamespaceAndPath(
                 payloadId.getNamespace(),
-                "_tml_protocol/" + payloadId.getPath() + "/" + fingerprint
-            );
+                "_tml_protocol/" + payloadId.getPath() + "/" + fingerprint);
             CustomPacketPayload.Type<VersionProbePayload> type = new CustomPacketPayload.Type<>(id);
-            VersionProbePayload payload = new VersionProbePayload(type);
+            var payload = new VersionProbePayload(type);
             return new VersionProbe(type, StreamCodec.unit(payload));
         }
     }
@@ -517,8 +510,9 @@ public final class FabricNetworkService implements NetworkService {
 
         @Override
         public void completeConfigurationTask(Identifier taskId) {
-            if (configurationTaskCompleter == null)
+            if (configurationTaskCompleter == null) {
                 PayloadContext.super.completeConfigurationTask(taskId);
+            }
             configurationTaskCompleter.accept(Objects.requireNonNull(taskId, "taskId"));
         }
 

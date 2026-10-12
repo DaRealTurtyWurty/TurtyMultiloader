@@ -27,8 +27,7 @@ import java.util.function.Supplier;
 public final class NeoForgeAttachmentService implements AttachmentService {
     private static volatile IEventBus modBus;
 
-    private final Map<AttachmentType<?>, NativeTypes<?>> types =
-        new IdentityHashMap<>();
+    private final Map<AttachmentType<?>, NativeTypes<?>> types = new IdentityHashMap<>();
 
     public static synchronized void bind(IEventBus bus) {
         if (modBus != null && modBus != bus)
@@ -49,8 +48,8 @@ public final class NeoForgeAttachmentService implements AttachmentService {
         Objects.requireNonNull(configuration, "configuration").accept(builder);
         AttachmentType<T> type = new AttachmentType<>(id, builder);
 
-        DeferredRegister<net.neoforged.neoforge.attachment.AttachmentType<?>> registrar =
-            DeferredRegister.create(NeoForgeRegistries.Keys.ATTACHMENT_TYPES, id.getNamespace());
+        DeferredRegister<net.neoforged.neoforge.attachment.AttachmentType<?>> registrar = DeferredRegister
+            .create(NeoForgeRegistries.Keys.ATTACHMENT_TYPES, id.getNamespace());
         var holder = registrar.register(id.getPath(), () -> createNative(type, NeoForgeAttachmentService::wrap));
         registrar.register(bus);
 
@@ -58,14 +57,12 @@ public final class NeoForgeAttachmentService implements AttachmentService {
         // persistence level so server-global and level values cannot alias even when they share a common type.
         Identifier serverId = Identifier.fromNamespaceAndPath(
             TurtyMultiloader.MOD_ID,
-            "server_attachment/" + id.getNamespace() + "/" + id.getPath()
-        );
-        DeferredRegister<net.neoforged.neoforge.attachment.AttachmentType<?>> serverRegistrar =
-            DeferredRegister.create(NeoForgeRegistries.Keys.ATTACHMENT_TYPES, serverId.getNamespace());
+            "server_attachment/" + id.getNamespace() + "/" + id.getPath());
+        DeferredRegister<net.neoforged.neoforge.attachment.AttachmentType<?>> serverRegistrar = DeferredRegister
+            .create(NeoForgeRegistries.Keys.ATTACHMENT_TYPES, serverId.getNamespace());
         var serverHolder = serverRegistrar.register(
             serverId.getPath(),
-            () -> createNative(type, NeoForgeAttachmentService::wrapServer)
-        );
+            () -> createNative(type, NeoForgeAttachmentService::wrapServer));
         serverRegistrar.register(bus);
         types.put(type, new NativeTypes<>(holder, serverHolder));
         return type;
@@ -78,8 +75,8 @@ public final class NeoForgeAttachmentService implements AttachmentService {
 
     @Override
     public <T> T getOrCreate(AttachmentTarget target, AttachmentType<T> type) {
-        type.defaultFactory().orElseThrow(() ->
-            new IllegalStateException("Attachment " + type.id() + " has no default factory"));
+        type.defaultFactory()
+            .orElseThrow(() -> new IllegalStateException("Attachment " + type.id() + " has no default factory"));
         return nativeTarget(target).getData(nativeType(target, type));
     }
 
@@ -87,8 +84,7 @@ public final class NeoForgeAttachmentService implements AttachmentService {
     public <T> Optional<T> set(AttachmentTarget target, AttachmentType<T> type, T value) {
         return Optional.ofNullable(nativeTarget(target).setData(
             nativeType(target, type),
-            Objects.requireNonNull(value, "value")
-        ));
+            Objects.requireNonNull(value, "value")));
     }
 
     @Override
@@ -119,12 +115,12 @@ public final class NeoForgeAttachmentService implements AttachmentService {
             });
         var builder = net.neoforged.neoforge.attachment.AttachmentType.builder(defaultFactory);
         type.persistenceCodec().ifPresent(codec -> builder.serialize(codec.fieldOf("value")));
-        if (type.copyOnDeath())
+        if (type.copyOnDeath()) {
             builder.copyOnDeath();
+        }
         type.streamCodec().ifPresent(codec -> builder.sync(
             (holder, player) -> type.syncPredicate().orElseThrow().test(targetWrapper.apply(holder), player),
-            codec
-        ));
+            codec));
         return builder.build();
     }
 
@@ -149,7 +145,8 @@ public final class NeoForgeAttachmentService implements AttachmentService {
     private static AttachmentTarget wrapServer(IAttachmentHolder holder) {
         if (holder instanceof ServerLevel level)
             return AttachmentTarget.server(level.getServer());
-        throw new IllegalArgumentException("Server attachment must be stored by a server level, got " + holder.getClass());
+        throw new IllegalArgumentException(
+            "Server attachment must be stored by a server level, got " + holder.getClass());
     }
 
     @SuppressWarnings("unchecked")
@@ -160,8 +157,8 @@ public final class NeoForgeAttachmentService implements AttachmentService {
         NativeTypes<?> nativeTypes = types.get(Objects.requireNonNull(type, "type"));
         if (nativeTypes == null)
             throw new IllegalArgumentException("Attachment type was not registered by this service: " + type.id());
-        Supplier<? extends net.neoforged.neoforge.attachment.AttachmentType<?>> supplier =
-            target.kind() == AttachmentTarget.Kind.SERVER ? nativeTypes.server() : nativeTypes.regular();
+        Supplier<? extends net.neoforged.neoforge.attachment.AttachmentType<?>> supplier = target
+            .kind() == AttachmentTarget.Kind.SERVER ? nativeTypes.server() : nativeTypes.regular();
         return (net.neoforged.neoforge.attachment.AttachmentType<T>) supplier.get();
     }
 

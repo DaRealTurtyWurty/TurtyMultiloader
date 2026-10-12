@@ -32,20 +32,16 @@ import java.util.Set;
  * Compile- and run-time smoke coverage for every common data-generation provider family.
  */
 public final class TestDataGeneration {
-    private static final ConventionTag<Item> TEST_INGOTS =
-        ConventionTags.item("ingots/turtymultiloader_test");
+    private static final ConventionTag<Item> TEST_INGOTS = ConventionTags.item("ingots/turtymultiloader_test");
     private static final ResourceKey<DamageType> TEST_DAMAGE_TYPE = ResourceKey.create(
         Registries.DAMAGE_TYPE,
-        id("test_damage")
-    );
+        id("test_damage"));
     private static final ResourceKey<LootTable> TEST_LOOT_TABLE = ResourceKey.create(
         Registries.LOOT_TABLE,
-        id("test_empty")
-    );
+        id("test_empty"));
     private static final ResourceKey<Recipe<?>> TEST_RECIPE = ResourceKey.create(
         Registries.RECIPE,
-        id("test_convention_tag")
-    );
+        id("test_convention_tag"));
 
     public static final DataGenerationSpec SPEC = DataGeneration.spec(TestModContent.MOD_ID)
         .woodSet(TestModContent.TEST_WOOD_SET)
@@ -53,64 +49,51 @@ public final class TestDataGeneration {
             @Override
             public void buildRecipes() {
                 ShapelessRecipeBuilder.shapeless(
-                registries.lookup(Registries.ITEM),
-                RecipeCategory.MISC,
-                Items.DIAMOND
-            )
-            .requires(TEST_INGOTS.key())
-            .unlockedBy("has_iron_ingot", InventoryChangeTrigger.TriggerInstance.hasItems(Items.IRON_INGOT))
-            .save(output, TEST_RECIPE);
+                    registries.lookup(Registries.ITEM),
+                    RecipeCategory.MISC,
+                    Items.DIAMOND)
+                    .requires(TEST_INGOTS.key())
+                    .unlockedBy("has_iron_ingot", InventoryChangeTrigger.TriggerInstance.hasItems(Items.IRON_INGOT))
+                    .save(output, TEST_RECIPE);
             }
         }.buildRecipes())
         .blockTags((registries, tags) -> tags.tag(TagKey.create(
             Registries.BLOCK,
-            id("test_blocks")
-        )).add(Blocks.STONE.builtInRegistryHolder().key()))
+            id("test_blocks"))).add(Blocks.STONE.builtInRegistryHolder().key()))
         .itemTags((registries, tags) -> tags.tag(TEST_INGOTS)
             .add(Items.IRON_INGOT.builtInRegistryHolder().key()))
         .fluidTags((registries, tags) -> tags.tag(TagKey.create(
             Registries.FLUID,
-            id("test_fluids")
-        )).add(Fluids.WATER.builtInRegistryHolder().key()))
+            id("test_fluids"))).add(Fluids.WATER.builtInRegistryHolder().key()))
         .entityTypeTags((registries, tags) -> tags.tag(TagKey.create(
             Registries.ENTITY_TYPE,
-            id("test_entities")
-        )).add(EntityTypes.COW.builtInRegistryHolder().key()))
+            id("test_entities"))).add(EntityTypes.COW.builtInRegistryHolder().key()))
         .language("en_us", translations -> {
             translations.add("datagen.turtymultiloader_testmod.smoke", "Data generation smoke test");
             translations.add(TEST_INGOTS, "Test Ingots");
         })
         .models(models -> {
             models.blockState(id("test_block"), JsonParser.parseString(
-                "{\"variants\":{\"\":{\"model\":\"turtymultiloader_testmod:block/test_block\"}}}"
-            ));
+                "{\"variants\":{\"\":{\"model\":\"turtymultiloader_testmod:block/test_block\"}}}"));
             models.blockModel(id("test_block"), JsonParser.parseString(
-                "{\"parent\":\"minecraft:block/cube_all\",\"textures\":{\"all\":\"minecraft:block/stone\"}}"
-            ));
+                "{\"parent\":\"minecraft:block/cube_all\",\"textures\":{\"all\":\"minecraft:block/stone\"}}"));
             models.blockModel(id("block/test_prefixed"), JsonParser.parseString(
-                "{\"parent\":\"minecraft:block/cube_all\",\"textures\":{\"all\":\"minecraft:block/stone\"}}"
-            ));
+                "{\"parent\":\"minecraft:block/cube_all\",\"textures\":{\"all\":\"minecraft:block/stone\"}}"));
             models.itemModel(id("test_item"), JsonParser.parseString(
-                "{\"parent\":\"minecraft:item/generated\",\"textures\":{\"layer0\":\"minecraft:item/iron_ingot\"}}"
-            ));
+                "{\"parent\":\"minecraft:item/generated\",\"textures\":{\"layer0\":\"minecraft:item/iron_ingot\"}}"));
             models.itemModel(id("item/test_prefixed"), JsonParser.parseString(
-                "{\"parent\":\"minecraft:item/generated\",\"textures\":{\"layer0\":\"minecraft:item/iron_ingot\"}}"
-            ));
+                "{\"parent\":\"minecraft:item/generated\",\"textures\":{\"layer0\":\"minecraft:item/iron_ingot\"}}"));
             models.itemDefinition(id("test_item"), JsonParser.parseString(
-                "{\"model\":{\"type\":\"minecraft:model\",\"model\":\"turtymultiloader_testmod:item/test_item\"}}"
-            ));
+                "{\"model\":{\"type\":\"minecraft:model\",\"model\":\"turtymultiloader_testmod:item/test_item\"}}"));
         })
         .vanillaModels((blocks, items) -> blocks.createParticleOnlyBlock(
             TestModContent.TEST_LOG.get(),
-            Blocks.STONE
-        ))
+            Blocks.STONE))
         .lootTables(
             Set.of(TEST_LOOT_TABLE),
             List.of(new LootTableProvider.SubProviderEntry(
                 output -> () -> output.accept(TEST_LOOT_TABLE, LootTable.lootTable()),
-                LootContextParamSets.EMPTY
-            ))
-        )
+                LootContextParamSets.EMPTY)))
         .damageTypes(context -> context.register(TEST_DAMAGE_TYPE, new DamageType("test_damage", 0.1F)))
         .build();
 

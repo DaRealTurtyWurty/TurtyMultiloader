@@ -62,8 +62,12 @@ public final class NeoForgeEnergyAdapter {
             }
 
             @Override
-            public long insert(int index, ResourceVariant<UnitResource> resource, long maxAmount,
-                               TransferContext transaction) {
+            public long insert(
+                int index,
+                ResourceVariant<UnitResource> resource,
+                long maxAmount,
+                TransferContext transaction
+            ) {
                 StoragePreconditions.index(index, 1);
                 if (!resource.equals(scalar))
                     return 0;
@@ -72,8 +76,12 @@ public final class NeoForgeEnergyAdapter {
             }
 
             @Override
-            public long extract(int index, ResourceVariant<UnitResource> resource, long maxAmount,
-                                TransferContext transaction) {
+            public long extract(
+                int index,
+                ResourceVariant<UnitResource> resource,
+                long maxAmount,
+                TransferContext transaction
+            ) {
                 StoragePreconditions.index(index, 1);
                 if (!resource.equals(scalar))
                     return 0;

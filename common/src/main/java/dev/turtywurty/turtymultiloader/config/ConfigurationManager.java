@@ -38,16 +38,14 @@ public final class ConfigurationManager {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static final Identifier SYNC_ID = Identifier.fromNamespaceAndPath(
         TurtyMultiloader.MOD_ID,
-        "configuration_sync"
-    );
+        "configuration_sync");
     private static final CustomPacketPayload.Type<SyncPayload> SYNC_TYPE = new CustomPacketPayload.Type<>(SYNC_ID);
     private static final StreamCodec<RegistryFriendlyByteBuf, SyncPayload> SYNC_CODEC = StreamCodec.composite(
         Identifier.STREAM_CODEC,
         SyncPayload::configId,
         ByteBufCodecs.stringUtf8(1_048_576),
         SyncPayload::json,
-        SyncPayload::new
-    ).cast();
+        SyncPayload::new).cast();
 
     private final Map<Identifier, Handle<?>> handles = new LinkedHashMap<>();
     private final Map<String, ConfigScreenFactory> screens = new LinkedHashMap<>();
@@ -69,10 +67,11 @@ public final class ConfigurationManager {
             throw new IllegalStateException("Configuration " + spec.id() + " is already registered");
 
         if (shouldLoadNow(spec.scope())) {
-            if (spec.scope() == ConfigScope.SERVER)
+            if (spec.scope() == ConfigScope.SERVER) {
                 handle.load(activeServer, ConfigLifecycle.LOAD);
-            else
+            } else {
                 handle.load(null, ConfigLifecycle.LOAD);
+            }
         }
         return handle;
     }
@@ -108,9 +107,8 @@ public final class ConfigurationManager {
         clientInitialized = true;
 
         NetworkService network = NetworkService.get();
-        network.registerClientHandler(PayloadPhase.PLAY, SYNC_TYPE, (payload, context) ->
-            applySynchronization(payload)
-        );
+        network.registerClientHandler(PayloadPhase.PLAY, SYNC_TYPE,
+            (payload, context) -> applySynchronization(payload));
         network.onClientDisconnect(this::clientDisconnected);
         handles.values().stream()
             .filter(handle -> handle.spec().scope() == ConfigScope.CLIENT)
@@ -118,8 +116,8 @@ public final class ConfigurationManager {
     }
 
     public synchronized void registerScreen(String modId, ConfigScreenFactory factory) {
-        if (screens.putIfAbsent(Objects.requireNonNull(modId, "modId"), Objects.requireNonNull(factory, "factory"))
-            != null)
+        if (screens.putIfAbsent(Objects.requireNonNull(modId, "modId"),
+            Objects.requireNonNull(factory, "factory")) != null)
             throw new IllegalStateException("A config screen is already registered for " + modId);
     }
 
@@ -154,8 +152,9 @@ public final class ConfigurationManager {
     private synchronized void clientDisconnected() {
         // An integrated server owns this manager too. If its disconnect event runs before the server-stop event,
         // leave the value installed so serverStopping can persist it; serverStopping clears it afterwards.
-        if (activeServer == null)
+        if (activeServer == null) {
             clearServerConfigurations();
+        }
     }
 
     private void clearServerConfigurations() {
@@ -167,8 +166,9 @@ public final class ConfigurationManager {
     private synchronized List<SyncPayload> synchronizedPayloads() {
         List<SyncPayload> payloads = new ArrayList<>();
         for (Handle<?> handle : handles.values()) {
-            if (handle.spec().scope().synchronizedToClient() && handle.isLoaded())
+            if (handle.spec().scope().synchronizedToClient() && handle.isLoaded()) {
                 payloads.add(handle.payload());
+            }
         }
         return payloads;
     }
@@ -187,8 +187,9 @@ public final class ConfigurationManager {
     }
 
     private void synchronize(MinecraftServer server, Handle<?> handle) {
-        if (handle.spec().scope().synchronizedToClient())
+        if (handle.spec().scope().synchronizedToClient()) {
             NetworkService.get().sendToAll(server, handle.payload());
+        }
     }
 
     private LiteralArgumentBuilder<CommandSourceStack> command() {
@@ -203,8 +204,7 @@ public final class ConfigurationManager {
                             .executes(context -> get(
                                 context.getSource(),
                                 id(context, "id"),
-                                StringArgumentType.getString(context, "path")
-                            )))))
+                                StringArgumentType.getString(context, "path"))))))
                 .then(Commands.literal("set")
                     .then(Commands.argument("id", StringArgumentType.word())
                         .then(Commands.argument("path", StringArgumentType.word())
@@ -213,8 +213,7 @@ public final class ConfigurationManager {
                                     context.getSource(),
                                     id(context, "id"),
                                     StringArgumentType.getString(context, "path"),
-                                    StringArgumentType.getString(context, "json")
-                                ))))))
+                                    StringArgumentType.getString(context, "json")))))))
                 .then(Commands.literal("reload")
                     .then(Commands.argument("id", StringArgumentType.word())
                         .executes(context -> reload(context.getSource(), id(context, "id")))))
@@ -229,8 +228,7 @@ public final class ConfigurationManager {
             return 0;
         }
         handles.values().forEach(handle -> source.sendSuccess(() -> Component.literal(
-            handle.spec().id() + " [" + handle.spec().scope().name().toLowerCase() + "]"
-        ), false));
+            handle.spec().id() + " [" + handle.spec().scope().name().toLowerCase() + "]"), false));
         return handles.size();
     }
 
@@ -310,8 +308,9 @@ public final class ConfigurationManager {
 
     private Handle<?> requireHandle(CommandSourceStack source, Identifier id) {
         Handle<?> handle = handles.get(id);
-        if (handle == null)
+        if (handle == null) {
             source.sendFailure(Component.literal("Unknown configuration: " + id));
+        }
         return handle;
     }
 
@@ -439,8 +438,7 @@ public final class ConfigurationManager {
                 TurtyMultiloader.LOGGER.error(
                     "Invalid config {} was backed up and replaced with defaults",
                     spec.id(),
-                    exception
-                );
+                    exception);
             }
             spec.listener().accept(value, lifecycle);
         }
@@ -511,21 +509,23 @@ public final class ConfigurationManager {
 
         private Path resolve(MinecraftServer server) {
             Optional<MinecraftServer> context = Optional.ofNullable(server);
-            if (spec.scope() == ConfigScope.SERVER && context.isEmpty())
+            if (spec.scope() == ConfigScope.SERVER && context.isEmpty()) {
                 context = Optional.ofNullable(activeServer);
+            }
             return spec.path().resolve(spec.id(), spec.scope(), context).toAbsolutePath().normalize();
         }
 
         private void write(Path path) {
             try {
                 Path parent = path.getParent();
-                if (parent != null)
+                if (parent != null) {
                     Files.createDirectories(parent);
+                }
                 Path temporary = path.resolveSibling(path.getFileName() + ".tmp");
                 Files.writeString(temporary, GSON.toJson(encode()) + System.lineSeparator());
                 try {
                     Files.move(temporary, path, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
-                } catch (AtomicMoveNotSupportedException ignored) {
+                } catch (AtomicMoveNotSupportedException _) {
                     Files.move(temporary, path, StandardCopyOption.REPLACE_EXISTING);
                 }
             } catch (IOException exception) {

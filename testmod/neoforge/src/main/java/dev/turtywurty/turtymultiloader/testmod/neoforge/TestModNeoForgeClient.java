@@ -23,7 +23,6 @@ public final class TestModNeoForgeClient {
             PayloadPhase.PLAY,
             TestModContent.TEST_PAYLOAD_TYPE,
             (payload, context) -> {
-            }
-        );
+            });
     }
 }

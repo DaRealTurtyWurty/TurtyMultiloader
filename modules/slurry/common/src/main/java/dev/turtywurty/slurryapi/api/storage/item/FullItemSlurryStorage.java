@@ -36,11 +36,9 @@ public final class FullItemSlurryStorage implements SingleSlotStorage<ResourceVa
             full -> ResourceVariant.of(
                 ResourceTypes.ITEM,
                 BuiltInRegistries.ITEM.wrapAsHolder(emptyItem),
-                full.components()
-            ),
+                full.components()),
             containedSlurry,
-            containedAmount
-        );
+            containedAmount);
     }
 
     public FullItemSlurryStorage(

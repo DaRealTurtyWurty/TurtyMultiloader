@@ -24,12 +24,10 @@ import java.util.function.Supplier;
 public final class ResourceTypes {
     public static final ResourceType<Item> ITEM = ResourceType.registered(
         id("item"), Registries.ITEM, UnitDimension.ITEM,
-        item -> item == Items.AIR, () -> Items.AIR.builtInRegistryHolder()
-    );
+        item -> item == Items.AIR, () -> Items.AIR.builtInRegistryHolder());
     public static final ResourceType<Fluid> FLUID = ResourceType.registered(
         id("fluid"), Registries.FLUID, UnitDimension.FLUID,
-        fluid -> fluid == Fluids.EMPTY, () -> Fluids.EMPTY.builtInRegistryHolder()
-    );
+        fluid -> fluid == Fluids.EMPTY, () -> Fluids.EMPTY.builtInRegistryHolder());
     public static final ResourceType<UnitResource> ENERGY = scalar("energy");
 
     private ResourceTypes() {

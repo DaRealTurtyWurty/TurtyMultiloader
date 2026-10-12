@@ -36,17 +36,17 @@ public final class MultiblockLib {
 
     public static final MultiblockDefinitionManager DEFINITION_MANAGER = new MultiblockDefinitionManager();
 
-    public static final ResourceKey<Block> MULTIBLOCK_PART_KEY = ResourceKey.create(Registries.BLOCK, Identifier.parse(MOD_ID + ":multiblock_part"));
+    public static final ResourceKey<Block> MULTIBLOCK_PART_KEY = ResourceKey.create(Registries.BLOCK,
+        Identifier.parse(MOD_ID + ":multiblock_part"));
     public static MultiblockPartBlock MULTIBLOCK_PART;
-    public static final ResourceKey<Block> MULTIBLOCK_CONTROLLER_KEY = ResourceKey.create(Registries.BLOCK, Identifier.parse(MOD_ID + ":multiblock_controller"));
+    public static final ResourceKey<Block> MULTIBLOCK_CONTROLLER_KEY = ResourceKey.create(Registries.BLOCK,
+        Identifier.parse(MOD_ID + ":multiblock_controller"));
     public static MultiblockControllerBlock MULTIBLOCK_CONTROLLER;
     private static final Set<Block> CONTROLLER_BLOCKS = new HashSet<>();
     public static RegistrationHandle<Block, MultiblockPartBlock> MULTIBLOCK_PART_HANDLE;
     public static RegistrationHandle<Block, MultiblockControllerBlock> MULTIBLOCK_CONTROLLER_HANDLE;
-    public static RegistrationHandle<BlockEntityType<?>, BlockEntityType<MultiblockPartBlockEntity>>
-        MULTIBLOCK_PART_ENTITY_HANDLE;
-    public static RegistrationHandle<BlockEntityType<?>, BlockEntityType<MultiblockControllerBlockEntity>>
-        MULTIBLOCK_CONTROLLER_ENTITY_HANDLE;
+    public static RegistrationHandle<BlockEntityType<?>, BlockEntityType<MultiblockPartBlockEntity>> MULTIBLOCK_PART_ENTITY_HANDLE;
+    public static RegistrationHandle<BlockEntityType<?>, BlockEntityType<MultiblockControllerBlockEntity>> MULTIBLOCK_CONTROLLER_ENTITY_HANDLE;
     private static boolean initialized;
 
     private static void registerContent() {
@@ -54,28 +54,24 @@ public final class MultiblockLib {
         MULTIBLOCK_PART_HANDLE = registries.registerBlock(id("multiblock_part"), () -> {
             MULTIBLOCK_PART = new MultiblockPartBlock(
                 BlockBehaviour.Properties.of().mapColor(MapColor.NONE).strength(1.0F).noOcclusion()
-                    .setId(MULTIBLOCK_PART_KEY)
-            );
+                    .setId(MULTIBLOCK_PART_KEY));
             return MULTIBLOCK_PART;
         });
         MULTIBLOCK_PART_ENTITY_HANDLE = registries.registerBlockEntityType(
             id("multiblock_part"),
             MultiblockPartBlockEntity::new,
-            builder -> builder.validBlock(MULTIBLOCK_PART_HANDLE)
-        );
+            builder -> builder.validBlock(MULTIBLOCK_PART_HANDLE));
         MULTIBLOCK_CONTROLLER_HANDLE = registries.registerBlock(id("multiblock_controller"), () -> {
             MULTIBLOCK_CONTROLLER = new MultiblockControllerBlock(
                 BlockBehaviour.Properties.of().mapColor(MapColor.NONE).strength(1.0F).noOcclusion()
-                    .setId(MULTIBLOCK_CONTROLLER_KEY)
-            );
+                    .setId(MULTIBLOCK_CONTROLLER_KEY));
             CONTROLLER_BLOCKS.add(MULTIBLOCK_CONTROLLER);
             return MULTIBLOCK_CONTROLLER;
         });
         MULTIBLOCK_CONTROLLER_ENTITY_HANDLE = registries.registerBlockEntityType(
             id("multiblock_controller"),
             MultiblockControllerBlockEntity::new,
-            builder -> builder.validBlock(MULTIBLOCK_CONTROLLER_HANDLE)
-        );
+            builder -> builder.validBlock(MULTIBLOCK_CONTROLLER_HANDLE));
         registries.apply();
     }
 
@@ -88,7 +84,8 @@ public final class MultiblockLib {
         MultiblockPatternRegistry.register(Identifier.parse(MOD_ID + ":cylinder"), new CylinderPatternFactory());
         MultiblockPatternRegistry.register(Identifier.parse(MOD_ID + ":pyramid"), new PyramidPatternFactory());
         MultiblockPatternRegistry.register(Identifier.parse(MOD_ID + ":plus"), new PlusPatternFactory());
-        MultiblockPatternRegistry.register(Identifier.parse(MOD_ID + ":checkerboard"), new CheckerboardPatternFactory());
+        MultiblockPatternRegistry.register(Identifier.parse(MOD_ID + ":checkerboard"),
+            new CheckerboardPatternFactory());
         MultiblockPatternRegistry.register(Identifier.parse(MOD_ID + ":layered"), new LayeredPatternFactory());
         MultiblockPatternRegistry.register(Identifier.parse(MOD_ID + ":sphere"), new SpherePatternFactory());
         MultiblockPatternRegistry.register(Identifier.parse(MOD_ID + ":hollow_box"), new HollowBoxPatternFactory());
@@ -100,18 +97,14 @@ public final class MultiblockLib {
 
     private static void registerEvents() {
         MultiblockPlatformService.get().registerUseBlock((player, level, hand, hitResult) -> {
-            if (level.isClientSide()) {
+            if (level.isClientSide())
                 return InteractionResult.PASS;
-            }
-            if (hand != InteractionHand.MAIN_HAND) {
+            if (hand != InteractionHand.MAIN_HAND)
                 return InteractionResult.PASS;
-            }
-            if (!(level instanceof ServerLevel serverLevel)) {
+            if (!(level instanceof ServerLevel serverLevel))
                 return InteractionResult.PASS;
-            }
-            if (!(player instanceof ServerPlayer serverPlayer)) {
+            if (!(player instanceof ServerPlayer serverPlayer))
                 return InteractionResult.PASS;
-            }
 
             ItemStack stack = player.getItemInHand(hand);
             return MultiblockPlacement.tryForm(serverLevel, hitResult.getBlockPos(), stack, serverPlayer);
@@ -144,9 +137,8 @@ public final class MultiblockLib {
     }
 
     public static synchronized void initialize() {
-        if (initialized) {
+        if (initialized)
             return;
-        }
         initialized = true;
         registerContent();
         registerPatterns();

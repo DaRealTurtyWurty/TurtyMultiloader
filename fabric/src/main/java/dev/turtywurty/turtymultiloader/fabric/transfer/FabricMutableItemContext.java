@@ -42,8 +42,11 @@ public final class FabricMutableItemContext implements MutableItemContext {
             }
 
             @Override
-            public long insert(ItemVariant resource, long maxAmount,
-                               TransactionContext transaction) {
+            public long insert(
+                ItemVariant resource,
+                long maxAmount,
+                TransactionContext transaction
+            ) {
                 return neutral.insert(FabricResourceAdapters.fromFabric(resource), maxAmount,
                     FabricTransactionAdapters.fromFabric(transaction));
             }
@@ -54,8 +57,11 @@ public final class FabricMutableItemContext implements MutableItemContext {
             }
 
             @Override
-            public long extract(ItemVariant resource, long maxAmount,
-                                TransactionContext transaction) {
+            public long extract(
+                ItemVariant resource,
+                long maxAmount,
+                TransactionContext transaction
+            ) {
                 return neutral.extract(FabricResourceAdapters.fromFabric(resource), maxAmount,
                     FabricTransactionAdapters.fromFabric(transaction));
             }
@@ -96,8 +102,11 @@ public final class FabricMutableItemContext implements MutableItemContext {
             }
 
             @Override
-            public long insertOverflow(ItemVariant itemVariant, long maxAmount,
-                                       TransactionContext transaction) {
+            public long insertOverflow(
+                ItemVariant itemVariant,
+                long maxAmount,
+                TransactionContext transaction
+            ) {
                 return neutral.insertOverflow(FabricResourceAdapters.fromFabric(itemVariant), maxAmount,
                     FabricTransactionAdapters.fromFabric(transaction));
             }
@@ -167,8 +176,7 @@ public final class FabricMutableItemContext implements MutableItemContext {
         return new ItemStack(
             resource.holder(),
             Math.toIntExact(Math.min(Integer.MAX_VALUE, amount())),
-            resource.components()
-        );
+            resource.components());
     }
 
     @Override
@@ -182,15 +190,21 @@ public final class FabricMutableItemContext implements MutableItemContext {
     }
 
     @Override
-    public long insert(ResourceVariant<Item> resource, long maxAmount,
-                       TransferContext transaction) {
+    public long insert(
+        ResourceVariant<Item> resource,
+        long maxAmount,
+        TransferContext transaction
+    ) {
         return this.fabric.insert(FabricResourceAdapters.toFabricItem(resource), maxAmount,
             FabricTransactionAdapters.toFabric(transaction));
     }
 
     @Override
-    public long extract(ResourceVariant<Item> resource, long maxAmount,
-                        TransferContext transaction) {
+    public long extract(
+        ResourceVariant<Item> resource,
+        long maxAmount,
+        TransferContext transaction
+    ) {
         return this.fabric.extract(FabricResourceAdapters.toFabricItem(resource), maxAmount,
             FabricTransactionAdapters.toFabric(transaction));
     }
@@ -210,7 +224,8 @@ public final class FabricMutableItemContext implements MutableItemContext {
     public TransferSupport support() {
         boolean insert = this.fabric.getMainSlot().supportsInsertion();
         boolean extract = this.fabric.getMainSlot().supportsExtraction();
-        return insert ? extract ? TransferSupport.BOTH : TransferSupport.INSERT_ONLY
+        return insert
+            ? extract ? TransferSupport.BOTH : TransferSupport.INSERT_ONLY
             : extract ? TransferSupport.EXTRACT_ONLY : TransferSupport.NONE;
     }
 

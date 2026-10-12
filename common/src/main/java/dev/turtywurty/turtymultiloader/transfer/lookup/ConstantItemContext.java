@@ -11,11 +11,11 @@ import java.util.Objects;
 /**
  * Read-only item context for looking up storage in a detached stack.
  */
-final class ConstantItemContext implements MutableItemContext {
+public final class ConstantItemContext implements MutableItemContext {
     private final ItemStack stack;
     private final ResourceVariant<Item> resource;
 
-    ConstantItemContext(ItemStack stack) {
+    protected ConstantItemContext(ItemStack stack) {
         this.stack = Objects.requireNonNull(stack, "stack").copy();
         this.resource = ResourceVariant.ofItem(this.stack);
     }

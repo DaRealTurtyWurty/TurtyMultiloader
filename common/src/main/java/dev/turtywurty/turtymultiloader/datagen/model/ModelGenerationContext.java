@@ -45,7 +45,7 @@ public final class ModelGenerationContext {
     }
 
     private void add(ModelResourceType type, Identifier id, JsonElement json) {
-        ModelResource resource = new ModelResource(type, Objects.requireNonNull(id, "id"));
+        var resource = new ModelResource(type, Objects.requireNonNull(id, "id"));
         if (resources.putIfAbsent(resource, Objects.requireNonNull(json, "json")) != null)
             throw new IllegalArgumentException("Duplicate generated model resource: " + resource);
     }

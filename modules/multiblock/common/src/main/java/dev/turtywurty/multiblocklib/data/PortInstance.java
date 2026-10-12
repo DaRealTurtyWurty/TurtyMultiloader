@@ -12,6 +12,5 @@ public record PortInstance(BlockPos offset, Set<String> types, PortIO io) {
         BlockPos.CODEC.fieldOf("offset").forGetter(PortInstance::offset),
         Codec.STRING.listOf().<Set<String>>xmap(HashSet::new, list -> list.stream().toList())
             .fieldOf("types").forGetter(PortInstance::types),
-        PortIO.CODEC.fieldOf("io").forGetter(PortInstance::io)
-    ).apply(instance, PortInstance::new));
+        PortIO.CODEC.fieldOf("io").forGetter(PortInstance::io)).apply(instance, PortInstance::new));
 }

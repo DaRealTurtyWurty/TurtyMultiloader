@@ -70,8 +70,12 @@ public final class FabricStorageAdapter {
         private final Function<V, N> toNative;
         private final Supplier<V> empty;
 
-        private FromFabric(Storage<N> fabric, Function<N, V> fromNative,
-                           Function<V, N> toNative, Supplier<V> empty) {
+        private FromFabric(
+            Storage<N> fabric,
+            Function<N, V> fromNative,
+            Function<V, N> toNative,
+            Supplier<V> empty
+        ) {
             this.fabric = Objects.requireNonNull(fabric, "fabric");
             this.fromNative = fromNative;
             this.toNative = toNative;
@@ -95,7 +99,9 @@ public final class FabricStorageAdapter {
         @Override
         public V resource(int index) {
             var view = viewAt(index);
-            return view == null || view.isResourceBlank() ? this.empty.get() : this.fromNative.apply(view.getResource());
+            return view == null || view.isResourceBlank()
+                ? this.empty.get()
+                : this.fromNative.apply(view.getResource());
         }
 
         @Override
@@ -143,13 +149,18 @@ public final class FabricStorageAdapter {
             boolean insert = (this.fabric instanceof SlottedStorage<?>
                 || this.fabric instanceof SingleSlotStorage<?>) && this.fabric.supportsInsertion();
             boolean extract = this.fabric.supportsExtraction();
-            return insert ? extract ? TransferSupport.BOTH : TransferSupport.INSERT_ONLY
+            return insert
+                ? extract ? TransferSupport.BOTH : TransferSupport.INSERT_ONLY
                 : extract ? TransferSupport.EXTRACT_ONLY : TransferSupport.NONE;
         }
 
         @Override
-        public long insert(int index, V resource, long maxAmount,
-                           TransferContext transaction) {
+        public long insert(
+            int index,
+            V resource,
+            long maxAmount,
+            TransferContext transaction
+        ) {
             StoragePreconditions.index(index, size());
             if (this.fabric instanceof SingleSlotStorage<N> single)
                 return single.insert(this.toNative.apply(resource), maxAmount,
@@ -161,11 +172,17 @@ public final class FabricStorageAdapter {
         }
 
         @Override
-        public long extract(int index, V resource, long maxAmount,
-                            TransferContext transaction) {
+        public long extract(
+            int index,
+            V resource,
+            long maxAmount,
+            TransferContext transaction
+        ) {
             var view = viewAt(index);
-            return view == null ? 0 : view.extract(this.toNative.apply(resource), maxAmount,
-                FabricTransactionAdapters.toFabric(transaction));
+            return view == null
+                ? 0
+                : view.extract(this.toNative.apply(resource), maxAmount,
+                    FabricTransactionAdapters.toFabric(transaction));
         }
 
         @Override
@@ -208,14 +225,19 @@ public final class FabricStorageAdapter {
     }
 
     private static final class ToFabric<N, V extends ResourceVariant<?>>
-        implements SlottedStorage<N> {
+        implements
+            SlottedStorage<N> {
         private final ResourceStorage<V> neutral;
         private final Function<N, V> fromNative;
         private final Function<V, N> toNative;
         private final Predicate<N> blank;
 
-        private ToFabric(ResourceStorage<V> neutral, Function<N, V> fromNative, Function<V, N> toNative,
-                         Predicate<N> blank) {
+        private ToFabric(
+            ResourceStorage<V> neutral,
+            Function<N, V> fromNative,
+            Function<V, N> toNative,
+            Predicate<N> blank
+        ) {
             this.neutral = neutral;
             this.fromNative = fromNative;
             this.toNative = toNative;
@@ -228,8 +250,11 @@ public final class FabricStorageAdapter {
         }
 
         @Override
-        public long insert(N resource, long maxAmount,
-                           TransactionContext transaction) {
+        public long insert(
+            N resource,
+            long maxAmount,
+            TransactionContext transaction
+        ) {
             if (this.blank.test(resource) || maxAmount == 0)
                 return 0;
             return this.neutral.insert(this.fromNative.apply(resource), maxAmount,
@@ -242,8 +267,11 @@ public final class FabricStorageAdapter {
         }
 
         @Override
-        public long extract(N resource, long maxAmount,
-                            TransactionContext transaction) {
+        public long extract(
+            N resource,
+            long maxAmount,
+            TransactionContext transaction
+        ) {
             if (this.blank.test(resource) || maxAmount == 0)
                 return 0;
             return this.neutral.extract(this.fromNative.apply(resource), maxAmount,

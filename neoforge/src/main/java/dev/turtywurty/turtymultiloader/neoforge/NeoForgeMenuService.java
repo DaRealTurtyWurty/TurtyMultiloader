@@ -21,9 +21,8 @@ public final class NeoForgeMenuService implements MenuService {
     ) {
         Objects.requireNonNull(factory, "factory");
         Objects.requireNonNull(openingDataCodec, "openingDataCodec");
-        return IMenuTypeExtension.create((containerId, inventory, buffer) ->
-            factory.create(containerId, inventory, openingDataCodec.decode(buffer))
-        );
+        return IMenuTypeExtension.create((containerId, inventory, buffer) -> factory.create(containerId, inventory,
+            openingDataCodec.decode(buffer)));
     }
 
     @Override

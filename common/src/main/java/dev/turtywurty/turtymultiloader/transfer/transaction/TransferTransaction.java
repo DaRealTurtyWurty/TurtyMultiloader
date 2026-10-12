@@ -85,8 +85,7 @@ public final class TransferTransaction implements TransferTransactionScope {
         checkOpenAndCurrent();
         this.snapshots.computeIfAbsent(
             Objects.requireNonNull(participant, "participant"),
-            TransactionParticipant::createSnapshotForTransaction
-        );
+            TransactionParticipant::createSnapshotForTransaction);
     }
 
     @Override
@@ -99,10 +98,11 @@ public final class TransferTransaction implements TransferTransactionScope {
         List<Map.Entry<TransactionParticipant<?>, Object>> entries = new ArrayList<>(this.snapshots.entrySet());
         RuntimeException failure = null;
         try {
-            if (this.committed)
+            if (this.committed) {
                 commitSnapshots(entries);
-            else
+            } else {
                 rollbackSnapshots(entries);
+            }
         } catch (RuntimeException exception) {
             failure = exception;
         } finally {
@@ -116,10 +116,11 @@ public final class TransferTransaction implements TransferTransactionScope {
             try {
                 callback.accept(result);
             } catch (RuntimeException exception) {
-                if (failure == null)
+                if (failure == null) {
                     failure = exception;
-                else
+                } else {
                     failure.addSuppressed(exception);
+                }
             }
         }
         if (failure != null)
@@ -130,8 +131,9 @@ public final class TransferTransaction implements TransferTransactionScope {
         if (this.parent != null) {
             for (Map.Entry<TransactionParticipant<?>, Object> entry : entries) {
                 Object previous = this.parent.snapshots.putIfAbsent(entry.getKey(), entry.getValue());
-                if (previous != null)
+                if (previous != null) {
                     entry.getKey().releaseSnapshotForTransaction(entry.getValue());
+                }
             }
             this.parent.commitCallbacks.addAll(this.commitCallbacks);
             return;
@@ -141,8 +143,9 @@ public final class TransferTransaction implements TransferTransactionScope {
             entry.getKey().finalCommitForTransaction(entry.getValue());
             entry.getKey().releaseSnapshotForTransaction(entry.getValue());
         }
-        for (Runnable callback : this.commitCallbacks)
+        for (Runnable callback : this.commitCallbacks) {
             callback.run();
+        }
     }
 
     private static void rollbackSnapshots(List<Map.Entry<TransactionParticipant<?>, Object>> entries) {

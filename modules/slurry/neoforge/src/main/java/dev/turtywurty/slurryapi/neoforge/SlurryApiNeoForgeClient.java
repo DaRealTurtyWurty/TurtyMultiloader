@@ -8,11 +8,11 @@ import net.minecraft.util.profiling.ProfilerFiller;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.client.event.AddClientReloadListenersEvent;
 
-final class SlurryApiNeoForgeClient {
+public final class SlurryApiNeoForgeClient {
     private SlurryApiNeoForgeClient() {
     }
 
-    static void register(IEventBus modBus) {
+    protected static void register(IEventBus modBus) {
         modBus.addListener(AddClientReloadListenersEvent.class, SlurryApiNeoForgeClient::addReloadListeners);
     }
 

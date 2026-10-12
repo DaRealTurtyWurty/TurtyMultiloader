@@ -30,8 +30,7 @@ public class SingleSlurryStorage extends SimpleSingleSlotStorage<ResourceVariant
             capacity,
             Objects.requireNonNull(support, "support"),
             variant -> true,
-            storage -> Objects.requireNonNull(onChange, "onChange").run()
-        );
+            storage -> Objects.requireNonNull(onChange, "onChange").run());
     }
 
     public static SingleSlurryStorage withFixedCapacity(long capacity, Runnable onChange) {

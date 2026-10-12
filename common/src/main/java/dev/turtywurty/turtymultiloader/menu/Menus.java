@@ -31,8 +31,7 @@ public final class Menus {
 
         RegistrationHandle<MenuType<?>, MenuType<M>> handle = RegistryService.get().registerMenu(
             id,
-            () -> MenuService.get().createExtendedMenuType(factory, openingDataCodec)
-        );
+            () -> MenuService.get().createExtendedMenuType(factory, openingDataCodec));
         return new ExtendedMenuRegistration<>(handle, openingDataCodec);
     }
 

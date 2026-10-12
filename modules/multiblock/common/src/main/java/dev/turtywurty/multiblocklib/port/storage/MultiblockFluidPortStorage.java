@@ -15,13 +15,12 @@ import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
 
 public class MultiblockFluidPortStorage extends SimpleSingleSlotStorage<ResourceVariant<Fluid>> {
-    private static final Codec<ResourceVariant<Fluid>> LEGACY_VARIANT_CODEC = RecordCodecBuilder.create(instance ->
-        instance.group(
+    private static final Codec<ResourceVariant<Fluid>> LEGACY_VARIANT_CODEC = RecordCodecBuilder
+        .create(instance -> instance.group(
             BuiltInRegistries.FLUID.holderByNameCodec().fieldOf("fluid").forGetter(ResourceVariant::holder),
             DataComponentPatch.CODEC.optionalFieldOf("components", DataComponentPatch.EMPTY)
-                .forGetter(ResourceVariant::components)
-        ).apply(instance, (holder, components) -> ResourceVariant.of(ResourceTypes.FLUID, holder, components))
-    );
+                .forGetter(ResourceVariant::components))
+            .apply(instance, (holder, components) -> ResourceVariant.of(ResourceTypes.FLUID, holder, components)));
 
     public MultiblockFluidPortStorage(final long capacity, final PortIO io, final Runnable onChange) {
         super(ResourceTypes.FLUID, capacity, TransferSupport.BOTH, variant -> true, storage -> onChange.run());

@@ -18,10 +18,10 @@ import java.util.function.Consumer;
  * Bridges NeoForge and neutral transaction contexts in both directions.
  */
 public final class NeoForgeTransactionAdapters {
-    private static final ThreadLocal<Map<TransferContext, Transaction>>
-        NATIVE_BY_NEUTRAL = ThreadLocal.withInitial(IdentityHashMap::new);
-    private static final ThreadLocal<Map<TransactionContext, NeoForgeContext>>
-        NEUTRAL_BY_NATIVE = ThreadLocal.withInitial(IdentityHashMap::new);
+    private static final ThreadLocal<Map<TransferContext, Transaction>> NATIVE_BY_NEUTRAL = ThreadLocal
+        .withInitial(IdentityHashMap::new);
+    private static final ThreadLocal<Map<TransactionContext, NeoForgeContext>> NEUTRAL_BY_NATIVE = ThreadLocal
+        .withInitial(IdentityHashMap::new);
 
     private NeoForgeTransactionAdapters() {
     }
@@ -34,14 +34,16 @@ public final class NeoForgeTransactionAdapters {
                 .orElseGet(Transaction::openRoot);
             context.addCloseCallback(result -> {
                 try {
-                    if (result == TransferResult.COMMITTED)
+                    if (result == TransferResult.COMMITTED) {
                         nativeTransaction.commit();
-                    else
+                    } else {
                         nativeTransaction.close();
+                    }
                 } finally {
                     map.remove(context);
-                    if (map.isEmpty())
+                    if (map.isEmpty()) {
                         NATIVE_BY_NEUTRAL.remove();
+                    }
                 }
             });
             return nativeTransaction;
@@ -64,25 +66,29 @@ public final class NeoForgeTransactionAdapters {
             // NeoForge only permits one transaction hierarchy per thread. Reuse the
             // hierarchy's participant bridges so one journal owns all depth snapshots.
             participants = context.participants;
-            if (context.depth() == depth - 1)
+            if (context.depth() == depth - 1) {
                 parent = context;
+            }
         }
-        if (participants == null)
+        if (participants == null) {
             participants = new IdentityHashMap<>();
+        }
 
-        NeoForgeContext result = new NeoForgeContext(neoforge, parent, participants);
+        var result = new NeoForgeContext(neoforge, parent, participants);
         map.put(neoforge, result);
         try {
-            ContextCleanupJournal cleanup = new ContextCleanupJournal(() -> {
+            var cleanup = new ContextCleanupJournal(() -> {
                 map.remove(neoforge);
-                if (map.isEmpty())
+                if (map.isEmpty()) {
                     NEUTRAL_BY_NATIVE.remove();
+                }
             });
             cleanup.updateSnapshots(neoforge);
         } catch (RuntimeException exception) {
             map.remove(neoforge);
-            if (map.isEmpty())
+            if (map.isEmpty()) {
                 NEUTRAL_BY_NATIVE.remove();
+            }
             throw exception;
         }
         return result;
@@ -194,15 +200,16 @@ public final class NeoForgeTransactionAdapters {
 
         @Override
         public void addCloseCallback(Consumer<TransferResult> callback) {
-            CallbackJournal journal = new CallbackJournal(callback);
+            var journal = new CallbackJournal(callback);
             journal.updateSnapshots(this.neoforge);
         }
 
         @Override
         public void addCommitCallback(Runnable callback) {
             addCloseCallback(result -> {
-                if (result == TransferResult.COMMITTED)
+                if (result == TransferResult.COMMITTED) {
                     callback.run();
+                }
             });
         }
 

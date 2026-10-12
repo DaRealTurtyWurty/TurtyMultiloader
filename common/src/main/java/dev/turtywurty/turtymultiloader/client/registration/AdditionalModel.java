@@ -10,12 +10,15 @@ import java.util.Objects;
 /**
  * Loader-neutral handle for a standalone model that is not owned by a block state or item definition.
  *
- * <p>The model is only available after the client model manager has completed a resource reload.</p>
+ * <p>
+ * The model is only available after the client model manager has completed a resource reload.
+ * </p>
  */
 public interface AdditionalModel<T> {
     Identifier id();
 
-    @Nullable T get(ModelManager modelManager);
+    @Nullable
+    T get(ModelManager modelManager);
 
     default @Nullable T get() {
         return get(Minecraft.getInstance().getModelManager());

@@ -76,15 +76,22 @@ public final class NeoForgeStorageAdapter {
         }
     }
 
-    private static final class FromNeoForge<N extends Resource, V extends ResourceVariant<?>> implements ResourceStorage<V> {
+    private static final class FromNeoForge<N extends Resource, V extends ResourceVariant<?>>
+        implements
+            ResourceStorage<V> {
         private final ResourceHandler<N> handler;
         private final Function<N, V> fromNative;
         private final Function<V, N> toNative;
         private final TransferUnit neutralUnit;
         private final TransferUnit nativeUnit;
 
-        private FromNeoForge(ResourceHandler<N> handler, Function<N, V> fromNative, Function<V, N> toNative,
-                             TransferUnit neutralUnit, TransferUnit nativeUnit) {
+        private FromNeoForge(
+            ResourceHandler<N> handler,
+            Function<N, V> fromNative,
+            Function<V, N> toNative,
+            TransferUnit neutralUnit,
+            TransferUnit nativeUnit
+        ) {
             this.handler = Objects.requireNonNull(handler, "handler");
             this.fromNative = Objects.requireNonNull(fromNative, "fromNative");
             this.toNative = Objects.requireNonNull(toNative, "toNative");
@@ -138,8 +145,7 @@ public final class NeoForgeStorageAdapter {
             // the neutral caller requests Long.MAX_VALUE from a long-capacity native handler.
             int request = (int) Math.min(
                 Integer.MAX_VALUE,
-                convert(maxAmount, this.neutralUnit, this.nativeUnit)
-            );
+                convert(maxAmount, this.neutralUnit, this.nativeUnit));
             if (request == 0)
                 return 0;
             int inserted = this.handler.insert(index, nativeResource, request, nativeTransaction);
@@ -154,8 +160,7 @@ public final class NeoForgeStorageAdapter {
             // See insert: one neutral transfer maps to at most one native operation.
             int request = (int) Math.min(
                 Integer.MAX_VALUE,
-                convert(maxAmount, this.neutralUnit, this.nativeUnit)
-            );
+                convert(maxAmount, this.neutralUnit, this.nativeUnit));
             if (request == 0)
                 return 0;
             int extracted = this.handler.extract(index, nativeResource, request, nativeTransaction);
@@ -164,15 +169,21 @@ public final class NeoForgeStorageAdapter {
     }
 
     private static final class ToNeoForge<N extends Resource, V extends ResourceVariant<?>>
-        implements DirectionalResourceHandler<N> {
+        implements
+            DirectionalResourceHandler<N> {
         private final ResourceStorage<V> storage;
         private final Function<N, V> fromNative;
         private final Function<V, N> toNative;
         private final TransferUnit neutralUnit;
         private final TransferUnit nativeUnit;
 
-        private ToNeoForge(ResourceStorage<V> storage, Function<N, V> fromNative, Function<V, N> toNative,
-                           TransferUnit neutralUnit, TransferUnit nativeUnit) {
+        private ToNeoForge(
+            ResourceStorage<V> storage,
+            Function<N, V> fromNative,
+            Function<V, N> toNative,
+            TransferUnit neutralUnit,
+            TransferUnit nativeUnit
+        ) {
             this.storage = Objects.requireNonNull(storage, "storage");
             this.fromNative = Objects.requireNonNull(fromNative, "fromNative");
             this.toNative = Objects.requireNonNull(toNative, "toNative");
@@ -198,9 +209,8 @@ public final class NeoForgeStorageAdapter {
 
         @Override
         public long getCapacityAsLong(int index, N resource) {
-            if (resource.isEmpty()) {
+            if (resource.isEmpty())
                 return convert(generalCapacity(index), this.neutralUnit, this.nativeUnit);
-            }
 
             return convert(this.storage.capacity(index, this.fromNative.apply(resource)),
                 this.neutralUnit, this.nativeUnit);
@@ -217,26 +227,32 @@ public final class NeoForgeStorageAdapter {
         }
 
         @Override
-        public int insert(int index, N resource, int amount,
-                          TransactionContext transaction) {
+        public int insert(
+            int index,
+            N resource,
+            int amount,
+            TransactionContext transaction
+        ) {
             V neutralResource = this.fromNative.apply(resource);
             TransferContext neutralTransaction = NeoForgeTransactionAdapters.fromNeoForge(transaction);
             long neutralRequest = convert(amount, this.nativeUnit, this.neutralUnit);
             long simulated = neutralTransaction.simulate(
-                nested -> this.storage.insert(index, neutralResource, neutralRequest, nested)
-            );
+                nested -> this.storage.insert(index, neutralResource, neutralRequest, nested));
             return insertRepresentable(index, neutralResource, simulated, neutralTransaction);
         }
 
         @Override
-        public int extract(int index, N resource, int amount,
-                           TransactionContext transaction) {
+        public int extract(
+            int index,
+            N resource,
+            int amount,
+            TransactionContext transaction
+        ) {
             V neutralResource = this.fromNative.apply(resource);
             TransferContext neutralTransaction = NeoForgeTransactionAdapters.fromNeoForge(transaction);
             long neutralRequest = convert(amount, this.nativeUnit, this.neutralUnit);
             long simulated = neutralTransaction.simulate(
-                nested -> this.storage.extract(index, neutralResource, neutralRequest, nested)
-            );
+                nested -> this.storage.extract(index, neutralResource, neutralRequest, nested));
             return extractRepresentable(index, neutralResource, simulated, neutralTransaction);
         }
 
@@ -269,14 +285,12 @@ public final class NeoForgeStorageAdapter {
         }
 
         private long generalCapacity(int index) {
-            if (!this.storage.support(index).supportsInsertion()) {
+            if (!this.storage.support(index).supportsInsertion())
                 return this.storage.amount(index);
-            }
 
             V currentResource = this.storage.resource(index);
-            if (!currentResource.isBlank()) {
+            if (!currentResource.isBlank())
                 return this.storage.capacity(index, currentResource);
-            }
 
             return Integer.MAX_VALUE;
         }

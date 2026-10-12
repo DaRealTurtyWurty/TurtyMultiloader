@@ -7,36 +7,112 @@ plugins {
 
 subprojects {
     apply plugin: 'dev.railroadide.quality'
+
+    afterEvaluate {
+        // Shared sources are formatted by their owning common project.
+        spotless.java {
+            target(provider {
+                sourceSets.collectMany { it.allJava.files }.findAll {
+                    it.toPath().startsWith(projectDir.toPath())
+                }
+            })
+        }
+    }
+}
+
+// The test mod's shared sources have no common Gradle project, so the root owns them.
+apply plugin: 'com.diffplug.spotless'
+
+repositories {
+    mavenCentral()
+}
+
+def qualityConfig = project(':common').layout.buildDirectory.dir('railroad-quality/config')
+spotless {
+    java {
+        target('testmod/common/src/main/java/**/*.java')
+        eclipse().configFile(qualityConfig.get().file('railroad-eclipse-formatter.xml').asFile)
+        trimTrailingWhitespace()
+        endWithNewline()
+    }
+    groovyGradle {
+        target('*.gradle', 'gradle/**/*.gradle')
+        greclipse().configFile(qualityConfig.get().file('railroad-groovy.properties').asFile)
+        trimTrailingWhitespace()
+        endWithNewline()
+    }
+}
+
+tasks.matching {
+    it.name.startsWith('spotless') && it.name != 'spotlessDiagnose'
+}.configureEach {
+    dependsOn(':common:railroadQualityConfig')
+}
+
+tasks.named('spotlessApply') {
+    mustRunAfter(subprojects.collect { "${it.path}:format" })
+}
+
+tasks.named('spotlessCheck') {
+    mustRunAfter(subprojects.collect { "${it.path}:formatCheck" })
+}
+
+tasks.register('format') {
+    group = 'formatting'
+    description = 'Formats all modules, shared test-mod sources, and root Gradle files.'
+    dependsOn(subprojects.collect { "${it.path}:format" }, 'spotlessApply')
+}
+
+tasks.register('formatCheck') {
+    group = 'verification'
+    description = 'Checks formatting across all modules and shared sources.'
+    dependsOn(subprojects.collect { "${it.path}:formatCheck" }, 'spotlessCheck')
 }
 
 def publishedProjects = [
-    ':common', ':fabric', ':neoforge',
-    ':gas-common', ':gas-fabric', ':gas-neoforge',
-    ':slurry-common', ':slurry-fabric', ':slurry-neoforge',
-    ':multiblock-common', ':multiblock-fabric', ':multiblock-neoforge'
+    ':common',
+    ':fabric',
+    ':neoforge',
+    ':gas-common',
+    ':gas-fabric',
+    ':gas-neoforge',
+    ':slurry-common',
+    ':slurry-fabric',
+    ':slurry-neoforge',
+    ':multiblock-common',
+    ':multiblock-fabric',
+    ':multiblock-neoforge'
 ]
 
 tasks.register('publishConsumerArtifacts') {
     group = 'publishing'
     description = 'Publishes every consumer artifact to build/local-maven (or the configured local repository).'
-    dependsOn(publishedProjects.collect { "${it}:publishMavenJavaPublicationToLocalRepository" })
+    dependsOn(publishedProjects.collect {
+        "${it}:publishMavenJavaPublicationToLocalRepository"
+    })
 }
 
 tasks.register('publishConsumerArtifactsToMavenLocal') {
     group = 'publishing'
     description = 'Publishes every consumer artifact to the local Maven cache.'
-    dependsOn(publishedProjects.collect { "${it}:publishMavenJavaPublicationToMavenLocal" })
+    dependsOn(publishedProjects.collect {
+        "${it}:publishMavenJavaPublicationToMavenLocal"
+    })
 }
 
 tasks.register('publishConsumerArtifactsToCloudsmith') {
     group = 'publishing'
     description = 'Publishes every consumer artifact to the public Cloudsmith repository.'
-    dependsOn(publishedProjects.collect { "${it}:publishMavenJavaPublicationToCloudsmithRepository" })
+    dependsOn(publishedProjects.collect {
+        "${it}:publishMavenJavaPublicationToCloudsmithRepository"
+    })
 }
 
 def verificationRepository = providers.gradleProperty('localMavenUrl')
-    .orElse(providers.environmentVariable('LOCAL_MAVEN_URL'))
-    .orElse(layout.buildDirectory.dir('local-maven').map { it.asFile.absolutePath })
+        .orElse(providers.environmentVariable('LOCAL_MAVEN_URL'))
+        .orElse(layout.buildDirectory.dir('local-maven').map {
+            it.asFile.absolutePath
+        })
 
 tasks.register('verifyPublishedConsumer', GradleBuild) {
     group = 'verification'
@@ -60,10 +136,10 @@ tasks.register('dataGenerationTest') {
     group = 'verification'
     description = 'Runs Fabric combined datagen and NeoForge client/server datagen.'
     dependsOn(
-        ':testmod-fabric:runDataGeneration',
-        ':testmod-neoforge:runData',
-        ':testmod-neoforge:runServerData'
-    )
+            ':testmod-fabric:runDataGeneration',
+            ':testmod-neoforge:runData',
+            ':testmod-neoforge:runServerData'
+            )
 }
 
 tasks.register('clientSmokeTest') {
@@ -74,10 +150,10 @@ tasks.register('clientSmokeTest') {
 
 tasks.named('check') {
     dependsOn(
-        'publishConsumerArtifacts',
-        'gameTest',
-        'dataGenerationTest',
-        'clientSmokeTest',
-        'verifyPublishedConsumer'
+    'publishConsumerArtifacts',
+    'gameTest',
+    'dataGenerationTest',
+    'clientSmokeTest',
+    'verifyPublishedConsumer'
     )
 }

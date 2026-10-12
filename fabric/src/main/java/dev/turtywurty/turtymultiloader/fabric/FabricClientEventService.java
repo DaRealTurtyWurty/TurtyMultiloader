@@ -104,14 +104,12 @@ public final class FabricClientEventService implements ClientEventService {
     public void onRenderStage(RenderStage stage, Consumer<LevelRenderContext> callback) {
         require(callback);
         switch (require(stage)) {
-            case COLLECT_SUBMITS -> LevelRenderEvents.COLLECT_SUBMITS.register(context ->
-                callback.accept(wrap(context.gameRenderer(), context.levelRenderer(), context.levelState(),
-                    context.poseStack(), context.submitNodeCollector()))
-            );
-            case AFTER_SOLID_FEATURES -> LevelRenderEvents.AFTER_SOLID_FEATURES.register(context ->
-                callback.accept(wrap(context.gameRenderer(), context.levelRenderer(), context.levelState(),
-                    context.poseStack(), context.submitNodeCollector()))
-            );
+            case COLLECT_SUBMITS -> LevelRenderEvents.COLLECT_SUBMITS.register(
+                context -> callback.accept(wrap(context.gameRenderer(), context.levelRenderer(), context.levelState(),
+                    context.poseStack(), context.submitNodeCollector())));
+            case AFTER_SOLID_FEATURES -> LevelRenderEvents.AFTER_SOLID_FEATURES.register(
+                context -> callback.accept(wrap(context.gameRenderer(), context.levelRenderer(), context.levelState(),
+                    context.poseStack(), context.submitNodeCollector())));
         }
     }
 
@@ -147,8 +145,7 @@ public final class FabricClientEventService implements ClientEventService {
             levelState,
             poseStack,
             client.gameRenderer.renderBuffers().stagedVertexBuffer(),
-            submitNodeCollector
-        );
+            submitNodeCollector);
     }
 
     private static <T> T require(T value) {

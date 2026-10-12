@@ -12,7 +12,8 @@ public final class SlurryApiNeoForge {
     public SlurryApiNeoForge(IEventBus modBus) {
         SlurryApi.initialize();
         RegistryService.get().apply();
-        if (FMLEnvironment.getDist() == Dist.CLIENT)
+        if (FMLEnvironment.getDist() == Dist.CLIENT) {
             SlurryApiNeoForgeClient.register(modBus);
+        }
     }
 }

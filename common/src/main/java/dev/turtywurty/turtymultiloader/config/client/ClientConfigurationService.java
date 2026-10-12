@@ -14,9 +14,8 @@ public interface ClientConfigurationService {
 
     final class ServiceHolder {
         private static final ClientConfigurationService INSTANCE = ServiceLoader.load(
-                ClientConfigurationService.class,
-                ClientConfigurationService.class.getClassLoader()
-            )
+            ClientConfigurationService.class,
+            ClientConfigurationService.class.getClassLoader())
             .findFirst()
             .orElseThrow(() -> new IllegalStateException("No client configuration service is available"));
 

@@ -9,9 +9,11 @@ import java.util.Iterator;
 /**
  * Transactional storage. All amounts use the unit declared by its StorageKey.
  *
- * <p>Most implementations expose stable indexed slots. An adapter for a native aggregate storage may instead report
+ * <p>
+ * Most implementations expose stable indexed slots. An adapter for a native aggregate storage may instead report
  * {@link #hasStableIndices()} as {@code false} and {@link #size()} as zero. Such a storage still supports the aggregate
- * insert/extract and direction-query methods, but cannot be inspected, serialized, or mutated by index.</p>
+ * insert/extract and direction-query methods, but cannot be inspected, serialized, or mutated by index.
+ * </p>
  */
 public interface ResourceStorage<V extends ResourceVariant<?>> extends Iterable<ResourceStorageView<V>> {
     /**
@@ -40,30 +42,34 @@ public interface ResourceStorage<V extends ResourceVariant<?>> extends Iterable<
     default long insert(V resource, long maxAmount, TransferContext transaction) {
         StoragePreconditions.check(resource, maxAmount);
         long inserted = 0;
-        for (int index = 0; index < size() && inserted < maxAmount; index++)
+        for (int index = 0; index < size() && inserted < maxAmount; index++) {
             inserted += insert(index, resource, maxAmount - inserted, transaction);
+        }
         return inserted;
     }
 
     default long extract(V resource, long maxAmount, TransferContext transaction) {
         StoragePreconditions.check(resource, maxAmount);
         long extracted = 0;
-        for (int index = 0; index < size() && extracted < maxAmount; index++)
+        for (int index = 0; index < size() && extracted < maxAmount; index++) {
             extracted += extract(index, resource, maxAmount - extracted, transaction);
+        }
         return extracted;
     }
 
     default boolean supportsInsertion() {
-        for (int index = 0; index < size(); index++)
+        for (int index = 0; index < size(); index++) {
             if (support(index).supportsInsertion())
                 return true;
+        }
         return false;
     }
 
     default boolean supportsExtraction() {
-        for (int index = 0; index < size(); index++)
+        for (int index = 0; index < size(); index++) {
             if (support(index).supportsExtraction())
                 return true;
+        }
         return false;
     }
 

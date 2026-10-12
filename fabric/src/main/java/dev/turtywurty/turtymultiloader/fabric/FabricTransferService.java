@@ -70,9 +70,8 @@ public final class FabricTransferService implements TransferService {
         Lookups<V> lookups = lookups(key);
         declare(() -> lookups.block.registerForBlocks(
             (level, pos, state, blockEntity, side) -> adapt(
-                provider.find(level, pos, state, blockEntity, side), lookups.toNative
-            ), supplied(blocks, Block[]::new)
-        ));
+                provider.find(level, pos, state, blockEntity, side), lookups.toNative),
+            supplied(blocks, Block[]::new)));
     }
 
     @Override
@@ -84,8 +83,7 @@ public final class FabricTransferService implements TransferService {
         Lookups<V> lookups = lookups(key);
         declare(() -> lookups.block.registerForBlockEntity(
             (blockEntity, side) -> adapt(provider.find(blockEntity, side), lookups.toNative),
-            blockEntityType.get()
-        ));
+            blockEntityType.get()));
     }
 
     @Override
@@ -96,8 +94,7 @@ public final class FabricTransferService implements TransferService {
     ) {
         Lookups<V> lookups = lookups(key);
         declare(() -> lookups.entity.registerForType(
-            (entity, context) -> adapt(provider.find(entity, context), lookups.toNative), entityType.get()
-        ));
+            (entity, context) -> adapt(provider.find(entity, context), lookups.toNative), entityType.get()));
     }
 
     @Override
@@ -110,23 +107,30 @@ public final class FabricTransferService implements TransferService {
         Lookups<V> lookups = lookups(key);
         declare(() -> lookups.item.registerForItems(
             (stack, context) -> adapt(
-                provider.find(new FabricMutableItemContext(stack, context)), lookups.toNative
-            ),
-            supplied(items, Item[]::new)
-        ));
+                provider.find(new FabricMutableItemContext(stack, context)), lookups.toNative),
+            supplied(items, Item[]::new)));
     }
 
     @Override
-    public <V extends ResourceVariant<?>> ResourceStorage<V> findBlock(StorageKey<V> key, Level level, BlockPos pos,
-                                                                       BlockState state, BlockEntity blockEntity, Direction side) {
+    public <V extends ResourceVariant<?>> ResourceStorage<V> findBlock(
+        StorageKey<V> key,
+        Level level,
+        BlockPos pos,
+        BlockState state,
+        BlockEntity blockEntity,
+        Direction side
+    ) {
         Lookups<V> lookups = lookups(key);
         Object found = lookups.block.find(level, pos, state, blockEntity, side);
         return found == null ? null : lookups.fromNative.apply(found);
     }
 
     @Override
-    public <V extends ResourceVariant<?>> ResourceStorage<V> findEntity(StorageKey<V> key, Entity entity,
-                                                                        EntityStorageContext context) {
+    public <V extends ResourceVariant<?>> ResourceStorage<V> findEntity(
+        StorageKey<V> key,
+        Entity entity,
+        EntityStorageContext context
+    ) {
         Lookups<V> lookups = lookups(key);
         Object found = lookups.entity.find(entity, context);
         return found == null ? null : lookups.fromNative.apply(found);
@@ -146,8 +150,12 @@ public final class FabricTransferService implements TransferService {
     }
 
     @Override
-    public <V extends ResourceVariant<?>> BlockStorageCache<V> createBlockCache(StorageKey<V> key, ServerLevel level,
-                                                                                BlockPos pos, Direction side) {
+    public <V extends ResourceVariant<?>> BlockStorageCache<V> createBlockCache(
+        StorageKey<V> key,
+        ServerLevel level,
+        BlockPos pos,
+        Direction side
+    ) {
         Lookups<V> lookups = lookups(key);
         BlockApiCache<Object, Direction> nativeCache = BlockApiCache.create(lookups.block, level, pos);
         return new CachedLookup<>(nativeCache, lookups.fromNative, side);
@@ -175,10 +183,11 @@ public final class FabricTransferService implements TransferService {
     }
 
     private synchronized void declare(Runnable declaration) {
-        if (this.applied)
+        if (this.applied) {
             declaration.run();
-        else
+        } else {
             this.declarations.add(declaration);
+        }
     }
 
     @SuppressWarnings("unchecked")
@@ -225,8 +234,7 @@ public final class FabricTransferService implements TransferService {
             item = EnergyStorage.ITEM;
             fromNative = nativeStorage -> FabricEnergyAdapter.fromFabric((EnergyStorage) nativeStorage);
             toNative = neutral -> FabricEnergyAdapter.toFabric(
-                (ResourceStorage<ResourceVariant<UnitResource>>) neutral
-            );
+                (ResourceStorage<ResourceVariant<UnitResource>>) neutral);
             entity = EntityApiLookup.get(key.id(), EnergyStorage.class, EntityStorageContext.class);
         } else {
             block = BlockApiLookup.get(key.id(), Storage.asClass(), Direction.class);
@@ -243,12 +251,16 @@ public final class FabricTransferService implements TransferService {
 
     private static <T> T[] supplied(Supplier<? extends T>[] suppliers, IntFunction<T[]> factory) {
         T[] values = factory.apply(suppliers.length);
-        for (int index = 0; index < suppliers.length; index++)
+        for (int index = 0; index < suppliers.length; index++) {
             values[index] = suppliers[index].get();
+        }
         return values;
     }
 
-    private static <V extends ResourceVariant<?>> Object adapt(ResourceStorage<V> storage, Function<ResourceStorage<V>, Object> adapter) {
+    private static <V extends ResourceVariant<?>> Object adapt(
+        ResourceStorage<V> storage,
+        Function<ResourceStorage<V>, Object> adapter
+    ) {
         return storage == null ? null : adapter.apply(storage);
     }
 
@@ -267,8 +279,11 @@ public final class FabricTransferService implements TransferService {
         private final Direction side;
         private boolean closed;
 
-        private CachedLookup(BlockApiCache<Object, Direction> nativeCache,
-                             Function<Object, ResourceStorage<V>> fromNative, Direction side) {
+        private CachedLookup(
+            BlockApiCache<Object, Direction> nativeCache,
+            Function<Object, ResourceStorage<V>> fromNative,
+            Direction side
+        ) {
             this.nativeCache = nativeCache;
             this.fromNative = fromNative;
             this.side = side;

@@ -15,8 +15,7 @@ import java.util.List;
 public final class ClientRegistrationSmokeTest {
     private static final ModelLayerLocation EMPTY_LAYER = new ModelLayerLocation(
         Identifier.fromNamespaceAndPath(TestModContent.MOD_ID, "empty"),
-        "main"
-    );
+        "main");
 
     public static AdditionalModel<BlockStateModel> STONE_MODEL;
 
@@ -26,8 +25,7 @@ public final class ClientRegistrationSmokeTest {
     public static void register() {
         ClientRegistrations.registerModelLayer(
             EMPTY_LAYER,
-            () -> LayerDefinition.create(new MeshDefinition(), 16, 16)
-        );
+            () -> LayerDefinition.create(new MeshDefinition(), 16, 16));
         ClientRegistrations.registerBlockTintSources(
             List.of(new BlockTintSource() {
                 @Override
@@ -35,16 +33,13 @@ public final class ClientRegistrationSmokeTest {
                     return 0xFFFFFFFF;
                 }
             }),
-            TestModContent.TEST_LOG
-        );
+            TestModContent.TEST_LOG);
         ClientRegistrations.registerBlockStateModelAugmenter(
             TestModContent.TEST_LOG,
             (context, models) -> {
                 // No-op wrapper used to compile and exercise loader registration in client runs.
-            }
-        );
+            });
         STONE_MODEL = ClientRegistrations.registerAdditionalBlockStateModel(
-            Identifier.withDefaultNamespace("block/stone")
-        );
+            Identifier.withDefaultNamespace("block/stone"));
     }
 }

@@ -18,20 +18,17 @@ public class CrossPatternFactory implements MultiblockPatternFactory {
     public MultiblockPattern create(final JsonObject json) {
         int radius = GsonHelper.getAsInt(json, "radius");
         int height = GsonHelper.getAsInt(json, "size", 1);
-        if (radius < 0) {
+        if (radius < 0)
             throw new IllegalArgumentException("Cross radius must be >= 0");
-        }
-        if (height <= 0) {
+        if (height <= 0)
             throw new IllegalArgumentException("Cross size must be >= 1");
-        }
 
         JsonElement blocks = json.get("blocks");
         if (blocks == null) {
             blocks = json.get("block");
         }
-        if (blocks == null || blocks.isJsonNull()) {
+        if (blocks == null || blocks.isJsonNull())
             throw new IllegalArgumentException("Cross pattern requires 'block' or 'blocks' to be defined");
-        }
         BlockMatcherList matcher = BlockMatchers.parseMatcherList(blocks);
 
         Map<BlockPos, BlockMatcherList> matchers = new HashMap<>();

@@ -37,11 +37,9 @@ public final class TagGenerationContext<T> {
 
     public TagAppender<T> tag(ConventionTag<T> tag) {
         Objects.requireNonNull(tag, "tag");
-        if (!tag.registry().equals(registry)) {
+        if (!tag.registry().equals(registry))
             throw new IllegalArgumentException(
-                "Convention tag " + tag + " is not for registry " + registry.identifier()
-            );
-        }
+                "Convention tag " + tag + " is not for registry " + registry.identifier());
         return tag(tag.key());
     }
 }

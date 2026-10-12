@@ -37,11 +37,9 @@ public final class EmptyItemSlurryStorage implements SingleSlotStorage<ResourceV
             (empty, insertedSlurry) -> ResourceVariant.of(
                 ResourceTypes.ITEM,
                 BuiltInRegistries.ITEM.wrapAsHolder(fullItem),
-                empty.components()
-            ),
+                empty.components()),
             insertableSlurry,
-            insertableAmount
-        );
+            insertableAmount);
     }
 
     public EmptyItemSlurryStorage(
@@ -54,7 +52,8 @@ public final class EmptyItemSlurryStorage implements SingleSlotStorage<ResourceV
     }
 
     /**
-     * Creates an item storage whose transformation can encode the complete inserted slurry variant, including components.
+     * Creates an item storage whose transformation can encode the complete inserted slurry variant, including
+     * components.
      */
     public EmptyItemSlurryStorage(
         MutableItemContext context,

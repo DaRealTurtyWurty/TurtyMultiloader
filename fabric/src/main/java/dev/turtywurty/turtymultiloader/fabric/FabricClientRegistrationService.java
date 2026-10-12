@@ -81,8 +81,7 @@ public final class FabricClientRegistrationService implements ClientRegistration
     ) {
         BlockColorRegistry.register(
             List.copyOf(require(tintSources)),
-            require(blocks).stream().map(Supplier::get).toArray(Block[]::new)
-        );
+            require(blocks).stream().map(Supplier::get).toArray(Block[]::new));
     }
 
     @Override
@@ -95,8 +94,9 @@ public final class FabricClientRegistrationService implements ClientRegistration
         FluidModel.Unbaked model,
         List<? extends Supplier<? extends Fluid>> fluids
     ) {
-        for (Supplier<? extends Fluid> fluid : require(fluids))
+        for (Supplier<? extends Fluid> fluid : require(fluids)) {
             FluidRenderingRegistry.register(require(fluid).get(), require(model));
+        }
     }
 
     @Override
@@ -120,12 +120,9 @@ public final class FabricClientRegistrationService implements ClientRegistration
         Identifier id = require(modelId);
         AdditionalBlockStateModelDefinition unbakedModel = require(definition);
         ExtraModelKey<BlockStateModel> key = ExtraModelKey.create(id::toString);
-        ModelLoadingPlugin.register(context ->
-            context.addModel(key, SimpleUnbakedExtraModel.blockStateModel(
-                unbakedModel.modelId(),
-                unbakedModel.modelState()
-            ))
-        );
+        ModelLoadingPlugin.register(context -> context.addModel(key, SimpleUnbakedExtraModel.blockStateModel(
+            unbakedModel.modelId(),
+            unbakedModel.modelState())));
         return new FabricAdditionalModel(id, key);
     }
 
@@ -140,8 +137,7 @@ public final class FabricClientRegistrationService implements ClientRegistration
             ModelModifier.WRAP_LAST_PHASE,
             (model, modifierContext) -> stateSelector.test(modifierContext.state())
                 ? new FabricAugmentedBlockStateModel(model, modelAugmenter)
-                : model
-        ));
+                : model));
     }
 
     private record FabricAdditionalModel(
@@ -178,9 +174,8 @@ public final class FabricClientRegistrationService implements ClientRegistration
             random.setSeed(baseSeed);
             var context = new BlockStateModelAugmenter.Context(level, pos, state, random, baseSeed);
             List<BlockStateModelAugmenter.SeededModel> additionalModels = new ArrayList<>();
-            augmenter.collectAdditionalModels(context, (model, seed) ->
-                additionalModels.add(new BlockStateModelAugmenter.SeededModel(model, seed))
-            );
+            augmenter.collectAdditionalModels(context,
+                (model, seed) -> additionalModels.add(new BlockStateModelAugmenter.SeededModel(model, seed)));
             for (BlockStateModelAugmenter.SeededModel model : additionalModels) {
                 random.setSeed(model.randomSeed());
                 model.model().emitQuads(emitter, level, pos, state, random, cullTest);
@@ -200,8 +195,7 @@ public final class FabricClientRegistrationService implements ClientRegistration
             random.setSeed(baseSeed);
             return augmenter.createGeometryKey(
                 new BlockStateModelAugmenter.Context(level, pos, state, random, baseSeed),
-                wrappedKey
-            );
+                wrappedKey);
         }
     }
 

@@ -20,8 +20,7 @@ public final class CommonMod {
             "Initializing {} on {} ({})",
             TurtyMultiloader.MOD_NAME,
             Platform.loader().displayName(),
-            Platform.physicalSide().displayName()
-        );
+            Platform.physicalSide().displayName());
         Configurations.initializeCommon();
         OptionalModIntegrations.initializeCommon();
     }

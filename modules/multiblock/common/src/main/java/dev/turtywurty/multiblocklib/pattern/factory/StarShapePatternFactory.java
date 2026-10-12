@@ -18,20 +18,17 @@ public class StarShapePatternFactory implements MultiblockPatternFactory {
     public MultiblockPattern create(final JsonObject json) {
         int radius = GsonHelper.getAsInt(json, "radius");
         int height = GsonHelper.getAsInt(json, "size", 1);
-        if (radius < 0) {
+        if (radius < 0)
             throw new IllegalArgumentException("Star radius must be >= 0");
-        }
-        if (height <= 0) {
+        if (height <= 0)
             throw new IllegalArgumentException("Star size must be >= 1");
-        }
         JsonElement blocks = json.get("blocks");
         if (blocks == null) {
             blocks = json.get("block");
         }
 
-        if (blocks == null || blocks.isJsonNull()) {
+        if (blocks == null || blocks.isJsonNull())
             throw new IllegalArgumentException("Star pattern requires 'block' or 'blocks' to be defined");
-        }
 
         BlockMatcherList matcher = BlockMatchers.parseMatcherList(blocks);
 
@@ -57,16 +54,16 @@ public class StarShapePatternFactory implements MultiblockPatternFactory {
                 }
             }
         }
-        if (matchers.isEmpty()) {
-            throw new IllegalArgumentException("Star pattern produced no blocks for radius " + radius + " and size " + height);
-        }
+        if (matchers.isEmpty())
+            throw new IllegalArgumentException(
+                "Star pattern produced no blocks for radius " + radius + " and size " + height);
 
         int sizeX = maxX - minX + 1;
         int sizeZ = maxZ - minZ + 1;
         Map<BlockPos, BlockMatcherList> shifted = new HashMap<>();
         for (Map.Entry<BlockPos, BlockMatcherList> entry : matchers.entrySet()) {
             BlockPos pos = entry.getKey();
-            BlockPos shiftedPos = new BlockPos(pos.getX() - minX, pos.getY(), pos.getZ() - minZ);
+            var shiftedPos = new BlockPos(pos.getX() - minX, pos.getY(), pos.getZ() - minZ);
             shifted.put(shiftedPos, entry.getValue());
         }
 

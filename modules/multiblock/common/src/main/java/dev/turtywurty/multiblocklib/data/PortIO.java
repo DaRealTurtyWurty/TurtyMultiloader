@@ -21,9 +21,8 @@ public enum PortIO implements StringRepresentable {
     public static PortIO fromString(final String value) {
         String normalized = value.toLowerCase(Locale.ROOT);
         for (PortIO io : values()) {
-            if (io.serializedName.equals(normalized)) {
+            if (io.serializedName.equals(normalized))
                 return io;
-            }
         }
 
         throw new IllegalArgumentException("Unknown port IO: " + value);

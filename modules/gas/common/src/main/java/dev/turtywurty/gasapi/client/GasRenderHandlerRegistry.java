@@ -17,7 +17,8 @@ public final class GasRenderHandlerRegistry {
     }
 
     public static synchronized void register(Gas gas, GasRenderHandler handler) {
-        if (HANDLERS.putIfAbsent(Objects.requireNonNull(gas, "gas"), Objects.requireNonNull(handler, "handler")) != null)
+        if (HANDLERS.putIfAbsent(Objects.requireNonNull(gas, "gas"),
+            Objects.requireNonNull(handler, "handler")) != null)
             throw new IllegalStateException("Duplicate handler for gas: " + gas);
     }
 }

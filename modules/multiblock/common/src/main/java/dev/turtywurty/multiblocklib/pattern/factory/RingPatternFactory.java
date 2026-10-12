@@ -19,15 +19,12 @@ public class RingPatternFactory implements MultiblockPatternFactory {
         int radius = GsonHelper.getAsInt(json, "radius");
         int thickness = GsonHelper.getAsInt(json, "thickness", 1);
         int height = GsonHelper.getAsInt(json, "size", 1);
-        if (radius <= 0) {
+        if (radius <= 0)
             throw new IllegalArgumentException("Ring radius must be >= 1");
-        }
-        if (thickness <= 0) {
+        if (thickness <= 0)
             throw new IllegalArgumentException("Ring thickness must be >= 1");
-        }
-        if (height <= 0) {
+        if (height <= 0)
             throw new IllegalArgumentException("Ring size must be >= 1");
-        }
 
         int outer = radius;
         int inner = Math.max(0, radius - thickness + 1);
@@ -35,9 +32,8 @@ public class RingPatternFactory implements MultiblockPatternFactory {
         if (blocks == null) {
             blocks = json.get("block");
         }
-        if (blocks == null || blocks.isJsonNull()) {
+        if (blocks == null || blocks.isJsonNull())
             throw new IllegalArgumentException("Ring pattern requires 'block' or 'blocks' to be defined");
-        }
         BlockMatcherList matcher = BlockMatchers.parseMatcherList(blocks);
 
         Map<BlockPos, BlockMatcherList> matchers = new HashMap<>();

@@ -21,9 +21,8 @@ public record BlockMatcherList(List<BlockMatcher> matchers, List<String> debugTo
     public boolean matches(final BlockState state) {
         Objects.requireNonNull(state, "state");
         for (BlockMatcher matcher : this.matchers) {
-            if (matcher.matches(state)) {
+            if (matcher.matches(state))
                 return true;
-            }
         }
 
         return false;
@@ -38,9 +37,8 @@ public record BlockMatcherList(List<BlockMatcher> matchers, List<String> debugTo
     }
 
     public String describe() {
-        if (this.debugTokens.isEmpty()) {
+        if (this.debugTokens.isEmpty())
             return "<pattern matcher>";
-        }
 
         return this.debugTokens.stream().collect(Collectors.joining(" | "));
     }

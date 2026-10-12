@@ -9,11 +9,11 @@ import java.util.function.Predicate;
 
 public final class InputSingleGasStorage extends PredicateSingleGasStorage {
     public InputSingleGasStorage(long capacity, Predicate<ResourceVariant<Gas>> canInsert) {
-        super(capacity, canInsert, ignored -> false);
+        super(capacity, canInsert, _ -> false);
     }
 
     public InputSingleGasStorage(long capacity) {
-        this(capacity, ignored -> true);
+        this(capacity, _ -> true);
     }
 
     @Override

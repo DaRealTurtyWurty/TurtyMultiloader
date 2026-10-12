@@ -37,36 +37,29 @@ public final class DataGenerationSpec {
     private DataGenerationSpec(Builder builder) {
         this.modId = builder.modId;
         List<ProviderDeclaration> composedProviders = new ArrayList<>(builder.providers);
-        builder.tagGenerators.forEach((registry, generators) ->
-            composedProviders.add(tagProvider(registry, generators))
-        );
+        builder.tagGenerators
+            .forEach((registry, generators) -> composedProviders.add(tagProvider(registry, generators)));
         builder.languageGenerators.forEach((locale, generators) -> {
             List<FunctionalLanguageProvider.LanguageGenerator> generatorCopy = List.copyOf(generators);
             composedProviders.add(new ProviderDeclaration(
                 DataGenerationSide.CLIENT,
-                context -> new FunctionalLanguageProvider(context.output(), context.modId(), locale, translations ->
-                    generatorCopy.forEach(generator -> generator.generate(translations))
-                )
-            ));
+                context -> new FunctionalLanguageProvider(context.output(), context.modId(), locale,
+                    translations -> generatorCopy.forEach(generator -> generator.generate(translations)))));
         });
         if (!builder.modelGenerators.isEmpty()) {
             List<FunctionalModelProvider.ModelGenerator> modelGenerators = List.copyOf(builder.modelGenerators);
             composedProviders.add(new ProviderDeclaration(
                 DataGenerationSide.CLIENT,
-                context -> new FunctionalModelProvider(context.output(), models ->
-                    modelGenerators.forEach(generator -> generator.generate(models))
-                )
-            ));
+                context -> new FunctionalModelProvider(context.output(),
+                    models -> modelGenerators.forEach(generator -> generator.generate(models)))));
         }
         if (!builder.vanillaModelGenerators.isEmpty()) {
-            List<FunctionalVanillaModelProvider.ModelGenerator> modelGenerators =
-                List.copyOf(builder.vanillaModelGenerators);
+            List<FunctionalVanillaModelProvider.ModelGenerator> modelGenerators = List
+                .copyOf(builder.vanillaModelGenerators);
             composedProviders.add(new ProviderDeclaration(
                 DataGenerationSide.CLIENT,
-                context -> new FunctionalVanillaModelProvider(context.output(), (blocks, items) ->
-                    modelGenerators.forEach(generator -> generator.generate(blocks, items))
-                )
-            ));
+                context -> new FunctionalVanillaModelProvider(context.output(),
+                    (blocks, items) -> modelGenerators.forEach(generator -> generator.generate(blocks, items)))));
         }
         this.lootRequiredTables = Set.copyOf(builder.lootRequiredTables);
         this.lootSubProviders = List.copyOf(builder.lootSubProviders);
@@ -87,10 +80,8 @@ public final class DataGenerationSpec {
             context.output(),
             registry,
             context.registries(),
-            (lookup, tags) -> generatorCopy.forEach(generator ->
-                ((FunctionalTagsProvider.TagGenerator) generator).generate(lookup, tags)
-            )
-        ));
+            (lookup, tags) -> generatorCopy
+                .forEach(generator -> ((FunctionalTagsProvider.TagGenerator) generator).generate(lookup, tags))));
     }
 
     public static Builder builder(String modId) {
@@ -118,7 +109,9 @@ public final class DataGenerationSpec {
             registries.add(Registries.RECIPE);
             registries.add(Registries.ADVANCEMENT);
         }
-        if (!lootSubProviders.isEmpty() || !lootRequiredTables.isEmpty()) registries.add(Registries.LOOT_TABLE);
+        if (!lootSubProviders.isEmpty() || !lootRequiredTables.isEmpty()) {
+            registries.add(Registries.LOOT_TABLE);
+        }
         registryBootstraps.forEach(declaration -> registries.add(declaration.registry()));
         return Collections.unmodifiableSet(registries);
     }
@@ -138,13 +131,17 @@ public final class DataGenerationSpec {
     public void addRegistryBootstraps(RegistrySetBuilder builder) {
         Objects.requireNonNull(builder, "builder");
         Map<ResourceKey<? extends Registry<?>>, List<RegistryBootstrapDeclaration<?>>> grouped = new LinkedHashMap<>();
-        for (RegistryBootstrapDeclaration<?> declaration : registryBootstraps)
-            grouped.computeIfAbsent(declaration.registry(), ignored -> new ArrayList<>()).add(declaration);
+        for (RegistryBootstrapDeclaration<?> declaration : registryBootstraps) {
+            grouped.computeIfAbsent(declaration.registry(), _ -> new ArrayList<>()).add(declaration);
+        }
         grouped.forEach((registry, declarations) -> addComposedBootstrap(builder, registry, declarations));
         registryContributors.forEach(contributor -> contributor.accept(builder));
-        if (!lootSubProviders.isEmpty() || !lootRequiredTables.isEmpty())
+        if (!lootSubProviders.isEmpty() || !lootRequiredTables.isEmpty()) {
             builder.add(Registries.LOOT_TABLE, new LootTableProvider(lootRequiredTables, lootSubProviders));
-        if (!recipeGenerators.isEmpty()) builder.add(FunctionalRecipeProvider.bootstrap(recipeGenerators));
+        }
+        if (!recipeGenerators.isEmpty()) {
+            builder.add(FunctionalRecipeProvider.bootstrap(recipeGenerators));
+        }
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
@@ -153,9 +150,8 @@ public final class DataGenerationSpec {
         ResourceKey<? extends Registry<?>> registry,
         List<RegistryBootstrapDeclaration<?>> declarations
     ) {
-        builder.add((ResourceKey) registry, context -> declarations.forEach(declaration ->
-            ((SingleRegistryBootstrap) declaration.bootstrap()).run(context)
-        ));
+        builder.add((ResourceKey) registry, context -> declarations
+            .forEach(declaration -> ((SingleRegistryBootstrap) declaration.bootstrap()).run(context)));
     }
 
     public record ProviderDeclaration(DataGenerationSide side, DataProviderFactory factory) {
@@ -179,10 +175,8 @@ public final class DataGenerationSpec {
         private final String modId;
         private final List<ProviderDeclaration> providers = new ArrayList<>();
         private final List<FunctionalRecipeProvider.RecipeGenerator> recipeGenerators = new ArrayList<>();
-        private final Map<ResourceKey<? extends Registry<?>>, List<FunctionalTagsProvider.TagGenerator<?>>> tagGenerators =
-            new LinkedHashMap<>();
-        private final Map<String, List<FunctionalLanguageProvider.LanguageGenerator>> languageGenerators =
-            new LinkedHashMap<>();
+        private final Map<ResourceKey<? extends Registry<?>>, List<FunctionalTagsProvider.TagGenerator<?>>> tagGenerators = new LinkedHashMap<>();
+        private final Map<String, List<FunctionalLanguageProvider.LanguageGenerator>> languageGenerators = new LinkedHashMap<>();
         private final List<FunctionalModelProvider.ModelGenerator> modelGenerators = new ArrayList<>();
         private final List<FunctionalVanillaModelProvider.ModelGenerator> vanillaModelGenerators = new ArrayList<>();
         private final Set<ResourceKey<LootTable>> lootRequiredTables = new LinkedHashSet<>();
@@ -218,7 +212,7 @@ public final class DataGenerationSpec {
         ) {
             Objects.requireNonNull(registry, "registry");
             Objects.requireNonNull(generator, "generator");
-            tagGenerators.computeIfAbsent(registry, ignored -> new ArrayList<>()).add(generator);
+            tagGenerators.computeIfAbsent(registry, _ -> new ArrayList<>()).add(generator);
             return this;
         }
 
@@ -241,7 +235,7 @@ public final class DataGenerationSpec {
         public Builder language(String locale, FunctionalLanguageProvider.LanguageGenerator generator) {
             Objects.requireNonNull(locale, "locale");
             Objects.requireNonNull(generator, "generator");
-            languageGenerators.computeIfAbsent(locale, ignored -> new ArrayList<>()).add(generator);
+            languageGenerators.computeIfAbsent(locale, _ -> new ArrayList<>()).add(generator);
             return this;
         }
 

@@ -14,13 +14,14 @@ import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.util.Unit;
 
-final class WoodSetBoatRenderer extends AbstractBoatRenderer {
+public final class WoodSetBoatRenderer extends AbstractBoatRenderer {
     private final Model.Simple waterPatchModel;
     private final EntityModel<BoatRenderState> model;
 
-    WoodSetBoatRenderer(EntityRendererProvider.Context context, ModelLayerLocation modelLayer) {
+    protected WoodSetBoatRenderer(EntityRendererProvider.Context context, ModelLayerLocation modelLayer) {
         super(context, modelLayer.model().withPath(path -> "textures/entity/" + path + ".png"));
-        waterPatchModel = new Model.Simple(context.bakeLayer(ModelLayers.BOAT_WATER_PATCH), ignored -> RenderTypes.waterMask());
+        waterPatchModel = new Model.Simple(context.bakeLayer(ModelLayers.BOAT_WATER_PATCH),
+            _ -> RenderTypes.waterMask());
         model = new BoatModel(context.bakeLayer(modelLayer));
     }
 
@@ -38,9 +39,9 @@ final class WoodSetBoatRenderer extends AbstractBoatRenderer {
     ) {
         if (!state.isUnderWater) {
             submitNodeCollector.submitModel(
-                waterPatchModel, Unit.INSTANCE, poseStack, RenderTypes.waterMask(), lightCoords, OverlayTexture.NO_OVERLAY,
-                state.outlineColor
-            );
+                waterPatchModel, Unit.INSTANCE, poseStack, RenderTypes.waterMask(), lightCoords,
+                OverlayTexture.NO_OVERLAY,
+                state.outlineColor);
         }
     }
 }

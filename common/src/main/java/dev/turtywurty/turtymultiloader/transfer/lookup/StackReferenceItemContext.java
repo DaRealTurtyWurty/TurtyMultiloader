@@ -16,14 +16,14 @@ import java.util.function.ToIntFunction;
 /**
  * Transactional context backed by a live Minecraft stack reference such as an inventory slot, hand, or cursor.
  */
-final class StackReferenceItemContext extends TransactionParticipant<ItemStack> implements MutableItemContext {
+public final class StackReferenceItemContext extends TransactionParticipant<ItemStack> implements MutableItemContext {
     private final Supplier<ItemStack> getter;
     private final Consumer<ItemStack> setter;
     private final Predicate<ItemStack> validity;
     private final ToIntFunction<ItemStack> capacity;
     private final Runnable changeListener;
 
-    StackReferenceItemContext(
+    protected StackReferenceItemContext(
         Supplier<ItemStack> getter,
         Consumer<ItemStack> setter,
         Predicate<ItemStack> validity,

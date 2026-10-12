@@ -13,8 +13,8 @@ import net.minecraft.network.codec.StreamCodec;
  */
 public final class SlurryVariant {
     public static final Codec<ResourceVariant<Slurry>> CODEC = SlurryApi.RESOURCE_FAMILY.codec();
-    public static final StreamCodec<RegistryFriendlyByteBuf, ResourceVariant<Slurry>> STREAM_CODEC =
-        SlurryApi.RESOURCE_FAMILY.streamCodec();
+    public static final StreamCodec<RegistryFriendlyByteBuf, ResourceVariant<Slurry>> STREAM_CODEC = SlurryApi.RESOURCE_FAMILY
+        .streamCodec();
 
     private SlurryVariant() {
     }

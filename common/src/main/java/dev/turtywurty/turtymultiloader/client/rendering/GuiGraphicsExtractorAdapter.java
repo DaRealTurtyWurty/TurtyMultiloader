@@ -30,9 +30,11 @@ import java.util.Objects;
 /**
  * Common-code access to the low-level operations hidden by vanilla's {@link GuiGraphicsExtractor}.
  *
- * <p>The extractor's normal public methods should still be called through {@link #extractor()}. This adapter covers
+ * <p>
+ * The extractor's normal public methods should still be called through {@link #extractor()}. This adapter covers
  * its private rendering helpers and the custom render-state submission operations exposed by NeoForge but absent
- * from vanilla and Fabric.</p>
+ * from vanilla and Fabric.
+ * </p>
  */
 public final class GuiGraphicsExtractorAdapter {
     private final GuiGraphicsExtractor extractor;
@@ -53,8 +55,7 @@ public final class GuiGraphicsExtractorAdapter {
             Objects.requireNonNull(pose, "pose"),
             Objects.requireNonNull(renderState, "renderState"),
             mouseX,
-            mouseY
-        ));
+            mouseY));
     }
 
     public GuiGraphicsExtractor extractor() {

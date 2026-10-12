@@ -19,23 +19,25 @@ import net.minecraft.world.entity.player.Player;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
+import java.util.function.Consumer;
 
-final class FabricClientNetworkHooks {
+public final class FabricClientNetworkHooks {
     private FabricClientNetworkHooks() {
     }
 
-    static void initialize(FabricNetworkService service) {
-        ClientConfigurationConnectionEvents.START.register((listener, client) ->
-            service.validateClientRequired(PayloadPhase.CONFIGURATION)
-        );
+    protected static void initialize(FabricNetworkService service) {
+        ClientConfigurationConnectionEvents.START
+            .register((listener, client) -> service.validateClientRequired(PayloadPhase.CONFIGURATION));
         ClientPlayConnectionEvents.JOIN.register((listener, sender, client) -> {
-            if (service.validateClientRequired(PayloadPhase.PLAY))
+            if (service.validateClientRequired(PayloadPhase.PLAY)) {
                 service.fireClientJoin();
+            }
         });
         ClientPlayConnectionEvents.DISCONNECT.register((listener, client) -> service.fireClientDisconnect());
     }
 
-    static <T extends CustomPacketPayload> void registerHandler(
+    protected static <T extends CustomPacketPayload> void registerHandler(
         PayloadPhase phase,
         CustomPacketPayload.Type<T> type,
         PayloadHandler<T> handler
@@ -48,24 +50,21 @@ final class FabricClientNetworkHooks {
                     context.player(),
                     context.responseSender()::sendPacket,
                     context.client().getConnection().getConnection()::disconnect,
-                    context.client()
-                )
-            ));
+                    context.client())));
         } else {
             ClientConfigurationNetworking.registerGlobalReceiver(type, (payload, context) -> {
-                ClientPayloadContext payloadContext = new ClientPayloadContext(
+                var payloadContext = new ClientPayloadContext(
                     PayloadPhase.CONFIGURATION,
                     null,
                     context.responseSender()::sendPacket,
                     context.packetContext().orElseThrow(PacketContext.CONNECTION)::disconnect,
-                    context.client()
-                );
+                    context.client());
                 context.client().execute(() -> handler.handle(payload, payloadContext));
             });
         }
     }
 
-    static void registerProbe(PayloadPhase phase, CustomPacketPayload.Type<?> type) {
+    protected static void registerProbe(PayloadPhase phase, CustomPacketPayload.Type<?> type) {
         registerProbeTyped(phase, type);
     }
 
@@ -80,28 +79,29 @@ final class FabricClientNetworkHooks {
         }
     }
 
-    static void sendToServer(CustomPacketPayload payload) {
+    protected static void sendToServer(CustomPacketPayload payload) {
         ClientPlayNetworking.send(payload);
     }
 
-    static boolean canSend(PayloadPhase phase, CustomPacketPayload.Type<?> type) {
+    protected static boolean canSend(PayloadPhase phase, CustomPacketPayload.Type<?> type) {
         return phase == PayloadPhase.PLAY
             ? ClientPlayNetworking.canSend(type)
             : ClientConfigurationNetworking.canSend(type);
     }
 
-    static void disconnect(Component reason) {
+    protected static void disconnect(Component reason) {
         var listener = Minecraft.getInstance().getConnection();
-        if (listener != null)
+        if (listener != null) {
             listener.getConnection().disconnect(reason);
+        }
     }
 
     private record ClientPayloadContext(
         PayloadPhase phase,
         Player rawPlayer,
-        java.util.function.Consumer<CustomPacketPayload> reply,
-        java.util.function.Consumer<Component> disconnector,
-        java.util.concurrent.Executor executor
+        Consumer<CustomPacketPayload> reply,
+        Consumer<Component> disconnector,
+        Executor executor
     ) implements PayloadContext {
         @Override
         public LogicalSide receptionSide() {

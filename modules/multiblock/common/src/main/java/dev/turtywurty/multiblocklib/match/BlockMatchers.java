@@ -23,9 +23,8 @@ public final class BlockMatchers {
     }
 
     public static BlockMatcherList parseMatcherList(final JsonElement element) {
-        if (element == null || element.isJsonNull()) {
+        if (element == null || element.isJsonNull())
             return new BlockMatcherList(List.of(state -> true), List.of("*"));
-        }
 
         List<BlockMatcher> matchers = new ArrayList<>();
         List<String> tokens = new ArrayList<>();
@@ -46,9 +45,8 @@ public final class BlockMatchers {
     }
 
     public static BlockMatcher parseMatcher(final String token) {
-        if (token.equals("*") || token.equalsIgnoreCase("any")) {
+        if (token.equals("*") || token.equalsIgnoreCase("any"))
             return state -> true;
-        }
         if (token.startsWith("#")) {
             Identifier tagId = Identifier.parse(token.substring(1));
             TagKey<Block> tag = TagKey.create(Registries.BLOCK, tagId);
@@ -56,8 +54,7 @@ public final class BlockMatchers {
                 state -> state.is(tag),
                 () -> BuiltInRegistries.BLOCK.get(tag)
                     .flatMap(holders -> holders.stream().findFirst())
-                    .map(holder -> holder.value().defaultBlockState())
-            );
+                    .map(holder -> holder.value().defaultBlockState()));
         }
 
         if (token.contains("[")) {
@@ -89,23 +86,20 @@ public final class BlockMatchers {
         Identifier blockId = Identifier.parse(idPart);
         Block block = BuiltInRegistries.BLOCK.getValue(blockId);
         BlockState state = block.defaultBlockState();
-        if (propsPart == null || propsPart.isBlank()) {
+        if (propsPart == null || propsPart.isBlank())
             return state;
-        }
 
         StateDefinition<Block, BlockState> definition = block.getStateDefinition();
         String[] parts = propsPart.split(",");
         for (String part : parts) {
             String[] kv = part.split("=", 2);
-            if (kv.length != 2) {
+            if (kv.length != 2)
                 throw new IllegalArgumentException("Invalid blockstate property segment: " + part + " in " + token);
-            }
             String key = kv[0].trim();
             String value = kv[1].trim();
             Property<?> property = definition.getProperty(key);
-            if (property == null) {
+            if (property == null)
                 throw new IllegalArgumentException("Unknown property '" + key + "' for block " + blockId);
-            }
             state = setProperty(state, property, value, token);
         }
 
@@ -119,9 +113,9 @@ public final class BlockMatchers {
         final String token
     ) {
         Optional<T> parsed = property.getValue(value);
-        if (parsed.isEmpty()) {
-            throw new IllegalArgumentException("Invalid value '" + value + "' for property '" + property.getName() + "' in " + token);
-        }
+        if (parsed.isEmpty())
+            throw new IllegalArgumentException(
+                "Invalid value '" + value + "' for property '" + property.getName() + "' in " + token);
 
         return state.setValue(property, parsed.get());
     }

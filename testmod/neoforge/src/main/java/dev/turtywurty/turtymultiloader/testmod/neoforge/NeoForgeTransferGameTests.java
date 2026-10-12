@@ -27,36 +27,31 @@ import java.util.concurrent.atomic.AtomicInteger;
 public final class NeoForgeTransferGameTests {
     public static final Identifier TEST_ID = Identifier.fromNamespaceAndPath(
         TestModContent.MOD_ID,
-        "neoforge_nested_transaction"
-    );
+        "neoforge_nested_transaction");
     public static final Identifier LONG_TRANSFER_TEST_ID = Identifier.fromNamespaceAndPath(
         TestModContent.MOD_ID,
-        "neoforge_long_transfer_is_bounded"
-    );
+        "neoforge_long_transfer_is_bounded");
 
     private NeoForgeTransferGameTests() {
     }
 
     public static void verifyNestedTransaction(GameTestHelper helper) {
-        AtomicInteger commitCount = new AtomicInteger();
+        var commitCount = new AtomicInteger();
         SimpleSingleSlotStorage<ResourceVariant<Item>> storage = new SimpleSingleSlotStorage<>(
             ResourceTypes.ITEM,
             64,
             TransferSupport.BOTH,
-            ignored -> true,
-            ignored -> commitCount.incrementAndGet()
-        );
+            _ -> true,
+            _ -> commitCount.incrementAndGet());
         ResourceHandler<ItemResource> handler = NeoForgeStorageAdapter.toNeoForge(
             storage,
             NeoForgeResourceAdapters::fromNeoForge,
             NeoForgeResourceAdapters::toNeoForgeItem,
             Units.ITEM,
-            Units.ITEM
-        );
+            Units.ITEM);
         ItemResource item = NeoForgeResourceAdapters.toNeoForgeItem(ResourceVariant.of(
             ResourceTypes.ITEM,
-            TestModContent.TEST_LOG_ITEM.holder()
-        ));
+            TestModContent.TEST_LOG_ITEM.holder()));
 
         try (Transaction root = Transaction.openRoot()) {
             helper.assertValueEqual(handler.insert(0, item, 4, root), 4, "Root insertion");
@@ -85,35 +80,29 @@ public final class NeoForgeTransferGameTests {
                 NeoForgeResourceAdapters::fromNeoForge,
                 NeoForgeResourceAdapters::toNeoForgeItem,
                 Units.ITEM,
-                Units.ITEM
-            )
-        );
+                Units.ITEM));
         helper.assertTrue(
             restrictedRoundTrip.support(0) == TransferSupport.EXTRACT_ONLY,
-            "NeoForge resource round-trip lost transfer direction metadata"
-        );
+            "NeoForge resource round-trip lost transfer direction metadata");
 
         SimpleSingleSlotStorage<ResourceVariant<UnitResource>> energyStorage = new SimpleSingleSlotStorage<>(
             ResourceTypes.ENERGY,
             100,
             TransferSupport.INSERT_ONLY,
-            ignored -> true,
-            ignored -> {
-            }
-        );
+            _ -> true,
+            _ -> {
+            });
         ResourceStorage<ResourceVariant<UnitResource>> energyRoundTrip = NeoForgeEnergyAdapter.fromNeoForge(
-            NeoForgeEnergyAdapter.toNeoForge(energyStorage)
-        );
+            NeoForgeEnergyAdapter.toNeoForge(energyStorage));
         helper.assertTrue(
             energyRoundTrip.support(0) == TransferSupport.INSERT_ONLY,
-            "NeoForge energy round-trip lost transfer direction metadata"
-        );
+            "NeoForge energy round-trip lost transfer direction metadata");
         helper.succeed();
     }
 
     public static void verifyLongTransferIsBounded(GameTestHelper helper) {
-        AtomicInteger energyInsertCalls = new AtomicInteger();
-        AtomicInteger energyExtractCalls = new AtomicInteger();
+        var energyInsertCalls = new AtomicInteger();
+        var energyExtractCalls = new AtomicInteger();
         EnergyHandler energyHandler = new EnergyHandler() {
             @Override
             public long getAmountAsLong() {
@@ -140,12 +129,11 @@ public final class NeoForgeTransferGameTests {
         ResourceStorage<ResourceVariant<UnitResource>> energy = NeoForgeEnergyAdapter.fromNeoForge(energyHandler);
         ResourceVariant<UnitResource> energyResource = ResourceTypes.ENERGY.of(Holder.direct(UnitResource.VALUE));
 
-        AtomicInteger resourceInsertCalls = new AtomicInteger();
-        AtomicInteger resourceExtractCalls = new AtomicInteger();
+        var resourceInsertCalls = new AtomicInteger();
+        var resourceExtractCalls = new AtomicInteger();
         ItemResource item = NeoForgeResourceAdapters.toNeoForgeItem(ResourceVariant.of(
             ResourceTypes.ITEM,
-            TestModContent.TEST_LOG_ITEM.holder()
-        ));
+            TestModContent.TEST_LOG_ITEM.holder()));
         ResourceHandler<ItemResource> itemHandler = new ResourceHandler<>() {
             @Override
             public int size() {
@@ -191,29 +179,27 @@ public final class NeoForgeTransferGameTests {
             helper.assertValueEqual(
                 energy.insert(energyResource, Long.MAX_VALUE, transaction),
                 (long) Integer.MAX_VALUE,
-                "Energy insertion was not bounded to one native request"
-            );
+                "Energy insertion was not bounded to one native request");
             helper.assertValueEqual(
                 energy.extract(energyResource, Long.MAX_VALUE, transaction),
                 (long) Integer.MAX_VALUE,
-                "Energy extraction was not bounded to one native request"
-            );
+                "Energy extraction was not bounded to one native request");
             helper.assertValueEqual(
                 items.insert(0, itemResource, Long.MAX_VALUE, transaction),
                 (long) Integer.MAX_VALUE,
-                "Resource insertion was not bounded to one native request"
-            );
+                "Resource insertion was not bounded to one native request");
             helper.assertValueEqual(
                 items.extract(0, itemResource, Long.MAX_VALUE, transaction),
                 (long) Integer.MAX_VALUE,
-                "Resource extraction was not bounded to one native request"
-            );
+                "Resource extraction was not bounded to one native request");
         }
 
         helper.assertValueEqual(energyInsertCalls.get(), 1, "Energy insertion invoked the native handler repeatedly");
         helper.assertValueEqual(energyExtractCalls.get(), 1, "Energy extraction invoked the native handler repeatedly");
-        helper.assertValueEqual(resourceInsertCalls.get(), 1, "Resource insertion invoked the native handler repeatedly");
-        helper.assertValueEqual(resourceExtractCalls.get(), 1, "Resource extraction invoked the native handler repeatedly");
+        helper.assertValueEqual(resourceInsertCalls.get(), 1,
+            "Resource insertion invoked the native handler repeatedly");
+        helper.assertValueEqual(resourceExtractCalls.get(), 1,
+            "Resource extraction invoked the native handler repeatedly");
         helper.succeed();
     }
 }

@@ -34,7 +34,7 @@ public final class FunctionalLanguageProvider implements DataProvider {
         Map<String, String> translations = new TreeMap<>();
         generator.generate(new LanguageGenerationContext(translations));
 
-        JsonObject json = new JsonObject();
+        var json = new JsonObject();
         translations.forEach(json::addProperty);
         Identifier id = Identifier.fromNamespaceAndPath(modId, locale);
         return DataProvider.saveStable(output, json, pathProvider.json(id));

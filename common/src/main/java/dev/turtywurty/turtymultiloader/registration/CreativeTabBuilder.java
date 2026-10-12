@@ -12,13 +12,15 @@ import java.util.function.Supplier;
 /**
  * Loader-neutral configuration for a custom creative tab.
  *
- * <p>The registry backends apply this configuration to the loader's custom-tab builder. In particular, Fabric
- * custom tabs cannot be created with vanilla's positioned-tab builder.</p>
+ * <p>
+ * The registry backends apply this configuration to the loader's custom-tab builder. In particular, Fabric
+ * custom tabs cannot be created with vanilla's positioned-tab builder.
+ * </p>
  */
 public final class CreativeTabBuilder {
     private Component title;
     private Supplier<ItemStack> icon = () -> ItemStack.EMPTY;
-    private Consumer<CreativeTabOutput> displayItems = ignored -> {
+    private Consumer<CreativeTabOutput> displayItems = _ -> {
     };
     private boolean alignedRight;
     private boolean hideTitle;
@@ -79,13 +81,17 @@ public final class CreativeTabBuilder {
         Objects.requireNonNull(builder, "builder")
             .title(title)
             .icon(icon);
-        if (alignedRight)
+        if (alignedRight) {
             builder.alignedRight();
-        if (hideTitle)
+        }
+        if (hideTitle) {
             builder.hideTitle();
-        if (noScrollBar)
+        }
+        if (noScrollBar) {
             builder.noScrollBar();
-        if (backgroundTexture != null)
+        }
+        if (backgroundTexture != null) {
             builder.backgroundTexture(backgroundTexture);
+        }
     }
 }

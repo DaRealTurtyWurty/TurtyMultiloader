@@ -45,19 +45,17 @@ public final class FunctionalVanillaModelProvider implements DataProvider {
 
     @Override
     public CompletableFuture<?> run(CachedOutput output) {
-        BlockStateCollector blockStates = new BlockStateCollector();
-        ItemCollector items = new ItemCollector();
-        ModelCollector models = new ModelCollector();
+        var blockStates = new BlockStateCollector();
+        var items = new ItemCollector();
+        var models = new ModelCollector();
         this.generator.generate(
             new BlockModelGenerators(blockStates, items, models),
-            new ItemModelGenerators(items, models)
-        );
+            new ItemModelGenerators(items, models));
         items.resolveCopies();
         return CompletableFuture.allOf(
             blockStates.save(output, this.blockStates),
             items.save(output, this.itemDefinitions),
-            models.save(output, this.models)
-        );
+            models.save(output, this.models));
     }
 
     @Override
@@ -107,8 +105,7 @@ public final class FunctionalVanillaModelProvider implements DataProvider {
         public void register(Identifier id, ClientItem definition) {
             if (this.definitionsById.putIfAbsent(
                 Objects.requireNonNull(id, "id"),
-                Objects.requireNonNull(definition, "definition")
-            ) != null)
+                Objects.requireNonNull(definition, "definition")) != null)
                 throw new IllegalStateException("Duplicate item model definition for " + id);
         }
 
@@ -140,10 +137,8 @@ public final class FunctionalVanillaModelProvider implements DataProvider {
                     output,
                     ClientItem.CODEC,
                     item -> paths.json(item.builtInRegistryHolder().key().identifier()),
-                    this.definitions
-                ),
-                DataProvider.saveAll(output, ClientItem.CODEC, paths::json, this.definitionsById)
-            );
+                    this.definitions),
+                DataProvider.saveAll(output, ClientItem.CODEC, paths::json, this.definitionsById));
         }
     }
 
@@ -152,7 +147,8 @@ public final class FunctionalVanillaModelProvider implements DataProvider {
 
         @Override
         public void accept(Identifier id, ModelInstance model) {
-            if (this.models.putIfAbsent(Objects.requireNonNull(id, "id"), Objects.requireNonNull(model, "model")) != null)
+            if (this.models.putIfAbsent(Objects.requireNonNull(id, "id"),
+                Objects.requireNonNull(model, "model")) != null)
                 throw new IllegalStateException("Duplicate model definition for " + id);
         }
 

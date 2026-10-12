@@ -23,7 +23,6 @@ public final class SlurryApiFabricClient implements ClientModInitializer {
                 public void onResourceManagerReload(ResourceManager manager) {
                     SlurryRenderHandlerRegistry.onResourcesReload();
                 }
-            }
-        );
+            });
     }
 }

@@ -43,10 +43,10 @@ import java.util.*;
 import java.util.function.Supplier;
 
 public final class NeoForgeWorldGenerationService implements WorldGenerationService {
-    private static final DeferredRegister<MapCodec<? extends BiomeModifier>> BIOME_MODIFIER_SERIALIZERS =
-        DeferredRegister.create(NeoForgeRegistries.Keys.BIOME_MODIFIER_SERIALIZERS, TurtyMultiloader.MOD_ID);
-    private static final DeferredHolder<MapCodec<? extends BiomeModifier>, MapCodec<CodeBiomeModifier>>
-        CODE_BIOME_MODIFIER = BIOME_MODIFIER_SERIALIZERS.register("code", () -> CodeBiomeModifier.CODEC);
+    private static final DeferredRegister<MapCodec<? extends BiomeModifier>> BIOME_MODIFIER_SERIALIZERS = DeferredRegister
+        .create(NeoForgeRegistries.Keys.BIOME_MODIFIER_SERIALIZERS, TurtyMultiloader.MOD_ID);
+    private static final DeferredHolder<MapCodec<? extends BiomeModifier>, MapCodec<CodeBiomeModifier>> CODE_BIOME_MODIFIER = BIOME_MODIFIER_SERIALIZERS
+        .register("code", () -> CodeBiomeModifier.CODEC);
     private static volatile NeoForgeWorldGenerationService instance;
     private static volatile boolean bound;
 
@@ -101,7 +101,7 @@ public final class NeoForgeWorldGenerationService implements WorldGenerationServ
     public synchronized void addBootstraps(RegistrySetBuilder builder) {
         Map<ResourceKey<? extends Registry<?>>, List<BootstrapDeclaration<?>>> grouped = new LinkedHashMap<>();
         bootstraps.forEach(declaration -> grouped
-            .computeIfAbsent(declaration.registryKey(), ignored -> new ArrayList<>())
+            .computeIfAbsent(declaration.registryKey(), _ -> new ArrayList<>())
             .add(declaration));
         grouped.forEach((registryKey, declarations) -> addBootstraps(builder, registryKey, declarations));
     }
@@ -128,8 +128,7 @@ public final class NeoForgeWorldGenerationService implements WorldGenerationServ
             Objects.requireNonNull(selector, "selector"),
             Objects.requireNonNull(step, "step"),
             Objects.requireNonNull(feature, "feature"),
-            false
-        ));
+            false));
     }
 
     @Override
@@ -144,8 +143,7 @@ public final class NeoForgeWorldGenerationService implements WorldGenerationServ
             Objects.requireNonNull(selector, "selector"),
             Objects.requireNonNull(step, "step"),
             Objects.requireNonNull(feature, "feature"),
-            true
-        ));
+            true));
     }
 
     @Override
@@ -167,8 +165,7 @@ public final class NeoForgeWorldGenerationService implements WorldGenerationServ
             weight,
             minimumGroupSize,
             maximumGroupSize,
-            false
-        ));
+            false));
     }
 
     @Override
@@ -185,8 +182,7 @@ public final class NeoForgeWorldGenerationService implements WorldGenerationServ
             0,
             0,
             0,
-            true
-        ));
+            true));
     }
 
     private void addModification(BiomeModificationDeclaration declaration) {
@@ -219,16 +215,14 @@ public final class NeoForgeWorldGenerationService implements WorldGenerationServ
                 BuiltInDatapackActivation activation = declaration.activation();
                 Identifier location = Identifier.fromNamespaceAndPath(
                     declaration.id().getNamespace(),
-                    "resourcepacks/" + declaration.id().getPath()
-                );
+                    "resourcepacks/" + declaration.id().getPath());
                 event.addPackFinders(
                     location,
                     PackType.SERVER_DATA,
                     declaration.displayName(),
                     activation == BuiltInDatapackActivation.NORMAL ? PackSource.FEATURE : PackSource.BUILT_IN,
                     activation == BuiltInDatapackActivation.ALWAYS_ENABLED,
-                    Pack.Position.TOP
-                );
+                    Pack.Position.TOP);
             });
         }
     }
@@ -248,9 +242,8 @@ public final class NeoForgeWorldGenerationService implements WorldGenerationServ
         ResourceKey<? extends Registry<?>> registryKey,
         List<BootstrapDeclaration<?>> declarations
     ) {
-        builder.add((ResourceKey) registryKey, context -> declarations.forEach(declaration ->
-            ((SingleRegistryBootstrap) declaration.bootstrap()).run(context)
-        ));
+        builder.add((ResourceKey) registryKey, context -> declarations
+            .forEach(declaration -> ((SingleRegistryBootstrap) declaration.bootstrap()).run(context)));
     }
 
     private static BiomeSelectionContext selectionContext(Holder<Biome> biome) {
@@ -262,11 +255,9 @@ public final class NeoForgeWorldGenerationService implements WorldGenerationServ
     private static void validateSpawn(int weight, int minimumGroupSize, int maximumGroupSize) {
         if (weight <= 0)
             throw new IllegalArgumentException("Spawn weight must be positive");
-        if (minimumGroupSize <= 0 || maximumGroupSize < minimumGroupSize) {
+        if (minimumGroupSize <= 0 || maximumGroupSize < minimumGroupSize)
             throw new IllegalArgumentException(
-                "Spawn group sizes must satisfy 0 < minimumGroupSize <= maximumGroupSize"
-            );
-        }
+                "Spawn group sizes must satisfy 0 < minimumGroupSize <= maximumGroupSize");
     }
 
     private static <T> void requireNew(Set<T> values, T value, String kind) {
@@ -301,10 +292,11 @@ public final class NeoForgeWorldGenerationService implements WorldGenerationServ
             if (phase != expectedPhase || !selector.test(selectionContext(biome)))
                 return;
             Holder<PlacedFeature> featureHolder = placedFeatures.getOrThrow(feature);
-            if (remove)
+            if (remove) {
                 builder.getGenerationSettings().getFeatures(step).removeIf(featureHolder::equals);
-            else
+            } else {
                 builder.getGenerationSettings().addFeature(step, featureHolder);
+            }
         }
     }
 
@@ -329,11 +321,9 @@ public final class NeoForgeWorldGenerationService implements WorldGenerationServ
             if (phase != expectedPhase || !selector.test(selectionContext(biome)))
                 return;
             EntityType<?> type = Objects.requireNonNull(entityType.get(), "entityType supplier result");
-            if (!remove && type.getCategory() != category) {
+            if (!remove && type.getCategory() != category)
                 throw new IllegalArgumentException(
-                    "Entity category " + type.getCategory() + " does not match requested category " + category
-                );
-            }
+                    "Entity category " + type.getCategory() + " does not match requested category " + category);
             if (remove) {
                 for (MobCategory mobCategory : MobCategory.values()) {
                     builder.getMobSpawnSettings().getSpawner(mobCategory)
@@ -344,26 +334,29 @@ public final class NeoForgeWorldGenerationService implements WorldGenerationServ
                     type,
                     Objects.requireNonNull(category),
                     weight,
-                    UniformInt.of(minimumGroupSize, maximumGroupSize)
-                );
+                    UniformInt.of(minimumGroupSize, maximumGroupSize));
             }
         }
     }
 
     private record CodeBiomeModifier(HolderGetter<PlacedFeature> placedFeatures) implements BiomeModifier {
         private static final MapCodec<CodeBiomeModifier> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
-            RegistryOps.<PlacedFeature, CodeBiomeModifier>retrieveGetter(Registries.PLACED_FEATURE)
-        ).apply(instance, CodeBiomeModifier::new));
+            RegistryOps.<PlacedFeature, CodeBiomeModifier>retrieveGetter(Registries.PLACED_FEATURE))
+            .apply(instance, CodeBiomeModifier::new));
 
         @Override
-        public void modify(RegistryAccess registryAccess, Holder<Biome> biome, Phase phase, ModifiableBiomeInfo.BiomeInfo.Builder builder) {
+        public void modify(
+            RegistryAccess registryAccess,
+            Holder<Biome> biome,
+            Phase phase,
+            ModifiableBiomeInfo.BiomeInfo.Builder builder
+        ) {
             NeoForgeWorldGenerationService service = instance;
             if (service == null)
                 return;
             synchronized (service) {
-                service.biomeModifications.forEach(declaration ->
-                    declaration.modify(biome, phase, builder, placedFeatures)
-                );
+                service.biomeModifications
+                    .forEach(declaration -> declaration.modify(biome, phase, builder, placedFeatures));
             }
         }
 

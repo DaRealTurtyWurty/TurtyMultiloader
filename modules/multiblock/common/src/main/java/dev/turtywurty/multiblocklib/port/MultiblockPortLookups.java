@@ -17,6 +17,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluid;
+import java.util.function.Supplier;
 
 public final class MultiblockPortLookups {
     private MultiblockPortLookups() {
@@ -35,7 +36,7 @@ public final class MultiblockPortLookups {
         registerBlock(() -> block);
     }
 
-    private static void registerBlock(final java.util.function.Supplier<? extends Block> block) {
+    private static void registerBlock(final Supplier<? extends Block> block) {
         TransferService transfers = TransferService.get();
         transfers.registerBlockProvider(StorageKeys.ITEM, MultiblockPortLookups::findItemStorage, block);
         transfers.registerBlockProvider(StorageKeys.FLUID, MultiblockPortLookups::findFluidStorage, block);
@@ -43,47 +44,54 @@ public final class MultiblockPortLookups {
     }
 
     public static ResourceStorage<ResourceVariant<Item>> findItemStorage(
-        final Level level, final BlockPos pos, final BlockState state,
-        final BlockEntity blockEntity, final Direction direction
+        final Level level,
+        final BlockPos pos,
+        final BlockState state,
+        final BlockEntity blockEntity,
+        final Direction direction
     ) {
         MultiblockControllerBlockEntity controller = resolveController(level, pos, blockEntity);
         return controller != null ? controller.getItemStorageForExternal(pos, direction) : null;
     }
 
     public static ResourceStorage<ResourceVariant<Fluid>> findFluidStorage(
-        final Level level, final BlockPos pos, final BlockState state,
-        final BlockEntity blockEntity, final Direction direction
+        final Level level,
+        final BlockPos pos,
+        final BlockState state,
+        final BlockEntity blockEntity,
+        final Direction direction
     ) {
         MultiblockControllerBlockEntity controller = resolveController(level, pos, blockEntity);
         return controller != null ? controller.getFluidStorageForExternal(pos, direction) : null;
     }
 
     public static ResourceStorage<ResourceVariant<UnitResource>> findEnergyStorage(
-        final Level level, final BlockPos pos, final BlockState state,
-        final BlockEntity blockEntity, final Direction direction
+        final Level level,
+        final BlockPos pos,
+        final BlockState state,
+        final BlockEntity blockEntity,
+        final Direction direction
     ) {
         MultiblockControllerBlockEntity controller = resolveController(level, pos, blockEntity);
         return controller != null ? controller.getEnergyStorageForExternal(pos, direction) : null;
     }
 
     private static MultiblockControllerBlockEntity resolveController(
-        final Level level, final BlockPos pos, final BlockEntity blockEntity
+        final Level level,
+        final BlockPos pos,
+        final BlockEntity blockEntity
     ) {
-        if (blockEntity instanceof MultiblockControllerBlockEntity controller) {
+        if (blockEntity instanceof MultiblockControllerBlockEntity controller)
             return controller;
-        }
-        if (!(level instanceof ServerLevel serverLevel)) {
+        if (!(level instanceof ServerLevel serverLevel))
             return null;
-        }
         MultiblockWorldData data = MultiblockWorldData.get(serverLevel);
         BlockPos controllerPos = data.getControllerFor(pos);
-        if (controllerPos == null) {
+        if (controllerPos == null)
             return null;
-        }
         BlockEntity controllerEntity = level.getBlockEntity(controllerPos);
-        if (controllerEntity instanceof MultiblockControllerBlockEntity controller) {
+        if (controllerEntity instanceof MultiblockControllerBlockEntity controller)
             return controller;
-        }
         data.restorePartsForController(serverLevel, controllerPos);
         return null;
     }

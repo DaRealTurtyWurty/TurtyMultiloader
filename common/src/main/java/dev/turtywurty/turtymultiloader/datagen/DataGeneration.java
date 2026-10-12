@@ -40,16 +40,24 @@ public final class DataGeneration {
         Objects.requireNonNull(builder, "builder");
         spec.addRegistryBootstraps(new RegistrySetBuilder() {
             @Override
-            public <T> RegistrySetBuilder add(ResourceKey<? extends Registry<T>> key,
-                SingleRegistryBootstrap<T> bootstrap) {
-                if (isReloadable(key) == reloadable) builder.add(key, bootstrap);
+            public <T> RegistrySetBuilder add(
+                ResourceKey<? extends Registry<T>> key,
+                SingleRegistryBootstrap<T> bootstrap
+            ) {
+                if (isReloadable(key) == reloadable) {
+                    builder.add(key, bootstrap);
+                }
                 return this;
             }
             @Override
             public RegistrySetBuilder add(MultiRegistryBootstrap bootstrap) {
-                var layers = bootstrap.requestedRegistries().stream().map(DataGeneration::isReloadable).distinct().toList();
-                if (layers.size() > 1) throw new IllegalArgumentException("Bootstrap spans world and reloadable registries");
-                if (!layers.isEmpty() && layers.getFirst() == reloadable) builder.add(bootstrap);
+                var layers = bootstrap.requestedRegistries().stream().map(DataGeneration::isReloadable).distinct()
+                    .toList();
+                if (layers.size() > 1)
+                    throw new IllegalArgumentException("Bootstrap spans world and reloadable registries");
+                if (!layers.isEmpty() && layers.getFirst() == reloadable) {
+                    builder.add(bootstrap);
+                }
                 return this;
             }
         });

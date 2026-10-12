@@ -32,7 +32,12 @@ dependencies {
 
     // The loader projects compile these sources into their own output, but IntelliJ
     // models them as separate modules. Keep the module dependencies visible to the IDE.
-    [':common', ':gas-common', ':slurry-common', ':multiblock-common'].each { commonProject ->
+    [
+        ':common',
+        ':gas-common',
+        ':slurry-common',
+        ':multiblock-common'
+    ].each { commonProject ->
         compileOnly(project(commonProject)) {
             attributes {
                 attribute(loaderAttribute, 'common')
@@ -72,10 +77,10 @@ processResources {
     inputs.property('fabric_api_version', fabric_api_version)
     filesMatching('fabric.mod.json') {
         expand([
-            version              : project.version,
-            minecraft_version    : minecraft_version,
+            version : project.version,
+            minecraft_version : minecraft_version,
             fabric_loader_version: fabric_loader_version,
-            fabric_api_version   : fabric_api_version
+            fabric_api_version : fabric_api_version
         ])
     }
 }

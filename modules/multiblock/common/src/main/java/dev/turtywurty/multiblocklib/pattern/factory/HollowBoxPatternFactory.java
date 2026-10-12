@@ -21,23 +21,19 @@ public class HollowBoxPatternFactory implements MultiblockPatternFactory {
         int height = GsonHelper.getAsInt(json, "height", size);
         int depth = GsonHelper.getAsInt(json, "depth", size);
         int wallThickness = GsonHelper.getAsInt(json, "wall_thickness", 1);
-        if (width <= 0 || height <= 0 || depth <= 0) {
+        if (width <= 0 || height <= 0 || depth <= 0)
             throw new IllegalArgumentException("Hollow box dimensions must be >= 1");
-        }
-        if (wallThickness <= 0) {
+        if (wallThickness <= 0)
             throw new IllegalArgumentException("Hollow box wall_thickness must be >= 1");
-        }
 
         JsonElement defaultBlocks = readMatcherElement(json, "blocks", "block");
         JsonElement edgeBlocks = readMatcherElement(json, "edge_blocks", "edge_block");
         JsonElement faceBlocks = readMatcherElement(json, "face_blocks", "face_block");
         if ((defaultBlocks == null || defaultBlocks.isJsonNull())
             && (edgeBlocks == null || edgeBlocks.isJsonNull())
-            && (faceBlocks == null || faceBlocks.isJsonNull())) {
+            && (faceBlocks == null || faceBlocks.isJsonNull()))
             throw new IllegalArgumentException(
-                "Hollow box pattern requires 'block(s)' or 'edge_block(s)'/'face_block(s)' to be defined"
-            );
-        }
+                "Hollow box pattern requires 'block(s)' or 'edge_block(s)'/'face_block(s)' to be defined");
 
         BlockMatcherList defaultMatcher = defaultBlocks != null && !defaultBlocks.isJsonNull()
             ? BlockMatchers.parseMatcherList(defaultBlocks)
@@ -69,7 +65,11 @@ public class HollowBoxPatternFactory implements MultiblockPatternFactory {
         return new GridPattern(new BlockPos(width, height, depth), matchers);
     }
 
-    private static JsonElement readMatcherElement(final JsonObject json, final String pluralKey, final String singularKey) {
+    private static JsonElement readMatcherElement(
+        final JsonObject json,
+        final String pluralKey,
+        final String singularKey
+    ) {
         JsonElement matcher = json.get(pluralKey);
         if (matcher == null) {
             matcher = json.get(singularKey);

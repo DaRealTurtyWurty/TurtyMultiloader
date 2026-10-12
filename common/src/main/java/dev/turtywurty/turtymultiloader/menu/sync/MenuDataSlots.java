@@ -6,6 +6,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.*;
+import java.util.function.BooleanSupplier;
+import java.util.function.Supplier;
 
 /**
  * Builds vanilla {@link ContainerData} views whose values remain valid after Vanilla's signed 16-bit menu-data
@@ -57,12 +59,11 @@ public final class MenuDataSlots implements ContainerData {
         public Builder add(IntSupplier getter, IntConsumer setter) {
             entries.add(new Entry(
                 Objects.requireNonNull(getter, "getter"),
-                Objects.requireNonNull(setter, "setter")
-            ));
+                Objects.requireNonNull(setter, "setter")));
             return this;
         }
 
-        public Builder addBoolean(java.util.function.BooleanSupplier getter, Consumer<Boolean> setter) {
+        public Builder addBoolean(BooleanSupplier getter, Consumer<Boolean> setter) {
             Objects.requireNonNull(getter, "getter");
             Objects.requireNonNull(setter, "setter");
             return add(() -> getter.getAsBoolean() ? 1 : 0, value -> setter.accept(value != 0));
@@ -73,8 +74,7 @@ public final class MenuDataSlots implements ContainerData {
             Objects.requireNonNull(setter, "setter");
             return addIntBits(
                 () -> Float.floatToRawIntBits((float) getter.getAsDouble()),
-                value -> setter.accept(Float.intBitsToFloat(value))
-            );
+                value -> setter.accept(Float.intBitsToFloat(value)));
         }
 
         public Builder addLong(LongSupplier getter, LongConsumer setter) {
@@ -88,8 +88,7 @@ public final class MenuDataSlots implements ContainerData {
                         long mask = 0xFFFFL << chunkShift;
                         long bits = (long) (chunk & 0xFFFF) << chunkShift;
                         setter.accept((getter.getAsLong() & ~mask) | bits);
-                    }
-                );
+                    });
             }
             return this;
         }
@@ -99,13 +98,12 @@ public final class MenuDataSlots implements ContainerData {
             Objects.requireNonNull(setter, "setter");
             return addLong(
                 () -> Double.doubleToRawLongBits(getter.getAsDouble()),
-                value -> setter.accept(Double.longBitsToDouble(value))
-            );
+                value -> setter.accept(Double.longBitsToDouble(value)));
         }
 
         public <E extends Enum<E>> Builder addEnum(
             Class<E> enumType,
-            java.util.function.Supplier<E> getter,
+            Supplier<E> getter,
             Consumer<E> setter
         ) {
             Objects.requireNonNull(enumType, "enumType");
@@ -116,11 +114,11 @@ public final class MenuDataSlots implements ContainerData {
                 () -> getter.get().ordinal(),
                 ordinal -> {
                     if (ordinal < 0 || ordinal >= constants.length)
-                        throw new IllegalArgumentException("Invalid " + enumType.getSimpleName() + " ordinal " + ordinal);
+                        throw new IllegalArgumentException(
+                            "Invalid " + enumType.getSimpleName() + " ordinal " + ordinal);
 
                     setter.accept(constants[ordinal]);
-                }
-            );
+                });
         }
 
         public MenuDataSlots build() {
@@ -136,8 +134,7 @@ public final class MenuDataSlots implements ContainerData {
                         int mask = 0xFFFF << chunkShift;
                         int bits = (chunk & 0xFFFF) << chunkShift;
                         setter.accept(getter.getAsInt() & ~mask | bits);
-                    }
-                );
+                    });
             }
             return this;
         }

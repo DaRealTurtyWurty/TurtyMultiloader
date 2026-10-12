@@ -87,9 +87,7 @@ public final class FabricEventService implements EventService {
 
     @Override
     public void onPlayerRespawn(Consumer<ServerPlayer> callback) {
-        ServerPlayerEvents.AFTER_RESPAWN.register((oldPlayer, newPlayer, alive) ->
-            require(callback).accept(newPlayer)
-        );
+        ServerPlayerEvents.AFTER_RESPAWN.register((oldPlayer, newPlayer, alive) -> require(callback).accept(newPlayer));
     }
 
     @Override
@@ -102,17 +100,17 @@ public final class FabricEventService implements EventService {
     public void onBlockBroken(BlockBreakCallback callback) {
         require(callback);
         PlayerBlockBreakEvents.AFTER.register((level, player, pos, state, blockEntity) -> {
-            if (level instanceof ServerLevel serverLevel && player instanceof ServerPlayer serverPlayer)
+            if (level instanceof ServerLevel serverLevel && player instanceof ServerPlayer serverPlayer) {
                 callback.afterBlockBreak(serverLevel, serverPlayer, pos, state, blockEntity);
+            }
         });
     }
 
     @Override
     public void onLivingDamaged(LivingDamageCallback callback) {
         require(callback);
-        ServerLivingEntityEvents.AFTER_DAMAGE.register((entity, source, baseDamage, damageTaken, blocked) ->
-            callback.afterDamage(entity, source, damageTaken)
-        );
+        ServerLivingEntityEvents.AFTER_DAMAGE.register(
+            (entity, source, baseDamage, damageTaken, blocked) -> callback.afterDamage(entity, source, damageTaken));
     }
 
     @Override
@@ -122,16 +120,16 @@ public final class FabricEventService implements EventService {
 
     @Override
     public void onCommandRegistration(Consumer<CommandDispatcher<CommandSourceStack>> callback) {
-        CommandRegistrationCallback.EVENT.register((dispatcher, context, selection) ->
-            require(callback).accept(dispatcher)
-        );
+        CommandRegistrationCallback.EVENT
+            .register((dispatcher, context, selection) -> require(callback).accept(dispatcher));
     }
 
     @Override
     public void onDatapackReload(Consumer<MinecraftServer> callback) {
         ServerLifecycleEvents.END_DATA_PACK_RELOAD.register((server, manager, success) -> {
-            if (success)
+            if (success) {
                 require(callback).accept(server);
+            }
         });
     }
 
