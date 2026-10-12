@@ -25,6 +25,7 @@ import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
+import net.minecraft.world.level.block.grower.TreeGrower;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockSetType;
 import net.minecraft.world.level.block.state.properties.WoodType;
@@ -86,7 +87,7 @@ public interface RegistryService {
 
     default WoodSet registerWoodSet(
         Identifier id,
-        net.minecraft.world.level.block.grower.TreeGrower treeGrower,
+        TreeGrower treeGrower,
         Consumer<WoodSetBuilder> configuration
     ) {
         WoodSetBuilder builder = new WoodSetBuilder(this, id, treeGrower);
@@ -216,11 +217,12 @@ public interface RegistryService {
         return register(Registries.POSITION_SOURCE_TYPE, id, factory);
     }
 
-    default <T extends Feature<?>> RegistrationHandle<Feature<?>, T> registerFeature(
+    /** Registers a feature codec; feature instances are supplied by a world-generation bootstrap. */
+    default <T extends Feature> RegistrationHandle<MapCodec<? extends Feature>, MapCodec<T>> registerFeatureType(
         Identifier id,
-        Supplier<? extends T> factory
+        Supplier<? extends MapCodec<T>> factory
     ) {
-        return register(Registries.FEATURE, id, factory);
+        return register(Registries.FEATURE_TYPE, id, factory);
     }
 
     default <T extends TrunkPlacer> RegistrationHandle<TrunkPlacerType<?>, TrunkPlacerType<T>> registerTrunkPlacerType(

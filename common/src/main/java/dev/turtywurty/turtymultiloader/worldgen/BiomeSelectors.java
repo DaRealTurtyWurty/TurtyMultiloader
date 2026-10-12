@@ -4,7 +4,7 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.tags.BiomeTags;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.level.biome.Biome;
-import net.minecraft.world.level.levelgen.feature.ConfiguredFeature;
+import net.minecraft.world.level.levelgen.feature.Feature;
 import net.minecraft.world.level.levelgen.placement.PlacedFeature;
 
 import java.util.Arrays;
@@ -83,7 +83,7 @@ public final class BiomeSelectors {
             .anyMatch(holder -> holder.unwrapKey().filter(featureKey::equals).isPresent());
     }
 
-    public static BiomeSelector hasConfiguredFeature(ResourceKey<ConfiguredFeature<?, ?>> featureKey) {
+    public static BiomeSelector hasFeature(ResourceKey<Feature> featureKey) {
         Objects.requireNonNull(featureKey, "featureKey");
         return context -> context.biome().getGenerationSettings().features().stream()
             .flatMap(features -> features.stream())

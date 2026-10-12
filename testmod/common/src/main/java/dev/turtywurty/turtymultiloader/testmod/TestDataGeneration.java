@@ -5,16 +5,19 @@ import dev.turtywurty.turtymultiloader.datagen.DataGeneration;
 import dev.turtywurty.turtymultiloader.datagen.DataGenerationSpec;
 import dev.turtywurty.turtymultiloader.datagen.convention.ConventionTag;
 import dev.turtywurty.turtymultiloader.datagen.convention.ConventionTags;
-import net.minecraft.advancements.criterion.InventoryChangeTrigger;
+import net.minecraft.advancements.triggers.InventoryChangeTrigger;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.data.loot.LootTableProvider;
 import net.minecraft.data.recipes.RecipeCategory;
+import net.minecraft.data.recipes.RecipeProvider;
 import net.minecraft.data.recipes.ShapelessRecipeBuilder;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.damagesource.DamageType;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EntityTypes;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.level.block.Blocks;
@@ -29,7 +32,7 @@ import java.util.Set;
  * Compile- and run-time smoke coverage for every common data-generation provider family.
  */
 public final class TestDataGeneration {
-    private static final ConventionTag<net.minecraft.world.item.Item> TEST_INGOTS =
+    private static final ConventionTag<Item> TEST_INGOTS =
         ConventionTags.item("ingots/turtymultiloader_test");
     private static final ResourceKey<DamageType> TEST_DAMAGE_TYPE = ResourceKey.create(
         Registries.DAMAGE_TYPE,
@@ -46,14 +49,19 @@ public final class TestDataGeneration {
 
     public static final DataGenerationSpec SPEC = DataGeneration.spec(TestModContent.MOD_ID)
         .woodSet(TestModContent.TEST_WOOD_SET)
-        .recipes((registries, output) -> ShapelessRecipeBuilder.shapeless(
-                registries.lookupOrThrow(Registries.ITEM),
+        .recipes((registries, advancements) -> new RecipeProvider(registries, advancements) {
+            @Override
+            public void buildRecipes() {
+                ShapelessRecipeBuilder.shapeless(
+                registries.lookup(Registries.ITEM),
                 RecipeCategory.MISC,
                 Items.DIAMOND
             )
             .requires(TEST_INGOTS.key())
             .unlockedBy("has_iron_ingot", InventoryChangeTrigger.TriggerInstance.hasItems(Items.IRON_INGOT))
-            .save(output, TEST_RECIPE))
+            .save(output, TEST_RECIPE);
+            }
+        }.buildRecipes())
         .blockTags((registries, tags) -> tags.tag(TagKey.create(
             Registries.BLOCK,
             id("test_blocks")
@@ -67,7 +75,7 @@ public final class TestDataGeneration {
         .entityTypeTags((registries, tags) -> tags.tag(TagKey.create(
             Registries.ENTITY_TYPE,
             id("test_entities")
-        )).add(EntityType.COW.builtInRegistryHolder().key()))
+        )).add(EntityTypes.COW.builtInRegistryHolder().key()))
         .language("en_us", translations -> {
             translations.add("datagen.turtymultiloader_testmod.smoke", "Data generation smoke test");
             translations.add(TEST_INGOTS, "Test Ingots");
@@ -99,7 +107,7 @@ public final class TestDataGeneration {
         .lootTables(
             Set.of(TEST_LOOT_TABLE),
             List.of(new LootTableProvider.SubProviderEntry(
-                registries -> output -> output.accept(TEST_LOOT_TABLE, LootTable.lootTable()),
+                output -> () -> output.accept(TEST_LOOT_TABLE, LootTable.lootTable()),
                 LootContextParamSets.EMPTY
             ))
         )

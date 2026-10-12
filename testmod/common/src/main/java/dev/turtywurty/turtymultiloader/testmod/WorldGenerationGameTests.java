@@ -13,6 +13,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.level.biome.Biomes;
 import net.minecraft.world.level.levelgen.GenerationStep;
@@ -62,7 +63,7 @@ public final class WorldGenerationGameTests {
             id("disabled_spawn_addition"),
             disabledPlains,
             MobCategory.CREATURE,
-            () -> EntityType.COW,
+            () -> EntityTypes.COW,
             10,
             2,
             4
@@ -70,7 +71,7 @@ public final class WorldGenerationGameTests {
         WorldGeneration.removeSpawn(
             id("disabled_spawn_removal"),
             disabledPlains,
-            () -> EntityType.PIG
+            () -> EntityTypes.PIG
         );
     }
 

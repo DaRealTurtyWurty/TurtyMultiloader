@@ -9,7 +9,6 @@ import net.fabricmc.fabric.api.event.registry.RegistryAttribute;
 import net.fabricmc.fabric.api.object.builder.v1.block.entity.FabricBlockEntityTypeBuilder;
 import net.fabricmc.fabric.api.object.builder.v1.entity.FabricDefaultAttributeRegistry;
 import net.fabricmc.fabric.api.registry.FlammableBlockRegistry;
-import net.fabricmc.fabric.api.registry.StrippableBlockRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.MappedRegistry;
@@ -225,7 +224,7 @@ public final class FabricRegistryService implements RegistryService {
             declaration.blockEntityType().get(), declaration.blocks().stream().map(Supplier::get).toList()
         ));
         blockEntityValidBlocks.clear();
-        strippables.forEach(declaration -> StrippableBlockRegistry.register(
+        strippables.forEach(declaration -> VanillaRegistryHooks.registerStrippable(
             declaration.block().get(),
             declaration.stripped().get()
         ));

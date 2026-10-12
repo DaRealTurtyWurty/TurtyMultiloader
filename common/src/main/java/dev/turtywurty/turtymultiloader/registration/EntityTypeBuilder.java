@@ -4,6 +4,7 @@ import dev.turtywurty.turtymultiloader.worldgen.BiomeSelector;
 import dev.turtywurty.turtymultiloader.worldgen.WorldGeneration;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.tags.TagKey;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.MobCategory;
@@ -53,7 +54,7 @@ public final class EntityTypeBuilder<T extends LivingEntity> {
         return this;
     }
 
-    public EntityTypeBuilder<T> immuneTo(Block... blocks) {
+    public EntityTypeBuilder<T> immuneTo(TagKey<Block> blocks) {
         vanillaBuilder.immuneTo(Objects.requireNonNull(blocks, "blocks"));
         return this;
     }

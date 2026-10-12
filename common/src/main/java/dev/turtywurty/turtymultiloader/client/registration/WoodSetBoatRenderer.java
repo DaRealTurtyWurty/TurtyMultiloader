@@ -38,8 +38,8 @@ final class WoodSetBoatRenderer extends AbstractBoatRenderer {
     ) {
         if (!state.isUnderWater) {
             submitNodeCollector.submitModel(
-                waterPatchModel, Unit.INSTANCE, poseStack, texture, lightCoords, OverlayTexture.NO_OVERLAY,
-                state.outlineColor, null
+                waterPatchModel, Unit.INSTANCE, poseStack, RenderTypes.waterMask(), lightCoords, OverlayTexture.NO_OVERLAY,
+                state.outlineColor
             );
         }
     }

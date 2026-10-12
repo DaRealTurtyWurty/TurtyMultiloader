@@ -240,7 +240,7 @@ public final class NeoForgeClientEventService implements ClientEventService {
             client.levelRenderer,
             levelState,
             poseStack,
-            client.renderBuffers().bufferSource(),
+            client.gameRenderer.renderBuffers().stagedVertexBuffer(),
             submitNodeCollector
         );
     }

@@ -11,8 +11,10 @@ import dev.turtywurty.turtymultiloader.worldgen.WorldGenerationService;
 import net.minecraft.core.Holder;
 import net.minecraft.core.HolderGetter;
 import net.minecraft.core.Registry;
+import net.minecraft.core.RegistryAccess;
 import net.minecraft.core.RegistrySetBuilder;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.core.registries.SingleRegistryBootstrap;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.RegistryOps;
@@ -20,6 +22,7 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.packs.PackType;
 import net.minecraft.server.packs.repository.Pack;
 import net.minecraft.server.packs.repository.PackSource;
+import net.minecraft.util.valueproviders.UniformInt;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.level.biome.Biome;
@@ -30,10 +33,10 @@ import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.common.world.BiomeModifier;
 import net.neoforged.neoforge.common.world.ModifiableBiomeInfo;
 import net.neoforged.neoforge.event.AddPackFindersEvent;
-import net.neoforged.neoforge.registries.DataPackRegistryEvent;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
 import net.neoforged.neoforge.registries.NeoForgeRegistries;
+import net.neoforged.neoforge.registries.NewDatapackRegistryEvent;
 import org.jspecify.annotations.Nullable;
 
 import java.util.*;
@@ -81,7 +84,7 @@ public final class NeoForgeWorldGenerationService implements WorldGenerationServ
         @Nullable Codec<T> networkCodec
     ) {
         if (datapackRegistryEventFired)
-            throw new IllegalStateException("Datapack registries must be declared before DataPackRegistryEvent.NewRegistry");
+            throw new IllegalStateException("Datapack registries must be declared before NewDatapackRegistryEvent");
         requireNew(datapackRegistryKeys, registryKey, "datapack registry");
         datapackRegistries.add(new DatapackRegistryDeclaration<>(registryKey, datapackCodec, networkCodec));
     }
@@ -89,7 +92,7 @@ public final class NeoForgeWorldGenerationService implements WorldGenerationServ
     @Override
     public synchronized <T> void registerBootstrap(
         ResourceKey<? extends Registry<T>> registryKey,
-        RegistrySetBuilder.RegistryBootstrap<T> bootstrap
+        SingleRegistryBootstrap<T> bootstrap
     ) {
         bootstraps.add(new BootstrapDeclaration<>(registryKey, bootstrap));
     }
@@ -195,7 +198,7 @@ public final class NeoForgeWorldGenerationService implements WorldGenerationServ
         return id;
     }
 
-    private static void handleDatapackRegistries(DataPackRegistryEvent.NewRegistry event) {
+    private static void handleDatapackRegistries(NewDatapackRegistryEvent event) {
         NeoForgeWorldGenerationService service = instance;
         if (service == null)
             return;
@@ -231,12 +234,12 @@ public final class NeoForgeWorldGenerationService implements WorldGenerationServ
     }
 
     private static <T> void registerDatapackRegistry(
-        DataPackRegistryEvent.NewRegistry event,
+        NewDatapackRegistryEvent event,
         DatapackRegistryDeclaration<T> declaration
     ) {
         @SuppressWarnings("unchecked")
         ResourceKey<Registry<T>> key = (ResourceKey<Registry<T>>) declaration.registryKey();
-        event.dataPackRegistry(key, declaration.datapackCodec(), declaration.networkCodec());
+        event.worldRegistry(key, declaration.datapackCodec(), declaration.networkCodec());
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
@@ -246,7 +249,7 @@ public final class NeoForgeWorldGenerationService implements WorldGenerationServ
         List<BootstrapDeclaration<?>> declarations
     ) {
         builder.add((ResourceKey) registryKey, context -> declarations.forEach(declaration ->
-            ((RegistrySetBuilder.RegistryBootstrap) declaration.bootstrap()).run(context)
+            ((SingleRegistryBootstrap) declaration.bootstrap()).run(context)
         ));
     }
 
@@ -338,9 +341,10 @@ public final class NeoForgeWorldGenerationService implements WorldGenerationServ
                 }
             } else {
                 builder.getMobSpawnSettings().addSpawn(
+                    type,
                     Objects.requireNonNull(category),
                     weight,
-                    new MobSpawnSettings.SpawnerData(type, minimumGroupSize, maximumGroupSize)
+                    UniformInt.of(minimumGroupSize, maximumGroupSize)
                 );
             }
         }
@@ -352,7 +356,7 @@ public final class NeoForgeWorldGenerationService implements WorldGenerationServ
         ).apply(instance, CodeBiomeModifier::new));
 
         @Override
-        public void modify(Holder<Biome> biome, Phase phase, ModifiableBiomeInfo.BiomeInfo.Builder builder) {
+        public void modify(RegistryAccess registryAccess, Holder<Biome> biome, Phase phase, ModifiableBiomeInfo.BiomeInfo.Builder builder) {
             NeoForgeWorldGenerationService service = instance;
             if (service == null)
                 return;
@@ -378,7 +382,7 @@ public final class NeoForgeWorldGenerationService implements WorldGenerationServ
 
     private record BootstrapDeclaration<T>(
         ResourceKey<? extends Registry<T>> registryKey,
-        RegistrySetBuilder.RegistryBootstrap<T> bootstrap
+        SingleRegistryBootstrap<T> bootstrap
     ) {
     }
 

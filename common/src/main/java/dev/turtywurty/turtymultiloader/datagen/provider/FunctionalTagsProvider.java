@@ -33,7 +33,7 @@ public final class FunctionalTagsProvider<T> extends TagsProvider<T> {
         generator.generate(registries, new TagGenerationContext<>(registryKey, this::appender));
     }
 
-    private TagAppender<ResourceKey<T>, T> appender(TagKey<T> tag) {
+    private TagAppender<T> appender(TagKey<T> tag) {
         return TagAppender.forBuilder(getOrCreateRawBuilder(tag));
     }
 

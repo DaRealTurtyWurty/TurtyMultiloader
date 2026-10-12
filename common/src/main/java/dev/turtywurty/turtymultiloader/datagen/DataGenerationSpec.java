@@ -6,8 +6,9 @@ import dev.turtywurty.turtymultiloader.worldgen.WorldGeneration;
 import net.minecraft.core.Registry;
 import net.minecraft.core.RegistrySetBuilder;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.data.loot.LootTableProvider;
+import net.minecraft.core.registries.SingleRegistryBootstrap;
 import net.minecraft.data.loot.LootTableProvider.SubProviderEntry;
+import net.minecraft.data.loot.LootTableProvider;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.damagesource.DamageType;
@@ -25,6 +26,8 @@ import java.util.function.Consumer;
  */
 public final class DataGenerationSpec {
     private final String modId;
+    private final Set<ResourceKey<LootTable>> lootRequiredTables;
+    private final List<SubProviderEntry> lootSubProviders;
     private final List<ProviderDeclaration> providers;
     private final List<FunctionalRecipeProvider.RecipeGenerator> recipeGenerators;
     private final List<RegistryBootstrapDeclaration<?>> registryBootstraps;
@@ -65,19 +68,8 @@ public final class DataGenerationSpec {
                 )
             ));
         }
-        if (!builder.lootRequiredTables.isEmpty() || !builder.lootSubProviders.isEmpty()) {
-            Set<ResourceKey<LootTable>> requiredTables = Set.copyOf(builder.lootRequiredTables);
-            List<SubProviderEntry> lootProviders = List.copyOf(builder.lootSubProviders);
-            composedProviders.add(new ProviderDeclaration(
-                DataGenerationSide.SERVER,
-                context -> new LootTableProvider(
-                    context.output(),
-                    requiredTables,
-                    lootProviders,
-                    context.registries()
-                )
-            ));
-        }
+        this.lootRequiredTables = Set.copyOf(builder.lootRequiredTables);
+        this.lootSubProviders = List.copyOf(builder.lootSubProviders);
         this.providers = List.copyOf(composedProviders);
         this.recipeGenerators = List.copyOf(builder.recipeGenerators);
         this.registryBootstraps = List.copyOf(builder.registryBootstraps);
@@ -121,13 +113,19 @@ public final class DataGenerationSpec {
         if (generateAllDynamicRegistries)
             return Set.of();
 
-        var registries = new java.util.LinkedHashSet<ResourceKey<? extends Registry<?>>>();
+        var registries = new LinkedHashSet<ResourceKey<? extends Registry<?>>>();
+        if (!recipeGenerators.isEmpty()) {
+            registries.add(Registries.RECIPE);
+            registries.add(Registries.ADVANCEMENT);
+        }
+        if (!lootSubProviders.isEmpty() || !lootRequiredTables.isEmpty()) registries.add(Registries.LOOT_TABLE);
         registryBootstraps.forEach(declaration -> registries.add(declaration.registry()));
         return Collections.unmodifiableSet(registries);
     }
 
     public boolean generatesDynamicRegistries() {
-        return generateAllDynamicRegistries || !registryBootstraps.isEmpty() || !registryContributors.isEmpty();
+        return generateAllDynamicRegistries || !registryBootstraps.isEmpty() || !registryContributors.isEmpty()
+            || !recipeGenerators.isEmpty() || !lootSubProviders.isEmpty() || !lootRequiredTables.isEmpty();
     }
 
     public boolean generatesAllDynamicRegistries() {
@@ -144,6 +142,9 @@ public final class DataGenerationSpec {
             grouped.computeIfAbsent(declaration.registry(), ignored -> new ArrayList<>()).add(declaration);
         grouped.forEach((registry, declarations) -> addComposedBootstrap(builder, registry, declarations));
         registryContributors.forEach(contributor -> contributor.accept(builder));
+        if (!lootSubProviders.isEmpty() || !lootRequiredTables.isEmpty())
+            builder.add(Registries.LOOT_TABLE, new LootTableProvider(lootRequiredTables, lootSubProviders));
+        if (!recipeGenerators.isEmpty()) builder.add(FunctionalRecipeProvider.bootstrap(recipeGenerators));
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
@@ -153,7 +154,7 @@ public final class DataGenerationSpec {
         List<RegistryBootstrapDeclaration<?>> declarations
     ) {
         builder.add((ResourceKey) registry, context -> declarations.forEach(declaration ->
-            ((RegistrySetBuilder.RegistryBootstrap) declaration.bootstrap()).run(context)
+            ((SingleRegistryBootstrap) declaration.bootstrap()).run(context)
         ));
     }
 
@@ -166,7 +167,7 @@ public final class DataGenerationSpec {
 
     private record RegistryBootstrapDeclaration<T>(
         ResourceKey<? extends Registry<T>> registry,
-        RegistrySetBuilder.RegistryBootstrap<T> bootstrap
+        SingleRegistryBootstrap<T> bootstrap
     ) {
         private RegistryBootstrapDeclaration {
             Objects.requireNonNull(registry, "registry");
@@ -268,22 +269,22 @@ public final class DataGenerationSpec {
 
         public <T> Builder dynamicRegistry(
             ResourceKey<? extends Registry<T>> registry,
-            RegistrySetBuilder.RegistryBootstrap<T> bootstrap
+            SingleRegistryBootstrap<T> bootstrap
         ) {
             registryBootstraps.add(new RegistryBootstrapDeclaration<>(registry, bootstrap));
             return this;
         }
 
-        public Builder damageTypes(RegistrySetBuilder.RegistryBootstrap<DamageType> bootstrap) {
+        public Builder damageTypes(SingleRegistryBootstrap<DamageType> bootstrap) {
             return dynamicRegistry(Registries.DAMAGE_TYPE, bootstrap);
         }
 
         /**
-         * Alias for world-generation registries such as configured features, placed features, biomes, and structures.
+         * Alias for world-generation registries such as features, placed features, biomes, and structures.
          */
         public <T> Builder worldGeneration(
             ResourceKey<? extends Registry<T>> registry,
-            RegistrySetBuilder.RegistryBootstrap<T> bootstrap
+            SingleRegistryBootstrap<T> bootstrap
         ) {
             return dynamicRegistry(registry, bootstrap);
         }

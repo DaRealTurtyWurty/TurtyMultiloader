@@ -1,5 +1,6 @@
 package dev.turtywurty.turtymultiloader.fabric;
 
+import com.mojang.blaze3d.vertex.PoseStack;
 import dev.turtywurty.turtymultiloader.event.client.ClientEventService;
 import dev.turtywurty.turtymultiloader.event.client.LevelRenderContext;
 import dev.turtywurty.turtymultiloader.event.client.RenderStage;
@@ -15,6 +16,10 @@ import net.fabricmc.fabric.api.resource.v1.ResourceLoader;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.client.renderer.GameRenderer;
+import net.minecraft.client.renderer.LevelRenderer;
+import net.minecraft.client.renderer.SubmitNodeCollector;
+import net.minecraft.client.renderer.state.level.LevelRenderState;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.PackType;
 import net.minecraft.server.packs.resources.PreparableReloadListener;
@@ -100,10 +105,12 @@ public final class FabricClientEventService implements ClientEventService {
         require(callback);
         switch (require(stage)) {
             case COLLECT_SUBMITS -> LevelRenderEvents.COLLECT_SUBMITS.register(context ->
-                callback.accept(wrap(context))
+                callback.accept(wrap(context.gameRenderer(), context.levelRenderer(), context.levelState(),
+                    context.poseStack(), context.submitNodeCollector()))
             );
             case AFTER_SOLID_FEATURES -> LevelRenderEvents.AFTER_SOLID_FEATURES.register(context ->
-                callback.accept(wrap(context))
+                callback.accept(wrap(context.gameRenderer(), context.levelRenderer(), context.levelState(),
+                    context.poseStack(), context.submitNodeCollector()))
             );
         }
     }
@@ -125,18 +132,22 @@ public final class FabricClientEventService implements ClientEventService {
     }
 
     private static LevelRenderContext wrap(
-        net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext context
+        GameRenderer gameRenderer,
+        LevelRenderer levelRenderer,
+        LevelRenderState levelState,
+        PoseStack poseStack,
+        SubmitNodeCollector submitNodeCollector
     ) {
         Minecraft client = Minecraft.getInstance();
         return new LevelRenderContext(
             client,
             Objects.requireNonNull(client.level, "No client level is active during level rendering"),
-            context.gameRenderer(),
-            context.levelRenderer(),
-            context.levelState(),
-            context.poseStack(),
-            context.bufferSource(),
-            context.submitNodeCollector()
+            gameRenderer,
+            levelRenderer,
+            levelState,
+            poseStack,
+            client.gameRenderer.renderBuffers().stagedVertexBuffer(),
+            submitNodeCollector
         );
     }
 

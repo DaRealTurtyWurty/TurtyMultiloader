@@ -35,14 +35,14 @@ public class MultiblockControllerBlockEntityRenderer implements BlockEntityRende
         }
 
         if (multi) {
-            return Blocks.WHITE_STAINED_GLASS.defaultBlockState();
+            return Blocks.STAINED_GLASS.white().defaultBlockState();
         }
 
         return switch (primary) {
-            case "energy" -> Blocks.YELLOW_STAINED_GLASS.defaultBlockState();
-            case "fluid" -> Blocks.LIGHT_BLUE_STAINED_GLASS.defaultBlockState();
-            case "item" -> Blocks.ORANGE_STAINED_GLASS.defaultBlockState();
-            default -> Blocks.MAGENTA_STAINED_GLASS.defaultBlockState();
+            case "energy" -> Blocks.STAINED_GLASS.yellow().defaultBlockState();
+            case "fluid" -> Blocks.STAINED_GLASS.lightBlue().defaultBlockState();
+            case "item" -> Blocks.STAINED_GLASS.orange().defaultBlockState();
+            default -> Blocks.STAINED_GLASS.magenta().defaultBlockState();
         };
     }
 
@@ -89,14 +89,14 @@ public class MultiblockControllerBlockEntityRenderer implements BlockEntityRende
         for (RenderPart part : state.parts) {
             poseStack.pushPose();
             poseStack.translate(part.offset().getX(), part.offset().getY(), part.offset().getZ());
-            submitNodeCollector.submitMovingBlock(poseStack, part.movingBlockRenderState());
+            submitNodeCollector.submitMovingBlock(poseStack, part.movingBlockRenderState(), 0);
             poseStack.popPose();
         }
 
         for (RenderPart part : state.portMarkers) {
             poseStack.pushPose();
             poseStack.translate(part.offset().getX(), part.offset().getY(), part.offset().getZ());
-            submitNodeCollector.submitMovingBlock(poseStack, part.movingBlockRenderState());
+            submitNodeCollector.submitMovingBlock(poseStack, part.movingBlockRenderState(), 0);
             poseStack.popPose();
         }
     }

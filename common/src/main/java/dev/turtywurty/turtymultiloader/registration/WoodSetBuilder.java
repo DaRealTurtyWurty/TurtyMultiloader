@@ -1,5 +1,6 @@
 package dev.turtywurty.turtymultiloader.registration;
 
+import net.minecraft.core.Direction;
 import net.minecraft.core.dispenser.BoatDispenseItemBehavior;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
@@ -12,8 +13,10 @@ import net.minecraft.world.entity.vehicle.boat.ChestBoat;
 import net.minecraft.world.item.*;
 import net.minecraft.world.level.block.*;
 import net.minecraft.world.level.block.entity.BlockEntityType;
+import net.minecraft.world.level.block.entity.BlockEntityTypes;
 import net.minecraft.world.level.block.grower.TreeGrower;
 import net.minecraft.world.level.block.state.BlockBehaviour;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockSetType;
 import net.minecraft.world.level.block.state.properties.WoodType;
 
@@ -235,10 +238,10 @@ public final class WoodSetBuilder {
             (ctx, properties) -> new WallHangingSignBlock(ctx.woodType().get(), properties));
 
         RegistrationHandle<Item, Item> signItem = item(base + "_sign", properties -> signItemFactory == null
-            ? new SignItem(sign.get(), wallSign.get(), properties.stacksTo(16))
+            ? new StandingAndWallBlockItem(sign.get(), wallSign.get(), Direction.DOWN, properties.stacksTo(16).signText())
             : signItemFactory.apply(context, properties));
         RegistrationHandle<Item, Item> hangingSignItem = item(base + "_hanging_sign", properties -> hangingSignItemFactory == null
-            ? new HangingSignItem(hangingSign.get(), wallHangingSign.get(), properties.stacksTo(16))
+            ? new HangingSignItem(hangingSign.get(), wallHangingSign.get(), properties.stacksTo(16).signText())
             : hangingSignItemFactory.apply(context, properties));
 
         AtomicReference<RegistrationHandle<Item, Item>> boatItemRef = new AtomicReference<>();
@@ -298,7 +301,7 @@ public final class WoodSetBuilder {
         return result;
     }
 
-    private RegistrationHandle<Item, Item> item(String path, java.util.function.Function<Item.Properties, Item> factory) {
+    private RegistrationHandle<Item, Item> item(String path, Function<Item.Properties, Item> factory) {
         Identifier itemId = child(path);
         ResourceKey<Item> key = ResourceKey.create(Registries.ITEM, itemId);
         return registries.registerItem(itemId, () -> factory.apply(new Item.Properties().setId(key)));
@@ -328,9 +331,9 @@ public final class WoodSetBuilder {
             flammable(block, 5, 20);
         for (RegistrationHandle<Block, Block> block : List.of(sign, wallSign, hangingSign, wallHangingSign))
             registries.registerFlammable(block, 5, 20);
-        registries.addBlockEntityValidBlocks(() -> BlockEntityType.SIGN,
+        registries.addBlockEntityValidBlocks(() -> BlockEntityTypes.SIGN,
             List.of(sign, wallSign));
-        registries.addBlockEntityValidBlocks(() -> BlockEntityType.HANGING_SIGN,
+        registries.addBlockEntityValidBlocks(() -> BlockEntityTypes.HANGING_SIGN,
             List.of(hangingSign, wallHangingSign));
         registries.registerDispenserBehavior(boatItem, () -> new BoatDispenseItemBehavior(boatEntity.get()));
         registries.registerDispenserBehavior(chestBoatItem, () -> new BoatDispenseItemBehavior(chestBoatEntity.get()));
@@ -377,7 +380,7 @@ public final class WoodSetBuilder {
     }
 
     private static final class PublicStairBlock extends StairBlock {
-        private PublicStairBlock(net.minecraft.world.level.block.state.BlockState state, BlockBehaviour.Properties properties) {
+        private PublicStairBlock(BlockState state, BlockBehaviour.Properties properties) {
             super(state, properties);
         }
     }

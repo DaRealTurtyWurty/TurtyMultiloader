@@ -1,10 +1,21 @@
 package dev.turtywurty.turtymultiloader.testmod;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.resources.Identifier;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.context.UseOnContext;
+import net.minecraft.world.level.GameType;
+import net.minecraft.world.level.block.RotatedPillarBlock;
+import net.minecraft.world.level.block.entity.BlockEntityTypes;
+import net.minecraft.world.level.block.state.properties.WoodType;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.Vec3;
 
 public final class RegistryGameTests {
     public static final Identifier TEST_ID = id("registry_service");
@@ -54,12 +65,12 @@ public final class RegistryGameTests {
             "Queued wood type"
         );
         helper.assertTrue(
-            net.minecraft.world.level.block.state.properties.WoodType.values()
+            WoodType.values()
                 .anyMatch(type -> type == TestModContent.TEST_WOOD_SET.woodType().get()),
             "Wood-set WoodType was not registered in vanilla's lookup"
         );
         helper.assertTrue(
-            net.minecraft.world.level.block.entity.BlockEntityType.SIGN.isValid(
+            BlockEntityTypes.SIGN.isValid(
                 TestModContent.TEST_WOOD_SET.sign().get().defaultBlockState()
             ),
             "Wood-set sign was not added to the vanilla sign block-entity type"
@@ -72,6 +83,21 @@ public final class RegistryGameTests {
         BlockPos testPosition = new BlockPos(1, 1, 1);
         helper.setBlock(testPosition, TestModContent.TEST_LOG.get());
         helper.assertBlockPresent(TestModContent.TEST_LOG.get(), testPosition);
+
+        // Exercise the actual transformer so both the mixin and axis preservation are verified.
+        var player = helper.makeMockPlayer(GameType.SURVIVAL);
+        var axe = new ItemStack(Items.IRON_AXE);
+        player.setItemInHand(InteractionHand.MAIN_HAND, axe);
+        var absolutePos = helper.absolutePos(testPosition);
+        helper.setBlock(testPosition, TestModContent.TEST_WOOD_SET.log().get().defaultBlockState()
+            .setValue(RotatedPillarBlock.AXIS, Direction.Axis.X));
+        var hit = new BlockHitResult(Vec3.atCenterOf(absolutePos),
+            Direction.UP, absolutePos, false);
+        axe.get(DataComponents.BLOCK_TRANSFORMER).value().transformBlock(
+            new UseOnContext(player, InteractionHand.MAIN_HAND, hit));
+        helper.assertBlockPresent(TestModContent.TEST_WOOD_SET.strippedLog().get(), testPosition);
+        helper.assertTrue(helper.getBlockState(testPosition).getValue(RotatedPillarBlock.AXIS)
+            == Direction.Axis.X, "Stripping changed the log axis");
         helper.succeed();
     }
 

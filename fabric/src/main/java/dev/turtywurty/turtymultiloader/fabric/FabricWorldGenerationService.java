@@ -14,9 +14,11 @@ import net.fabricmc.fabric.api.resource.v1.pack.PackActivationType;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.core.Registry;
 import net.minecraft.core.RegistrySetBuilder;
+import net.minecraft.core.registries.SingleRegistryBootstrap;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.util.valueproviders.UniformInt;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.level.biome.MobSpawnSettings;
@@ -49,7 +51,7 @@ public final class FabricWorldGenerationService implements WorldGenerationServic
     @Override
     public synchronized <T> void registerBootstrap(
         ResourceKey<? extends Registry<T>> registryKey,
-        RegistrySetBuilder.RegistryBootstrap<T> bootstrap
+        SingleRegistryBootstrap<T> bootstrap
     ) {
         bootstraps.add(new BootstrapDeclaration<>(registryKey, bootstrap));
     }
@@ -101,7 +103,7 @@ public final class FabricWorldGenerationService implements WorldGenerationServic
     ) {
         create(modificationId).add(
             ModificationPhase.ADDITIONS,
-            context -> selector.test(selectionContext(context)),
+            context -> selector.test(new BiomeSelectionContext(context.getBiomeKey(), context.getBiomeHolder(), context.getBiome())),
             context -> context.getGenerationSettings().addFeature(step, feature)
         );
     }
@@ -115,7 +117,7 @@ public final class FabricWorldGenerationService implements WorldGenerationServic
     ) {
         create(modificationId).add(
             ModificationPhase.REMOVALS,
-            context -> selector.test(selectionContext(context)),
+            context -> selector.test(new BiomeSelectionContext(context.getBiomeKey(), context.getBiomeHolder(), context.getBiome())),
             context -> context.getGenerationSettings().removeFeature(step, feature)
         );
     }
@@ -133,7 +135,7 @@ public final class FabricWorldGenerationService implements WorldGenerationServic
         validateSpawn(weight, minimumGroupSize, maximumGroupSize);
         create(modificationId).add(
             ModificationPhase.ADDITIONS,
-            context -> selector.test(selectionContext(context)),
+            context -> selector.test(new BiomeSelectionContext(context.getBiomeKey(), context.getBiomeHolder(), context.getBiome())),
             context -> {
                 EntityType<?> type = Objects.requireNonNull(entityType.get(), "entityType supplier result");
                 if (type.getCategory() != category) {
@@ -143,7 +145,7 @@ public final class FabricWorldGenerationService implements WorldGenerationServic
                 }
                 context.getMobSpawnSettings().addSpawn(
                     category,
-                    new MobSpawnSettings.SpawnerData(type, minimumGroupSize, maximumGroupSize),
+                    new MobSpawnSettings.SpawnerData(type, UniformInt.of(minimumGroupSize, maximumGroupSize)),
                     weight
                 );
             }
@@ -158,7 +160,7 @@ public final class FabricWorldGenerationService implements WorldGenerationServic
     ) {
         create(modificationId).add(
             ModificationPhase.REMOVALS,
-            context -> selector.test(selectionContext(context)),
+            context -> selector.test(new BiomeSelectionContext(context.getBiomeKey(), context.getBiomeHolder(), context.getBiome())),
             context -> context.getMobSpawnSettings().removeSpawnsOfEntityType(
                 Objects.requireNonNull(entityType.get(), "entityType supplier result")
             )
@@ -168,12 +170,6 @@ public final class FabricWorldGenerationService implements WorldGenerationServic
     private BiomeModification create(Identifier id) {
         requireNew(biomeModifications, Objects.requireNonNull(id, "modificationId"), "biome modification");
         return BiomeModifications.create(id);
-    }
-
-    private static BiomeSelectionContext selectionContext(
-        net.fabricmc.fabric.api.biome.v1.BiomeSelectionContext context
-    ) {
-        return new BiomeSelectionContext(context.getBiomeKey(), context.getBiomeHolder(), context.getBiome());
     }
 
     private static void validateSpawn(int weight, int minimumGroupSize, int maximumGroupSize) {
@@ -198,13 +194,13 @@ public final class FabricWorldGenerationService implements WorldGenerationServic
         List<BootstrapDeclaration<?>> declarations
     ) {
         builder.add((ResourceKey) registryKey, context -> declarations.forEach(declaration ->
-            ((RegistrySetBuilder.RegistryBootstrap) declaration.bootstrap()).run(context)
+            ((SingleRegistryBootstrap) declaration.bootstrap()).run(context)
         ));
     }
 
     private record BootstrapDeclaration<T>(
         ResourceKey<? extends Registry<T>> registryKey,
-        RegistrySetBuilder.RegistryBootstrap<T> bootstrap
+        SingleRegistryBootstrap<T> bootstrap
     ) {
     }
 }

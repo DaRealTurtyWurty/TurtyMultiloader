@@ -14,11 +14,11 @@ import java.util.function.Function;
  */
 public final class TagGenerationContext<T> {
     private final ResourceKey<? extends Registry<T>> registry;
-    private final Function<TagKey<T>, TagAppender<ResourceKey<T>, T>> appenderFactory;
+    private final Function<TagKey<T>, TagAppender<T>> appenderFactory;
 
     public TagGenerationContext(
         ResourceKey<? extends Registry<T>> registry,
-        Function<TagKey<T>, TagAppender<ResourceKey<T>, T>> appenderFactory
+        Function<TagKey<T>, TagAppender<T>> appenderFactory
     ) {
         this.registry = Objects.requireNonNull(registry, "registry");
         this.appenderFactory = Objects.requireNonNull(appenderFactory, "appenderFactory");
@@ -28,14 +28,14 @@ public final class TagGenerationContext<T> {
         return registry;
     }
 
-    public TagAppender<ResourceKey<T>, T> tag(TagKey<T> tag) {
+    public TagAppender<T> tag(TagKey<T> tag) {
         Objects.requireNonNull(tag, "tag");
         if (!tag.isFor(registry))
             throw new IllegalArgumentException("Tag " + tag + " is not for registry " + registry.identifier());
         return appenderFactory.apply(tag);
     }
 
-    public TagAppender<ResourceKey<T>, T> tag(ConventionTag<T> tag) {
+    public TagAppender<T> tag(ConventionTag<T> tag) {
         Objects.requireNonNull(tag, "tag");
         if (!tag.registry().equals(registry)) {
             throw new IllegalArgumentException(

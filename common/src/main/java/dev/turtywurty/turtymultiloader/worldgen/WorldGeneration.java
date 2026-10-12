@@ -3,6 +3,7 @@ package dev.turtywurty.turtymultiloader.worldgen;
 import com.mojang.serialization.Codec;
 import net.minecraft.core.Registry;
 import net.minecraft.core.RegistrySetBuilder;
+import net.minecraft.core.registries.SingleRegistryBootstrap;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
@@ -57,7 +58,7 @@ public final class WorldGeneration {
      */
     public static <T> void registerBootstrap(
         ResourceKey<? extends Registry<T>> registryKey,
-        RegistrySetBuilder.RegistryBootstrap<T> bootstrap
+        SingleRegistryBootstrap<T> bootstrap
     ) {
         WorldGenerationService.get().registerBootstrap(
             Objects.requireNonNull(registryKey, "registryKey"),

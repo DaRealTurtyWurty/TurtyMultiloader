@@ -12,6 +12,9 @@ authors = "${mod_author}"
 description = '''${description}'''
 
 [[mixins]]
+config = "turtymultiloader-common.mixins.json"
+
+[[mixins]]
 config = "turtymultiloader-neoforge.mixins.json"
 
 [[dependencies.${ mod_id }]]

@@ -669,7 +669,7 @@ Industria's configured and placed feature bootstraps can be declared in common i
 loader's data generator:
 
 ```java
-WorldGeneration.registerBootstrap(Registries.CONFIGURED_FEATURE, ConfiguredFeatureInit::bootstrap);
+WorldGeneration.registerBootstrap(Registries.FEATURE, FeatureInit::bootstrap);
 WorldGeneration.
 
 registerBootstrap(Registries.PLACED_FEATURE, PlacedFeatureInit::bootstrap);
@@ -770,12 +770,12 @@ public static final DataGenerationSpec DATA = DataGeneration.spec(Industria.MOD_
         .models(IndustriaModels::generate)
         .vanillaModels(IndustriaModels::generateTyped)
         .damageTypes(IndustriaDamageTypes::bootstrap)
-        .worldGeneration(Registries.CONFIGURED_FEATURE, ConfiguredFeatureInit::bootstrap)
+        .worldGeneration(Registries.FEATURE, FeatureInit::bootstrap)
         .worldGeneration(Registries.PLACED_FEATURE, PlacedFeatureInit::bootstrap)
         .build();
 ```
 
-Tag callbacks receive a public vanilla `TagAppender<ResourceKey<T>, T>`. A tag for any other registry can be added with
+Tag callbacks receive a public vanilla `TagAppender<T>`. A tag for any other registry can be added with
 `tags(registryKey, callback)`. Raw model callbacks can declare `blockState`, `blockModel`, `itemModel`, and the modern
 `itemDefinition`; each accepts a vanilla `Identifier` and Gson `JsonElement`. `blockModel` and `itemModel` accept either
 a short path such as `machine` or an already conventional `block/machine` or `item/machine` path; an existing prefix
@@ -799,25 +799,24 @@ public final class IndustriaFabricDataGeneration implements DataGeneratorEntrypo
     }
 
     public void buildRegistry(RegistrySetBuilder builder) {
-        DataGeneration.addRegistryBootstraps(IndustriaDataGeneration.DATA, builder);
+        DataGeneration.addWorldRegistryBootstraps(IndustriaDataGeneration.DATA, builder);
+    }
+
+    public void buildReloadableRegistry(RegistrySetBuilder builder) {
+        DataGeneration.addReloadableRegistryBootstraps(IndustriaDataGeneration.DATA, builder);
     }
 }
 ```
 
-Register that class under the `fabric-datagen` entrypoint. On NeoForge 26.1, client and server generation are separate
-events; bind both on the consuming mod's event bus:
+Register that class under the `fabric-datagen` entrypoint. On NeoForge 26.3, bind registry collection as well as client and server provider generation on the consuming mod's event bus:
 
 ```java
-modBus.addListener(GatherDataEvent.Client .class,
-                   event ->NeoForgeDataGeneration.
-
-run(event, IndustriaDataGeneration.DATA));
-        modBus.
-
-addListener(GatherDataEvent.Server .class,
-            event ->NeoForgeDataGeneration.
-
-run(event, IndustriaDataGeneration.DATA));
+modBus.addListener(GatherDataRegistryEntriesEvent.class,
+    event -> NeoForgeDataGeneration.run(event, IndustriaDataGeneration.DATA));
+modBus.addListener(GatherDataEvent.Client.class,
+    event -> NeoForgeDataGeneration.run(event, IndustriaDataGeneration.DATA));
+modBus.addListener(GatherDataEvent.Server.class,
+    event -> NeoForgeDataGeneration.run(event, IndustriaDataGeneration.DATA));
 ```
 
 NeoForge's client and server runs must use separate output roots so one hash cache cannot remove the other run's
@@ -826,8 +825,17 @@ that Loom run with `client()` when the spec uses `vanillaModels(...)`: vanilla's
 classes, and Fabric API's client datagen bootstrap runs the same combined providers before normal client startup.
 
 Existing bootstraps registered through `WorldGeneration.registerBootstrap(...)` can be included with
-`registeredWorldGeneration()`. The Fabric entrypoint must still pass the spec to `addRegistryBootstraps`; the NeoForge
-server runner performs that step itself.
+`registeredWorldGeneration()`. Fabric passes the spec to both `addWorldRegistryBootstraps` and
+`addReloadableRegistryBootstraps`. NeoForge collects these entries during `GatherDataRegistryEntriesEvent`.
+
+On 26.3, recipe callbacks receive `BootstrapContext<Recipe<?>>` and `BootstrapContext<Advancement>`.
+Construct a vanilla `RecipeProvider` with these contexts and emit recipes from `buildRecipes()` using its protected
+`output`. Loot factories receive `LootTableSubProvider.Context`; their `run()` callback calls `context.accept(...)`.
+Recipes, advancements, and loot are generated as reloadable registry entries.
+
+Custom features implement `Feature` and register their `MapCodec` with `RegistryService.registerFeatureType`;
+instances are bootstrapped into `Registries.FEATURE`. Entity block immunity uses a `TagKey<Block>`.
+Level-render callbacks expose `stagedVertexBuffer()` alongside the submit-node collector.
 
 ### Menus and screens
 

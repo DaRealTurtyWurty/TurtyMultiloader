@@ -268,7 +268,7 @@ public final class NeoForgeEventService implements EventService {
         livingDamageCallbacks.forEach(callback -> callback.afterDamage(
             event.getEntity(),
             event.getSource(),
-            event.getNewDamage()
+            event.getHealthDamage()
         ));
     }
 

@@ -57,6 +57,8 @@ public record WoodSet(
             .fenceGate(fenceGate.get())
             .pressurePlate(pressurePlate.get())
             .sign(sign.get(), wallSign.get())
+            .strippedLog(strippedLog.get())
+            .hangingSign(hangingSign.get(), wallHangingSign.get())
             .slab(slab.get())
             .stairs(stairs.get())
             .door(door.get())

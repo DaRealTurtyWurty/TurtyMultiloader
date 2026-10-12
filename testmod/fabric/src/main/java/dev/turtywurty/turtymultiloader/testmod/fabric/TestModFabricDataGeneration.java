@@ -15,6 +15,11 @@ public final class TestModFabricDataGeneration implements DataGeneratorEntrypoin
 
     @Override
     public void buildRegistry(RegistrySetBuilder builder) {
-        DataGeneration.addRegistryBootstraps(TestDataGeneration.SPEC, builder);
+        DataGeneration.addWorldRegistryBootstraps(TestDataGeneration.SPEC, builder);
+    }
+
+    @Override
+    public void buildReloadableRegistry(RegistrySetBuilder builder) {
+        DataGeneration.addReloadableRegistryBootstraps(TestDataGeneration.SPEC, builder);
     }
 }

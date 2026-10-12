@@ -15,7 +15,12 @@ public final class ExampleFabricDataGeneration implements DataGeneratorEntrypoin
 
     @Override
     public void buildRegistry(RegistrySetBuilder builder) {
-        DataGeneration.addRegistryBootstraps(ExampleDataGeneration.SPEC, builder);
+        DataGeneration.addWorldRegistryBootstraps(ExampleDataGeneration.SPEC, builder);
+    }
+
+    @Override
+    public void buildReloadableRegistry(RegistrySetBuilder builder) {
+        DataGeneration.addReloadableRegistryBootstraps(ExampleDataGeneration.SPEC, builder);
     }
 }
 

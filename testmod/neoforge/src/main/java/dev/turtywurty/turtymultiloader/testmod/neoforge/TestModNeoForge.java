@@ -9,6 +9,7 @@ import net.minecraft.resources.Identifier;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.neoforge.data.event.GatherDataEvent;
+import net.neoforged.neoforge.data.event.GatherDataRegistryEntriesEvent;
 import net.neoforged.neoforge.event.RegisterGameTestsEvent;
 
 @Mod(TestModContent.MOD_ID)
@@ -23,6 +24,9 @@ public final class TestModNeoForge {
         TransferService.get().apply();
 
         modBus.addListener(RegisterGameTestsEvent.class, TestModNeoForge::registerGameTests);
+        modBus.addListener(GatherDataRegistryEntriesEvent.class, event ->
+            NeoForgeDataGeneration.run(event, TestDataGeneration.SPEC)
+        );
         modBus.addListener(GatherDataEvent.Client.class, event ->
             NeoForgeDataGeneration.run(event, TestDataGeneration.SPEC)
         );

@@ -37,18 +37,13 @@ public final class FabricDataGeneration {
             ));
         }
 
-        if (!spec.recipeGenerators().isEmpty()) {
-            pack.addProvider((output, registries) ->
-                new FabricRecipeProviderAdapter(output, registries, spec.recipeGenerators())
-            );
-        }
 
         if (spec.generatesDynamicRegistries()) {
             pack.addProvider((output, registries) -> new FabricDynamicRegistryProvider(output, registries) {
                 @Override
                 protected void configure(HolderLookup.Provider lookup, Entries entries) {
                     if (spec.generatesAllDynamicRegistries()) {
-                        DynamicRegistries.getDynamicRegistries().forEach(registry ->
+                        DynamicRegistries.getAllDynamicRegistries().forEach(registry ->
                             addAll(entries, lookup, registry.key())
                         );
                     } else {

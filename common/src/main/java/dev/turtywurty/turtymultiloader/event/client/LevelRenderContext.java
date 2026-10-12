@@ -5,7 +5,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.LevelRenderer;
-import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.StagedVertexBuffer;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.state.level.LevelRenderState;
 import org.jspecify.annotations.Nullable;
@@ -22,7 +22,7 @@ public record LevelRenderContext(
     LevelRenderer levelRenderer,
     LevelRenderState levelState,
     PoseStack poseStack,
-    MultiBufferSource.BufferSource bufferSource,
+    StagedVertexBuffer stagedVertexBuffer,
     @Nullable SubmitNodeCollector submitNodeCollector
 ) {
     public LevelRenderContext {
@@ -32,6 +32,6 @@ public record LevelRenderContext(
         Objects.requireNonNull(levelRenderer, "levelRenderer");
         Objects.requireNonNull(levelState, "levelState");
         Objects.requireNonNull(poseStack, "poseStack");
-        Objects.requireNonNull(bufferSource, "bufferSource");
+        Objects.requireNonNull(stagedVertexBuffer, "stagedVertexBuffer");
     }
 }

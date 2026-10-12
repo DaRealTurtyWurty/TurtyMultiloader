@@ -11,9 +11,9 @@ import dev.turtywurty.turtymultiloader.transfer.resource.ResourceTypes;
 import dev.turtywurty.turtymultiloader.transfer.unit.TransferUnit;
 import dev.turtywurty.turtymultiloader.transfer.unit.UnitDimension;
 import dev.turtywurty.turtymultiloader.transfer.unit.Units;
+import net.minecraft.core.registries.codec.RegistryFixedCodec;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.resources.Identifier;
-import net.minecraft.resources.RegistryFixedCodec;
 
 /**
  * Loader-neutral entry point for the optional slurry module.
