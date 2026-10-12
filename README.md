@@ -5,7 +5,7 @@ TurtyMultiloader is a Minecraft mod targeting Fabric and NeoForge from a shared 
 ## Requirements
 
 - Java 25
-- Minecraft 26.1.1
+- Minecraft 26.3
 
 ## Project structure
 
@@ -53,7 +53,7 @@ Common code uses compile-only dependencies; each distributable loader JAR embeds
 
 ```groovy
 def tmlGroup = 'dev.turtywurty.turtymultiloader'
-def tmlVersion = '1.0.0'
+def tmlVersion = '1.1.0'
 def tml = { name -> "${tmlGroup}:${name}:${tmlVersion}" }
 
 // common/build.gradle
