@@ -53,7 +53,7 @@ Common code uses compile-only dependencies; each distributable loader JAR embeds
 
 ```groovy
 def tmlGroup = 'dev.turtywurty.turtymultiloader'
-def tmlVersion = '1.1.0'
+def tmlVersion = '1.1.1'
 def tml = { name -> "${tmlGroup}:${name}:${tmlVersion}" }
 
 // common/build.gradle

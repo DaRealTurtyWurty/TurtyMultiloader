@@ -35,6 +35,16 @@ public class MultiblockPartBlock extends Block implements EntityBlock {
         return RenderShape.INVISIBLE;
     }
 
+    @Override
+    protected float getShadeBrightness(@NonNull BlockState state, @NonNull BlockGetter level, @NonNull BlockPos pos) {
+        return 1.0F;
+    }
+
+    @Override
+    protected boolean propagatesSkylightDown(final @NonNull BlockState state) {
+        return true;
+    }
+
     @Nullable
     @Override
     public BlockEntity newBlockEntity(final @NonNull BlockPos pos, final @NonNull BlockState state) {
