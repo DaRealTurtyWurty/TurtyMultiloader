@@ -11,6 +11,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.level.chunk.LevelChunk;
 import net.neoforged.bus.api.EventPriority;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.OnDatapackSyncEvent;
@@ -19,6 +20,7 @@ import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDropsEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.level.BlockDropsEvent;
+import net.neoforged.neoforge.event.level.ChunkEvent;
 import net.neoforged.neoforge.event.level.LevelEvent;
 import net.neoforged.neoforge.event.server.ServerStartedEvent;
 import net.neoforged.neoforge.event.server.ServerStartingEvent;
@@ -39,6 +41,8 @@ public final class NeoForgeEventService implements EventService {
     private final CopyOnWriteArrayList<Consumer<MinecraftServer>> serverStoppedCallbacks = new CopyOnWriteArrayList<>();
     private final CopyOnWriteArrayList<Consumer<ServerLevel>> levelLoadCallbacks = new CopyOnWriteArrayList<>();
     private final CopyOnWriteArrayList<Consumer<ServerLevel>> levelUnloadCallbacks = new CopyOnWriteArrayList<>();
+    private final CopyOnWriteArrayList<BiConsumer<ServerLevel, LevelChunk>> chunkLoadCallbacks = new CopyOnWriteArrayList<>();
+    private final CopyOnWriteArrayList<BiConsumer<ServerLevel, LevelChunk>> chunkUnloadCallbacks = new CopyOnWriteArrayList<>();
     private final CopyOnWriteArrayList<Consumer<MinecraftServer>> startServerTickCallbacks = new CopyOnWriteArrayList<>();
     private final CopyOnWriteArrayList<Consumer<MinecraftServer>> endServerTickCallbacks = new CopyOnWriteArrayList<>();
     private final CopyOnWriteArrayList<Consumer<ServerLevel>> startLevelTickCallbacks = new CopyOnWriteArrayList<>();
@@ -61,6 +65,8 @@ public final class NeoForgeEventService implements EventService {
         bus.addListener(ServerStoppedEvent.class, this::handleServerStopped);
         bus.addListener(LevelEvent.Load.class, this::handleLevelLoad);
         bus.addListener(LevelEvent.Unload.class, this::handleLevelUnload);
+        bus.addListener(ChunkEvent.Load.class, this::handleChunkLoad);
+        bus.addListener(ChunkEvent.Unload.class, this::handleChunkUnload);
         bus.addListener(ServerTickEvent.Pre.class, this::handleStartServerTick);
         bus.addListener(ServerTickEvent.Post.class, this::handleEndServerTick);
         bus.addListener(LevelTickEvent.Pre.class, this::handleStartLevelTick);
@@ -107,6 +113,16 @@ public final class NeoForgeEventService implements EventService {
     @Override
     public void onLevelUnload(Consumer<ServerLevel> callback) {
         levelUnloadCallbacks.add(require(callback));
+    }
+
+    @Override
+    public void onChunkLoad(BiConsumer<ServerLevel, LevelChunk> callback) {
+        chunkLoadCallbacks.add(require(callback));
+    }
+
+    @Override
+    public void onChunkUnload(BiConsumer<ServerLevel, LevelChunk> callback) {
+        chunkUnloadCallbacks.add(require(callback));
     }
 
     @Override
@@ -199,6 +215,18 @@ public final class NeoForgeEventService implements EventService {
     private void handleLevelUnload(LevelEvent.Unload event) {
         if (event.getLevel() instanceof ServerLevel level) {
             levelUnloadCallbacks.forEach(callback -> callback.accept(level));
+        }
+    }
+
+    private void handleChunkLoad(ChunkEvent.Load event) {
+        if (event.getLevel() instanceof ServerLevel level) {
+            chunkLoadCallbacks.forEach(callback -> callback.accept(level, event.getChunk()));
+        }
+    }
+
+    private void handleChunkUnload(ChunkEvent.Unload event) {
+        if (event.getLevel() instanceof ServerLevel level) {
+            chunkUnloadCallbacks.forEach(callback -> callback.accept(level, event.getChunk()));
         }
     }
 

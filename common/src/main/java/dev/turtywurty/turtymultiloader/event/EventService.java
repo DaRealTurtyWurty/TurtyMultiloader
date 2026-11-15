@@ -7,6 +7,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.level.chunk.LevelChunk;
 
 import java.util.ServiceLoader;
 import java.util.function.BiConsumer;
@@ -32,6 +33,10 @@ public interface EventService {
     void onLevelLoad(Consumer<ServerLevel> callback);
 
     void onLevelUnload(Consumer<ServerLevel> callback);
+
+    void onChunkLoad(BiConsumer<ServerLevel, LevelChunk> callback);
+
+    void onChunkUnload(BiConsumer<ServerLevel, LevelChunk> callback);
 
     void onStartServerTick(Consumer<MinecraftServer> callback);
 

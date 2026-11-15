@@ -53,7 +53,7 @@ Common code uses compile-only dependencies; each distributable loader JAR embeds
 
 ```groovy
 def tmlGroup = 'dev.turtywurty.turtymultiloader'
-def tmlVersion = '1.1.1'
+def tmlVersion = '1.1.2'
 def tml = { name -> "${tmlGroup}:${name}:${tmlVersion}" }
 
 // common/build.gradle
@@ -136,7 +136,7 @@ beneath the game directory.
 
 ### Events and lifecycle
 
-`Events` is the common callback facade. It covers server start/stop, level load/unload, server and level tick
+`Events` is the common callback facade. It covers server start/stop, level and chunk load/unload, server and level tick
 boundaries,
 player join/disconnect/respawn/dimension change, successful player block breaks, post-damage/death, command
 registration, and successful
@@ -177,6 +177,16 @@ onCommandRegistration(dispatcher ->dispatcher.
 
 register(createIndustriaCommand()));
 ```
+
+Chunk lifecycle callbacks run on the logical server and receive a `ServerLevel` and `LevelChunk`:
+
+```java
+Events.onChunkLoad((level, chunk) -> trackChunk(level, chunk));
+Events.onChunkUnload((level, chunk) -> forgetChunk(level, chunk));
+```
+
+Load callbacks include newly generated chunks. The chunk may not yet be fully promoted, so defer level interactions
+until the next tick. Unload callbacks run while the chunk is being removed; avoid loading chunks from them.
 
 Client callbacks live under `event.client` so dedicated-server initialization never resolves client classes. They cover
 client and client-level ticks, client-level enter/leave, block-entity unload, play connection/disconnection, tooltip

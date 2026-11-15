@@ -7,6 +7,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.level.chunk.LevelChunk;
 
 import java.util.Objects;
 import java.util.function.BiConsumer;
@@ -41,6 +42,22 @@ public final class Events {
 
     public static void onLevelUnload(Consumer<ServerLevel> callback) {
         EventService.get().onLevelUnload(require(callback));
+    }
+
+    /**
+     * Registers a callback for a chunk loading into a server level, including newly generated chunks.
+     * The chunk may not yet be fully promoted; defer level interactions until the next tick.
+     */
+    public static void onChunkLoad(BiConsumer<ServerLevel, LevelChunk> callback) {
+        EventService.get().onChunkLoad(require(callback));
+    }
+
+    /**
+     * Registers a callback for a chunk unloading from a server level.
+     * Avoid loading chunks from this callback, as the chunk is being removed.
+     */
+    public static void onChunkUnload(BiConsumer<ServerLevel, LevelChunk> callback) {
+        EventService.get().onChunkUnload(require(callback));
     }
 
     public static void onStartServerTick(Consumer<MinecraftServer> callback) {

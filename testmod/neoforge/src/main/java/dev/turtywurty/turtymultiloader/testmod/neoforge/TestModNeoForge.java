@@ -37,6 +37,15 @@ public final class TestModNeoForge {
             Identifier.fromNamespaceAndPath(TestModContent.MOD_ID, "default"),
             new TestEnvironmentDefinition.AllOf());
         var testData = new TestData<>(environment, RegistryGameTests.EMPTY_STRUCTURE, 20, 0, true);
+        var chunkTestData = new TestData<>(environment, RegistryGameTests.EMPTY_STRUCTURE, 600, 0, true);
+        event.registerTest(
+            ChunkEventGameTests.TEST_ID,
+            new FunctionGameTestInstance(BuiltinTestFunctions.ALWAYS_PASS, chunkTestData) {
+                @Override
+                public void run(GameTestHelper helper) {
+                    ChunkEventGameTests.verifyChunkEvents(helper);
+                }
+            });
         event.registerTest(
             RegistryGameTests.TEST_ID,
             new FunctionGameTestInstance(BuiltinTestFunctions.ALWAYS_PASS, testData) {

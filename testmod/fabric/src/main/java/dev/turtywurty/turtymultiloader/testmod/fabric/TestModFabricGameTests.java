@@ -35,6 +35,11 @@ import java.util.Iterator;
 import java.util.List;
 
 public final class TestModFabricGameTests {
+    @GameTest(structure = "minecraft:empty", maxTicks = 600)
+    public void chunkEvents(GameTestHelper helper) {
+        ChunkEventGameTests.verifyChunkEvents(helper);
+    }
+
     @GameTest(structure = "minecraft:empty")
     public void multiblockModule(GameTestHelper helper) {
         MultiblockModuleGameTests.verifyModule(helper);

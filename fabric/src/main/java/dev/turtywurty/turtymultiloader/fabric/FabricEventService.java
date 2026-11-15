@@ -10,6 +10,7 @@ import net.fabricmc.fabric.api.entity.event.v1.ServerEntityLevelChangeEvents;
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLevelEvents;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerChunkEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents;
@@ -19,6 +20,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.level.chunk.LevelChunk;
 
 import java.util.Objects;
 import java.util.function.BiConsumer;
@@ -53,6 +55,17 @@ public final class FabricEventService implements EventService {
     @Override
     public void onLevelUnload(Consumer<ServerLevel> callback) {
         ServerLevelEvents.UNLOAD.register((server, level) -> require(callback).accept(level));
+    }
+
+    @Override
+    public void onChunkLoad(BiConsumer<ServerLevel, LevelChunk> callback) {
+        require(callback);
+        ServerChunkEvents.CHUNK_LOAD.register((level, chunk, generated) -> callback.accept(level, chunk));
+    }
+
+    @Override
+    public void onChunkUnload(BiConsumer<ServerLevel, LevelChunk> callback) {
+        ServerChunkEvents.CHUNK_UNLOAD.register(require(callback)::accept);
     }
 
     @Override

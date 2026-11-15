@@ -19,6 +19,10 @@ public final class EventSmokeTest {
         });
         Events.onLevelUnload(level -> {
         });
+        Events.onChunkLoad((level, chunk) -> {
+        });
+        Events.onChunkUnload((level, chunk) -> {
+        });
         Events.onStartServerTick(server -> {
         });
         Events.onEndServerTick(server -> {
